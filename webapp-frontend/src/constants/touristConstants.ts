@@ -22,6 +22,8 @@ export const INTEREST_MAP: Record<string, Interest> = Object.fromEntries(
 );
 
 
+// -------------------- Tourist Regions -----------------------------
+
 export interface Regions {
   id: string;
   label: string;
@@ -44,3 +46,16 @@ export const REGIONS: Regions[] = [
 export const REGIONS_MAP: Record<string, Regions> = Object.fromEntries(
   REGIONS.map((i) => [i.id, i])
 );
+
+
+
+
+
+
+//-------------------- Blog Hashtags -----------------------------------
+
+export const TRENDING_TAGS = [
+  '#Batik', '#Pottery', '#Masks', '#Weaving', '#Lacquer', '#Cooking', '#Drumming', '#WoodCarving',
+  '#Colombo', '#Kandy', '#Galle', '#Jaffna', '#Anuradhapura', '#Sigiriya', '#Ella', '#Trincomalee', '#Negombo',
+  '#SriLanka',
+];

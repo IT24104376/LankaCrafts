@@ -8,13 +8,20 @@ import {
   updateBlog,
   deleteBlog,
   toggleLike,
+  getBlog,
 } from '../services/blogService.js';
 
 const router = express.Router();
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Multer Configuration
+// ─────────────────────────────────────────────────────────────────────────────
 const upload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 30 * 1024 * 1024 }, // 30 MB
+  limits: {
+    fileSize: 40 * 1024 * 1024, // optional per-file safety (max 40MB each)
+    files: 10, // max number of files
+  },
   fileFilter: (_req, file, cb) => {
     const allowed = [
       'image/jpeg', 'image/png', 'image/webp', 'image/gif',
@@ -25,19 +32,38 @@ const upload = multer({
   },
 });
 
+// Accept up to 10 files under 'media'
+const uploadMedia = upload.array('media', 10);
+
+const TOTAL_LIMIT = 40 * 1024 * 1024; // 40MB
+
+const checkTotalSize = (req, res, next) => {
+  if (!req.files || req.files.length === 0) return next();
+
+  const totalSize = req.files.reduce((sum, file) => sum + file.size, 0);
+
+  if (totalSize > TOTAL_LIMIT) {
+    return res.status(400).json({
+      message: 'Total upload size must not exceed 40MB.',
+    });
+  }
+
+  next();
+};
+
 // ─────────────────────────────────────────────────────────────────────────────
 // GET /api/tourist/blogs
-// Public — list all published blogs with pagination & sorting
+// Public — list all published blogs
 // ─────────────────────────────────────────────────────────────────────────────
 router.get('/', async (req, res) => {
-  const { page, limit, sort } = req.query;
-  const result = await listBlogs(page, limit, sort);
+  const { page, limit, sort, tag } = req.query;
+  const result = await listBlogs(page, limit, sort, tag);
   res.json(result);
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
-// GET /api/tourist/blogs/me - with TOKEN
-// Private — list all published and draft blogs by a specific user
+// GET /api/tourist/blogs/me
+// Private — user's blogs
 // ─────────────────────────────────────────────────────────────────────────────
 router.get('/me', verifyFirebaseToken, async (req, res) => {
   const blogs = await listMyBlogs(req.tourist._id);
@@ -45,20 +71,40 @@ router.get('/me', verifyFirebaseToken, async (req, res) => {
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
-// POST /api/tourist/blogs
-// Authenticated — create a new blog post (with optional Cloudinary media)
+// GET /api/tourist/blogs/:id
+// Public — single blog
 // ─────────────────────────────────────────────────────────────────────────────
-router.post('/', verifyFirebaseToken, upload.single('media'), async (req, res) => {
-  const blog = await createBlog(req.tourist._id, req.body, req.file);
-  res.status(201).json({
-    message: `Blog ${blog.status === 'draft' ? 'saved as draft' : 'published'} successfully.`,
-    blog,
-  });
+router.get('/:id', async (req, res) => {
+  const result = await getBlog(req.params.id);
+  res.json(result);
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
+// POST /api/tourist/blogs
+// Create blog
+// ─────────────────────────────────────────────────────────────────────────────
+router.post(
+  '/',
+  verifyFirebaseToken,
+  uploadMedia,
+  checkTotalSize,
+  async (req, res) => {
+    const blog = await createBlog(
+      req.tourist._id,
+      req.body,
+      req.files ?? []
+    );
+
+    res.status(201).json({
+      message: `Blog ${blog.status === 'draft' ? 'saved as draft' : 'published'} successfully.`,
+      blog,
+    });
+  }
+);
+
+// ─────────────────────────────────────────────────────────────────────────────
 // PATCH /api/tourist/blogs/:id/like
-// Authenticated — toggle like on a blog
+// Toggle like
 // ─────────────────────────────────────────────────────────────────────────────
 router.patch('/:id/like', verifyFirebaseToken, async (req, res) => {
   const result = await toggleLike(req.params.id, req.tourist._id);
@@ -67,16 +113,31 @@ router.patch('/:id/like', verifyFirebaseToken, async (req, res) => {
 
 // ─────────────────────────────────────────────────────────────────────────────
 // PATCH /api/tourist/blogs/:id
-// Authenticated — edit own blog (and update status)
+// Update blog
 // ─────────────────────────────────────────────────────────────────────────────
-router.patch('/:id', verifyFirebaseToken, upload.single('media'), async (req, res) => {
-  const blog = await updateBlog(req.params.id, req.tourist._id, req.body, req.file);
-  res.json({ message: 'Blog updated successfully.', blog });
-});
+router.patch(
+  '/:id',
+  verifyFirebaseToken,
+  uploadMedia,
+  checkTotalSize,
+  async (req, res) => {
+    const blog = await updateBlog(
+      req.params.id,
+      req.tourist._id,
+      req.body,
+      req.files ?? []
+    );
+
+    res.json({
+      message: 'Blog updated successfully.',
+      blog,
+    });
+  }
+);
 
 // ─────────────────────────────────────────────────────────────────────────────
 // DELETE /api/tourist/blogs/:id
-// Authenticated — soft delete own blog
+// Delete blog
 // ─────────────────────────────────────────────────────────────────────────────
 router.delete('/:id', verifyFirebaseToken, async (req, res) => {
   await deleteBlog(req.params.id, req.tourist._id);

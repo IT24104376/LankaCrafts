@@ -281,11 +281,33 @@ export function TouristProfile() {
                 ) : blogs.length > 0 ? (
                   blogs.map((b: any) => (
                     <div key={b._id} className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden flex flex-col sm:flex-row items-stretch hover:shadow-md transition-shadow">
-                      {b.mediaUrl && b.mediaType === 'image' && (
-                        <div className="sm:w-40 h-32 sm:h-auto shrink-0 bg-gray-100">
-                          <img src={b.mediaUrl} alt={b.title} className="w-full h-full object-cover" />
-                        </div>
-                      )}
+                      {/* Show first media item from media[] array only — no legacy fallback */}
+                      {b.media && b.media.length > 0 && (() => {
+                        const sorted = [...b.media].sort((x: any, y: any) => x.order - y.order);
+                        const first = sorted[0];
+                        const extraCount = sorted.length - 1;
+                        return (
+                          <div className="relative w-40 h-32 shrink-0 bg-gray-100">
+                            {first.mediaType === 'video' ? (
+                              <video
+                                src={first.url}
+                                className="w-full h-full object-cover"
+                                muted
+                                playsInline
+                                autoPlay
+                                loop
+                              />
+                            ) : (
+                              <img src={first.url} alt={b.title} className="w-full h-full object-cover" />
+                            )}
+                            {extraCount > 0 && (
+                              <span className="absolute bottom-1.5 right-1.5 bg-black/60 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+                                +{extraCount}
+                              </span>
+                            )}
+                          </div>
+                        );
+                      })()}
                       <div className="p-4 flex-1 min-w-0 flex flex-col justify-center">
                         <div className="flex items-start justify-between gap-4">
                           <div>

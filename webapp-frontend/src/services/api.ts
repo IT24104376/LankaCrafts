@@ -58,8 +58,13 @@ export const updateReviews = (reviewIds: string[]) =>
 
 // ── Blogs ─────────────────────────────────────────────────────────────────────
 
-export const getBlogs = (page = 1, sort = 'recent') =>
-  api.get(`/api/tourist/blogs?page=${page}&sort=${sort}`);
+export const getBlogs = (page = 1, sort = 'recent', tag?: string) => {
+  const tagParam = tag ? `&tag=${encodeURIComponent(tag)}` : '';
+  return api.get(`/api/tourist/blogs?page=${page}&sort=${sort}${tagParam}`);
+};
+
+export const getBlog = (id: string) =>
+  api.get(`/api/tourist/blogs/${id}`); 
 
 export const getMyBlogs = () =>
   api.get('/api/tourist/blogs/me');
