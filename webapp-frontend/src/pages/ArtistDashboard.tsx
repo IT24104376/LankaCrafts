@@ -23,19 +23,24 @@ import {
   SearchIcon,
   SendIcon,
   CheckCheckIcon,
+  CheckIcon,
+  MoreVerticalIcon,
   ArrowLeftIcon } from
 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { clearAuthSession, getStoredUser } from '../lib/auth';
+import { chatApi, handleApiError } from '../config/api';
 // ── Inbox Data ──────────────────────────────────────────────────
 interface InboxMessage {
-  id: number;
+  id: string;
   text: string;
   sender: 'me' | 'them';
   time: string;
   seen: boolean;
+  edited?: boolean;
 }
 interface InboxConversation {
-  id: number;
+  id: string;
   name: string;
   initials: string;
   avatarColor: string;
@@ -47,200 +52,173 @@ interface InboxConversation {
   online: boolean;
   messages: InboxMessage[];
 }
-const INBOX_CONVERSATIONS: InboxConversation[] = [
-{
-  id: 1,
-  name: 'Arjun Mehta',
-  initials: 'AM',
-  avatarColor: '#C1440E',
-  country: '🇮🇳 India',
-  workshopContext: 'Kandyan Lacquerwork Workshop',
-  lastMessage: "Thank you! I'll be there at 10 AM sharp.",
-  time: '10:45 AM',
-  unread: 1,
-  online: true,
-  messages: [
-  {
-    id: 1,
-    text: "Hello! I saw your lacquerwork profile and I'm very interested in booking a workshop.",
-    sender: 'them',
-    time: '9:45 AM',
-    seen: true
-  },
-  {
-    id: 2,
-    text: "Welcome! I'd be happy to have you. When are you planning to visit Kandy?",
-    sender: 'me',
-    time: '9:52 AM',
-    seen: true
-  },
-  {
-    id: 3,
-    text: "I'm thinking this Saturday morning. Is that available?",
-    sender: 'them',
-    time: '9:55 AM',
-    seen: true
-  },
-  {
-    id: 4,
-    text: "Yes, Saturday is perfect! I have a slot at 10 AM. The session is about 3 hours and you'll make your own lacquer piece to take home.",
-    sender: 'me',
-    time: '10:01 AM',
-    seen: true
-  },
-  {
-    id: 5,
-    text: 'That sounds amazing! How many people can join?',
-    sender: 'them',
-    time: '10:15 AM',
-    seen: true
-  },
-  {
-    id: 6,
-    text: 'The workshop starts at 10 AM. Please bring comfortable clothes.',
-    sender: 'me',
-    time: '10:32 AM',
-    seen: true
-  },
-  {
-    id: 7,
-    text: "Thank you! I'll be there at 10 AM sharp.",
-    sender: 'them',
-    time: '10:45 AM',
-    seen: false
-  }]
 
+const INBOX_CONVERSATIONS: InboxConversation[] = [];
+const AVATAR_COLORS = ['#C1440E', '#2F5D50', '#C9A227', '#1A6B6B'];
+
+const DEFAULT_SCHEDULE = [
+{
+  day: 'Mon',
+  slots: ['10:00 AM', '2:00 PM']
 },
 {
-  id: 2,
-  name: 'Sofia Reyes',
-  initials: 'SR',
-  avatarColor: '#2F5D50',
-  country: '🇪🇸 Spain',
-  workshopContext: 'Kandyan Lacquerwork Workshop',
-  lastMessage: 'Can I bring my own tools or do you provide everything?',
-  time: 'Yesterday',
-  unread: 0,
-  online: false,
-  messages: [
-  {
-    id: 1,
-    text: "Hi! I'm a craft enthusiast visiting Sri Lanka next month.",
-    sender: 'them',
-    time: 'Yesterday 2:00 PM',
-    seen: true
-  },
-  {
-    id: 2,
-    text: "Wonderful! I'd love to share the art of lacquerwork with you.",
-    sender: 'me',
-    time: 'Yesterday 2:10 PM',
-    seen: true
-  },
-  {
-    id: 3,
-    text: 'Can I bring my own tools or do you provide everything?',
-    sender: 'them',
-    time: 'Yesterday 2:30 PM',
-    seen: true
-  }]
-
+  day: 'Tue',
+  slots: ['10:00 AM', '2:00 PM']
 },
 {
-  id: 3,
-  name: 'Kenji Tanaka',
-  initials: 'KT',
-  avatarColor: '#C9A227',
-  country: '🇯🇵 Japan',
-  workshopContext: 'Kandyan Lacquerwork Workshop',
-  lastMessage: 'I will book for 2 people. Looking forward to it!',
-  time: 'Mon',
-  unread: 2,
-  online: false,
-  messages: [
-  {
-    id: 1,
-    text: "Your work is beautiful. I'd like to book for 2 people.",
-    sender: 'them',
-    time: 'Mon 11:00 AM',
-    seen: true
-  },
-  {
-    id: 2,
-    text: 'Thank you! I can accommodate 2 people easily. The rate is $45 per person.',
-    sender: 'me',
-    time: 'Mon 11:30 AM',
-    seen: true
-  },
-  {
-    id: 3,
-    text: 'I will book for 2 people. Looking forward to it!',
-    sender: 'them',
-    time: 'Mon 12:00 PM',
-    seen: false
-  }]
-
+  day: 'Wed',
+  slots: ['10:00 AM']
+},
+{
+  day: 'Thu',
+  slots: ['10:00 AM', '2:00 PM']
+},
+{
+  day: 'Fri',
+  slots: ['10:00 AM', '2:00 PM']
+},
+{
+  day: 'Sat',
+  slots: ['9:00 AM']
 }];
 
-// Mock initial data matching ArtistProfile structure
-const INITIAL_DATA = {
-  name: 'Nimal Perera',
-  username: 'nimal.p',
-  email: 'nimal@example.com',
-  craft: 'Kandyan Lacquerwork',
-  region: 'Kandy',
-  location: 'Kandy, Central Province',
-  bio: "For over four decades, I have dedicated my life to the ancient art of Kandyan lacquerwork (Laksha). Learning from my father at the age of 12, I've mastered the traditional technique of applying natural lacquer to turned wood using only the heat of friction. My workshop is not just a place of production, but a sanctuary where this dying art form is preserved and passed down to the next generation.",
-  rating: 4.9,
-  reviews: 124,
-  initials: 'NP',
-  specialties: ['Ceremonial Staffs', 'Jewelry Boxes', 'Traditional Vases'],
-  schedule: [
-  {
-    day: 'Mon',
-    slots: ['10:00 AM', '2:00 PM']
-  },
-  {
-    day: 'Tue',
-    slots: ['10:00 AM', '2:00 PM']
-  },
-  {
-    day: 'Wed',
-    slots: ['10:00 AM']
-  },
-  {
-    day: 'Thu',
-    slots: ['10:00 AM', '2:00 PM']
-  },
-  {
-    day: 'Fri',
-    slots: ['10:00 AM', '2:00 PM']
-  },
-  {
-    day: 'Sat',
-    slots: ['9:00 AM']
-  }]
+const getInitials = (name: string) =>
+name
+  .split(' ')
+  .filter(Boolean)
+  .slice(0, 2)
+  .map((part) => part[0]?.toUpperCase() || '')
+  .join('') || 'AR';
 
+const getUsernameFromName = (name: string) =>
+name.trim().toLowerCase().replace(/\s+/g, '.');
+
+const getAvatarColor = (seed: string) => {
+  const hash = seed.split('').reduce((total, char) => total + char.charCodeAt(0), 0);
+  return AVATAR_COLORS[hash % AVATAR_COLORS.length];
+};
+
+const formatTimestamp = (value?: string | null) => {
+  if (!value) return '';
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '';
+
+  return date.toLocaleString([], {
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+};
+
+const normalizeId = (value?: string | { id?: string; _id?: string } | null) => {
+  if (!value) return null;
+  if (typeof value === 'string') return value.trim();
+  if (typeof value === 'object') {
+    return (value.id || value._id || '').trim() || null;
+  }
+  return null;
+};
+
+const getMessageSide = (
+senderId?: string | { id?: string; _id?: string } | null,
+currentUserId?: string | null
+): 'me' | 'them' => {
+  const normalizedSenderId = normalizeId(senderId);
+  const normalizedCurrentUserId = normalizeId(currentUserId);
+  return normalizedSenderId && normalizedCurrentUserId && normalizedSenderId === normalizedCurrentUserId ? 'me' : 'them';
+};
+
+const mapInboxMessage = (message: any, currentUserId?: string | null): InboxMessage => ({
+  id: message.id,
+  text: message.text,
+  sender: getMessageSide(message.sender?.id ?? message.sender, currentUserId),
+  time: formatTimestamp(message.createdAt),
+  seen: Boolean(message.readAt),
+  edited: Boolean(message.editedAt),
+});
+
+const createInitialArtistData = () => {
+  const storedUser = getStoredUser();
+  const fullName = storedUser?.fullName || 'Artist User';
+  const email = storedUser?.email || 'artist@example.com';
+
+  return {
+    name: fullName,
+    username: getUsernameFromName(fullName),
+    email,
+    craft: 'Traditional Artisan',
+    region: 'Sri Lanka',
+    location: 'Sri Lanka',
+    bio: 'Complete your artist profile to show your craft, story, and workshop details to tourists.',
+    rating: 0,
+    reviews: 0,
+    initials: getInitials(fullName),
+    specialties: ['Add your specialties'],
+    schedule: DEFAULT_SCHEDULE,
+  };
 };
 export function ArtistDashboard() {
   const navigate = useNavigate();
+  const initialArtistData = createInitialArtistData();
   const [activeTab, setActiveTab] = useState<
     'view' | 'edit' | 'schedule' | 'inbox' | 'settings'>(
     'view');
-  const [artistData, setArtistData] = useState(INITIAL_DATA);
-  const [editForm, setEditForm] = useState(INITIAL_DATA);
+  const [artistData, setArtistData] = useState(initialArtistData);
+  const [editForm, setEditForm] = useState(initialArtistData);
   const [passwordForm, setPasswordForm] = useState({
     current: '',
     new: '',
     confirm: ''
   });
   // Inbox state
+  const currentUser = getStoredUser();
+  const currentUserId = normalizeId(currentUser?.id);
   const [inboxConversations, setInboxConversations] =
-  useState(INBOX_CONVERSATIONS);
-  const [activeInboxId, setActiveInboxId] = useState<number | null>(1);
+  useState<InboxConversation[]>(INBOX_CONVERSATIONS);
+  const [activeInboxId, setActiveInboxId] = useState<string | null>(null);
   const [inboxInput, setInboxInput] = useState('');
   const [inboxSearch, setInboxSearch] = useState('');
+  const [inboxError, setInboxError] = useState('');
+  const [selectedInboxMessageId, setSelectedInboxMessageId] = useState<string | null>(null);
+  const [openInboxMessageMenuId, setOpenInboxMessageMenuId] = useState<string | null>(null);
+  const [editingInboxMessageId, setEditingInboxMessageId] = useState<string | null>(null);
+  const [editingInboxText, setEditingInboxText] = useState('');
+  const [isSavingInboxEdit, setIsSavingInboxEdit] = useState(false);
+  const [deletingInboxMessageId, setDeletingInboxMessageId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (activeTab !== 'inbox') {
+      return;
+    }
+
+    const loadConversations = async () => {
+      try {
+        const response = await chatApi.getConversations();
+        const items = (response.data.data || []).map((conversation: any) => ({
+          id: conversation.id,
+          name: conversation.otherUser?.fullName || 'Tourist',
+          initials: getInitials(conversation.otherUser?.fullName || 'Tourist'),
+          avatarColor: getAvatarColor(conversation.otherUser?.fullName || 'Tourist'),
+          country: conversation.otherUser?.country || 'Sri Lanka',
+          workshopContext: conversation.artistProfile?.craftType || 'Workshop inquiry',
+          lastMessage: conversation.lastMessage || 'No messages yet',
+          time: formatTimestamp(conversation.lastMessageAt),
+          unread: conversation.unread || 0,
+          online: Boolean(conversation.online),
+          messages: [],
+        })) as InboxConversation[];
+
+        setInboxConversations(items);
+        setActiveInboxId((current) => current || items[0]?.id || null);
+      } catch (err) {
+        setInboxError(handleApiError(err).message);
+      }
+    };
+
+    loadConversations();
+  }, [activeTab]);
   useEffect(() => {
     if (activeTab === 'inbox') {
       messagesEndRef.current?.scrollIntoView({
@@ -248,35 +226,208 @@ export function ArtistDashboard() {
       });
     }
   }, [activeInboxId, inboxConversations, activeTab]);
-  const activeInboxConv = inboxConversations.find((c) => c.id === activeInboxId);
-  const handleSendInbox = () => {
-    if (!inboxInput.trim() || !activeInboxId) return;
-    const newMsg: InboxMessage = {
-      id: Date.now(),
-      text: inboxInput.trim(),
-      sender: 'me',
-      time: new Date().toLocaleTimeString([], {
-        hour: '2-digit',
-        minute: '2-digit'
-      }),
-      seen: false
+  useEffect(() => {
+    if (activeTab !== 'inbox') {
+      return;
+    }
+
+    const loadMessages = async () => {
+      if (!activeInboxId) return;
+
+      try {
+        const response = await chatApi.getConversationMessages(activeInboxId);
+        const messages = (response.data.data || []).map((message: any) =>
+          mapInboxMessage(message, currentUserId)
+        ) as InboxMessage[];
+
+        setInboxConversations((prev) =>
+          prev.map((conversation) =>
+            conversation.id === activeInboxId ? { ...conversation, messages } : conversation
+          )
+        );
+      } catch (err) {
+        setInboxError(handleApiError(err).message);
+      }
     };
-    setInboxConversations((prev) =>
-    prev.map((c) =>
-    c.id === activeInboxId ?
-    {
-      ...c,
-      messages: [...c.messages, newMsg],
-      lastMessage: inboxInput.trim(),
-      time: 'Now',
-      unread: 0
-    } :
-    c
-    )
-    );
-    setInboxInput('');
+
+    loadMessages();
+  }, [activeInboxId, currentUserId, activeTab]);
+  useEffect(() => {
+    if (activeTab !== 'inbox') {
+      return;
+    }
+
+    const intervalId = window.setInterval(async () => {
+      if (document.hidden) {
+        return;
+      }
+
+      try {
+        const response = await chatApi.getConversations();
+        const items = (response.data.data || []).map((conversation: any) => ({
+          id: conversation.id,
+          name: conversation.otherUser?.fullName || 'Tourist',
+          initials: getInitials(conversation.otherUser?.fullName || 'Tourist'),
+          avatarColor: getAvatarColor(conversation.otherUser?.fullName || 'Tourist'),
+          country: conversation.otherUser?.country || 'Sri Lanka',
+          workshopContext: conversation.artistProfile?.craftType || 'Workshop inquiry',
+          lastMessage: conversation.lastMessage || 'No messages yet',
+          time: formatTimestamp(conversation.lastMessageAt),
+          unread: conversation.unread || 0,
+          online: Boolean(conversation.online),
+          messages: [],
+        })) as InboxConversation[];
+
+        setInboxConversations((prev) =>
+          items.map((item) => ({
+            ...item,
+            messages: prev.find((existing) => existing.id === item.id)?.messages || [],
+          }))
+        );
+
+        if (activeInboxId) {
+          const messagesResponse = await chatApi.getConversationMessages(activeInboxId);
+          const messages = (messagesResponse.data.data || []).map((message: any) =>
+            mapInboxMessage(message, currentUserId)
+          ) as InboxMessage[];
+
+          setInboxConversations((prev) =>
+            prev.map((conversation) =>
+              conversation.id === activeInboxId ? { ...conversation, messages } : conversation
+            )
+          );
+        }
+      } catch {
+        // Silent polling retry
+      }
+    }, 15000);
+
+    return () => window.clearInterval(intervalId);
+  }, [activeInboxId, currentUserId, activeTab]);
+  const activeInboxConv = inboxConversations.find((c) => c.id === activeInboxId);
+  const handleSendInbox = async () => {
+    if (!inboxInput.trim() || !activeInboxId) return;
+
+    try {
+      const response = await chatApi.sendMessage(activeInboxId, inboxInput.trim());
+      const sentMessage = response.data.data;
+      const newMsg: InboxMessage = {
+        id: sentMessage.id,
+        text: sentMessage.text,
+        sender: 'me',
+        time: formatTimestamp(sentMessage.createdAt),
+        seen: Boolean(sentMessage.readAt),
+        edited: Boolean(sentMessage.editedAt),
+      };
+      setInboxConversations((prev) =>
+        prev.map((c) =>
+          c.id === activeInboxId ?
+          {
+            ...c,
+            messages: [...c.messages, newMsg],
+            lastMessage: inboxInput.trim(),
+            time: newMsg.time,
+            unread: 0
+          } :
+          c
+        )
+      );
+      setInboxInput('');
+    } catch (err) {
+      setInboxError(handleApiError(err).message);
+    }
   };
-  const handleLogout = () => navigate('/login');
+  const startEditingInboxMessage = (message: InboxMessage) => {
+    setSelectedInboxMessageId(message.id);
+    setOpenInboxMessageMenuId(null);
+    setEditingInboxMessageId(message.id);
+    setEditingInboxText(message.text);
+  };
+  const cancelEditingInboxMessage = () => {
+    setEditingInboxMessageId(null);
+    setEditingInboxText('');
+  };
+  const handleUpdateInboxMessage = async () => {
+    if (!activeInboxId || !editingInboxMessageId || !editingInboxText.trim()) return;
+
+    try {
+      setIsSavingInboxEdit(true);
+      const response = await chatApi.updateMessage(activeInboxId, editingInboxMessageId, editingInboxText.trim());
+      const updatedMessage = response.data.data;
+
+      setInboxConversations((prev) =>
+        prev.map((conversation) =>
+          conversation.id === activeInboxId
+            ? {
+                ...conversation,
+                messages: conversation.messages.map((message) =>
+                  message.id === editingInboxMessageId
+                    ? { ...message, text: updatedMessage.text, edited: Boolean(updatedMessage.editedAt) }
+                    : message
+                ),
+                lastMessage:
+                  conversation.messages[conversation.messages.length - 1]?.id === editingInboxMessageId
+                    ? updatedMessage.text
+                    : conversation.lastMessage,
+              }
+            : conversation
+        )
+      );
+
+      cancelEditingInboxMessage();
+    } catch (err) {
+      setInboxError(handleApiError(err).message);
+    } finally {
+      setIsSavingInboxEdit(false);
+    }
+  };
+  const handleDeleteInboxMessage = async (messageId: string) => {
+    if (!activeInboxId) return;
+    const confirmed = window.confirm('Delete this message?');
+    if (!confirmed) return;
+
+    try {
+      setDeletingInboxMessageId(messageId);
+      setInboxConversations((prev) =>
+        prev.map((conversation) => {
+          if (conversation.id !== activeInboxId) return conversation;
+
+          const remainingMessages = conversation.messages.filter((message) => message.id !== messageId);
+          const lastMessage = remainingMessages[remainingMessages.length - 1];
+
+          return {
+            ...conversation,
+            messages: remainingMessages,
+            lastMessage: lastMessage?.text || 'No messages yet',
+            time: lastMessage?.time || conversation.time,
+          };
+        })
+      );
+
+      await chatApi.deleteMessage(activeInboxId, messageId);
+      if (selectedInboxMessageId === messageId) setSelectedInboxMessageId(null);
+      if (openInboxMessageMenuId === messageId) setOpenInboxMessageMenuId(null);
+      if (editingInboxMessageId === messageId) cancelEditingInboxMessage();
+    } catch (err) {
+      setInboxError(handleApiError(err).message);
+      const response = await chatApi.getConversationMessages(activeInboxId);
+      const messages = (response.data.data || []).map((message: any) =>
+        mapInboxMessage(message, currentUserId)
+      ) as InboxMessage[];
+
+      setInboxConversations((prev) =>
+        prev.map((conversation) =>
+          conversation.id === activeInboxId ? { ...conversation, messages } : conversation
+        )
+      );
+    } finally {
+      setDeletingInboxMessageId(null);
+    }
+  };
+  const handleLogout = () => {
+    clearAuthSession();
+    navigate('/login');
+  };
   const handleDeleteProfile = () => {
     if (
     window.confirm(
@@ -757,6 +908,9 @@ export function ArtistDashboard() {
                           className="w-full pl-9 pr-3 py-2 rounded-xl bg-gray-50 border border-gray-100 text-sm outline-none focus:border-gray-200 transition-colors" />
 
                         </div>
+                        {inboxError &&
+                        <p className="mt-2 text-xs text-red-500">{inboxError}</p>
+                        }
                       </div>
                       <div className="flex-1 overflow-y-auto">
                         {inboxConversations.
@@ -780,6 +934,7 @@ export function ArtistDashboard() {
                           c
                           )
                           );
+                          void chatApi.markConversationRead(conv.id).catch(() => undefined);
                         }}
                         className={`w-full flex items-start gap-3 p-3.5 hover:bg-gray-50 transition-colors border-b border-gray-50 text-left ${activeInboxId === conv.id ? 'bg-forest/5 border-l-2 border-l-forest' : ''}`}>
 
@@ -867,6 +1022,8 @@ export function ArtistDashboard() {
                           <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-gray-50">
                             {activeInboxConv.messages.map((msg, idx) => {
                           const isMe = msg.sender === 'me';
+                          const isSelected = selectedInboxMessageId === msg.id;
+                          const isEditing = editingInboxMessageId === msg.id;
                           return (
                             <motion.div
                               key={msg.id}
@@ -882,7 +1039,13 @@ export function ArtistDashboard() {
                                 duration: 0.15,
                                 delay: idx * 0.02
                               }}
-                              className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
+                              onClick={() => {
+                                setSelectedInboxMessageId(msg.id);
+                                if (openInboxMessageMenuId && openInboxMessageMenuId !== msg.id) {
+                                  setOpenInboxMessageMenuId(null);
+                                }
+                              }}
+                              className={`flex w-full ${isMe ? 'justify-end' : 'justify-start'}`}>
 
                                   {!isMe &&
                               <div
@@ -896,34 +1059,108 @@ export function ArtistDashboard() {
                                     </div>
                               }
                                   <div
-                                className={`max-w-xs flex flex-col ${isMe ? 'items-end' : 'items-start'}`}>
+                                className={`max-w-xs flex flex-col ${isMe ? 'items-end' : 'items-start'} relative`}>
 
                                     <div
-                                  className="px-3.5 py-2.5 rounded-2xl text-sm leading-relaxed"
+                                  className="px-3.5 py-2.5 rounded-2xl text-sm leading-relaxed border"
                                   style={
                                   isMe ?
                                   {
                                     backgroundColor: '#2F5D50',
                                     color: 'white',
-                                    borderBottomRightRadius: '4px'
+                                    borderBottomRightRadius: '4px',
+                                    borderColor: isSelected ? '#1E3E36' : 'transparent'
                                   } :
                                   {
                                     backgroundColor: 'white',
                                     color: '#1E1E1E',
                                     borderBottomLeftRadius: '4px',
                                     boxShadow:
-                                    '0 1px 2px rgba(0,0,0,0.06)'
+                                    '0 1px 2px rgba(0,0,0,0.06)',
+                                    borderColor: isSelected ? '#2F5D50' : 'transparent'
                                   }
                                   }>
 
-                                      {msg.text}
+                                      {isEditing ?
+                                  <div className="space-y-2">
+                                          <textarea
+                                          value={editingInboxText}
+                                          onChange={(e) => setEditingInboxText(e.target.value)}
+                                          rows={3}
+                                          className="w-full rounded-xl px-3 py-2 text-sm resize-none outline-none text-gray-900" />
+                                          <div className="flex items-center justify-end gap-2">
+                                            <button
+                                            type="button"
+                                            onClick={cancelEditingInboxMessage}
+                                            className="p-1 rounded-lg hover:bg-black/10 transition-colors">
+
+                                              <X className="w-4 h-4" />
+                                            </button>
+                                            <button
+                                            type="button"
+                                            onClick={handleUpdateInboxMessage}
+                                            disabled={!editingInboxText.trim() || isSavingInboxEdit}
+                                            className="px-3 py-1 rounded-lg bg-white/20 hover:bg-white/30 disabled:opacity-50 transition-colors">
+
+                                              Save
+                                            </button>
+                                          </div>
+                                        </div> :
+
+                                  msg.text}
                                     </div>
+                                    {isSelected && isMe && !isEditing &&
+                                <div className="self-end mt-2 relative">
+                                        <button
+                                        type="button"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setOpenInboxMessageMenuId((current) => current === msg.id ? null : msg.id);
+                                        }}
+                                        className="inline-flex items-center justify-center w-8 h-8 rounded-full hover:bg-gray-100 text-gray-500 transition-colors">
+
+                                          <MoreVerticalIcon className="w-4 h-4" />
+                                        </button>
+                                        {openInboxMessageMenuId === msg.id &&
+                                    <div className="absolute right-0 mt-1 min-w-32 rounded-xl border border-gray-200 bg-white shadow-lg py-1 z-10">
+                                            <button
+                                            type="button"
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              startEditingInboxMessage(msg);
+                                            }}
+                                            className="w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 inline-flex items-center gap-2">
+
+                                              <Edit2 className="w-4 h-4" />
+                                              Edit
+                                            </button>
+                                            <button
+                                            type="button"
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              void handleDeleteInboxMessage(msg.id);
+                                            }}
+                                            disabled={deletingInboxMessageId === msg.id}
+                                            className="w-full px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50 inline-flex items-center gap-2 disabled:opacity-50">
+
+                                              <Trash2 className="w-4 h-4" />
+                                              Delete
+                                            </button>
+                                          </div>
+                                    }
+                                      </div>
+                                }
                                     <div
                                   className={`flex items-center gap-1 mt-0.5 ${isMe ? 'flex-row-reverse' : ''}`}>
 
                                       <span className="text-xs text-gray-400">
                                         {msg.time}
                                       </span>
+                                      {msg.edited &&
+                                  <span className="text-xs text-gray-400">
+                                          edited
+                                        </span>
+                                  }
                                       {isMe && (
                                   msg.seen ?
                                   <CheckCheckIcon className="w-3 h-3 text-blue-400" /> :

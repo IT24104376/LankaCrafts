@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ChevronDownIcon,
@@ -14,54 +14,39 @@ import {
 } from
   'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext';
-
-
+import { clearAuthSession, getStoredUser } from '../../lib/auth';
 interface TouristNavbarProps {
+  userName?: string;
+  userInitials?: string;
   activeTab?: string;
 }
-
-export function TouristNavbar({ activeTab }: TouristNavbarProps) {
-  const { tourist } = useAuth();
-  const { logout } = useAuth();
-
-  useEffect(() => {
-    if (!tourist) return;
-
-  }, [tourist]);
-
-  const userName = tourist?.fullName ?? 'User';
-  const callingName = tourist?.callingName ?? 'User';
-  const userInitials = tourist?.initials ?? 'U';
-  const userProfilePic = tourist?.profilePicUrl ?? '';
-
+const getInitials = (name: string) =>
+  name
+    .split(' ')
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase() || '')
+    .join('') || 'TU';
+export function TouristNavbar({
+  userName,
+  userInitials,
+  activeTab,
+}: TouristNavbarProps) {
   const [dropdownOpen, setDropdownOpen] = useState(false);
-
-  const handleLogout = async () => {
-    try {
-      await logout();
-      setDropdownOpen(false);
-    } catch (error) {
-      console.error("Logout failed:", error);
-    }
-  };
-
   const location = useLocation();
+  const storedUser = getStoredUser();
+  const resolvedUserName = userName || storedUser?.fullName || 'Tourist User';
+  const resolvedUserInitials = userInitials || getInitials(resolvedUserName);
   const navLinks = [
     {
       label: 'Home',
-      href: '/',
+      href: '/tourist/home',
       icon: HomeIcon
     },
     {
       label: 'Dashboard',
       href: '/tourist/dashboard',
       icon: LayoutDashboardIcon
-    },
-    {
-      label: 'Profile',
-      href: '/tourist/profile',
-      icon: UserIcon
     },
     {
       label: 'Blogs',
@@ -75,7 +60,7 @@ export function TouristNavbar({ activeTab }: TouristNavbarProps) {
     },
     {
       label: 'Inbox',
-      href: '/inbox',
+      href: '/tourist/inbox',
       icon: MessageCircleIcon
     }];
 
@@ -134,7 +119,7 @@ export function TouristNavbar({ activeTab }: TouristNavbarProps) {
               color: '#C1440E'
             }}>
 
-            Lanka Crafts
+            LankaCrafts
           </span>
         </Link>
 
@@ -172,23 +157,24 @@ export function TouristNavbar({ activeTab }: TouristNavbarProps) {
 
           {/* User Dropdown */}
           <div className="relative">
-            <button onClick={() => setDropdownOpen(!dropdownOpen)} className="flex items-center gap-2 pl-1 pr-3 py-1 rounded-full hover:bg-gray-50 transition-colors border border-gray-100">
-              <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold font-body overflow-hidden"
-                style={{ backgroundColor: '#C1440E' }}>
-                {userProfilePic ? (
-                  <img src={userProfilePic} alt={callingName} className="w-full h-full object-cover" />
-                ) : (
-                  <span>{userInitials}</span>
-                )}
+            <button
+              onClick={() => setDropdownOpen(!dropdownOpen)}
+              className="flex items-center gap-2 pl-1 pr-3 py-1 rounded-full hover:bg-gray-50 transition-colors border border-gray-100">
+
+              <div
+                className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold font-body"
+                style={{
+                  backgroundColor: '#C1440E'
+                }}>
+
+                {resolvedUserInitials}
               </div>
-
               <span className="text-sm font-medium text-[#1E1E1E] font-body hidden sm:block">
-                {callingName}
+                {resolvedUserName}
               </span>
-
               <ChevronDownIcon
-                className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${dropdownOpen ? 'rotate-180' : ''}`}
-              />
+                className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${dropdownOpen ? 'rotate-180' : ''}`} />
+
             </button>
 
             <AnimatePresence>
@@ -220,7 +206,7 @@ export function TouristNavbar({ activeTab }: TouristNavbarProps) {
                         Signed in as
                       </p>
                       <p className="text-sm font-semibold text-[#1E1E1E] font-body truncate">
-                        {userName}
+                        {resolvedUserName}
                       </p>
                     </div>
                     <div className="border-t border-gray-100 my-1" />
@@ -228,22 +214,22 @@ export function TouristNavbar({ activeTab }: TouristNavbarProps) {
                       {
                         icon: UserIcon,
                         label: 'My Profile',
-                        href: '/tourist/profile'
+                        href: '#'
                       },
                       {
                         icon: HeartIcon,
                         label: 'My Wishlist',
-                        href: '/tourist/profile#myWishlist'
+                        href: '#'
                       },
                       {
                         icon: CalendarIcon,
                         label: 'My Bookings',
-                        href: '/tourist/profile#myBookings'
+                        href: '/tourist/bookings'
                       },
                       {
                         icon: MessageCircleIcon,
                         label: 'Inbox',
-                        href: '/inbox'
+                        href: '/tourist/inbox'
                       }].
                       map(({ icon: Icon, label, href }) =>
                         <Link
@@ -258,8 +244,11 @@ export function TouristNavbar({ activeTab }: TouristNavbarProps) {
                       )}
                     <div className="border-t border-gray-100 my-1" />
                     <Link
-                      to="/tourist/login"
-                      onClick={() => handleLogout()}
+                      to="/login"
+                      onClick={() => {
+                        clearAuthSession();
+                        setDropdownOpen(false);
+                      }}
                       className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm text-red-500 hover:bg-red-50 transition-colors font-body">
 
                       <LogOutIcon className="w-4 h-4" />
