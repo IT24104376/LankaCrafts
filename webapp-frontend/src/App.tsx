@@ -1,18 +1,21 @@
-import { useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
+
+// Pages
 import { Home } from './pages/Home';
 import { CraftShop } from './pages/CraftShop';
 import { BrowseArtists } from './pages/BrowseArtists';
 import { ArtistProfile } from './pages/ArtistProfile';
 import { ArtistRegistration } from './pages/ArtistRegistration';
 import { FullMap } from './pages/FullMap';
-import { ChatWidget } from './components/chatbot/ChatWidget';
 import { BookWorkshop } from './pages/BookWorkshop';
 import { UnifiedLogin } from './pages/UnifiedLogin';
 import { RegisterSelect } from './pages/RegisterSelect';
 import { ArtistDashboard } from './pages/ArtistDashboard';
 import { ArtistHome } from './pages/ArtistHome';
-import { AuthProvider } from './context/AuthContext';
+import { AdminDashboard } from './pages/AdminDashboard';
+
+// Tourist
 import { TouristLogin } from './pages/tourist/TouristLogin';
 import { TouristRegister } from './pages/tourist/TouristRegister';
 import { TouristDashboard } from './pages/tourist/TouristDashboard';
@@ -21,10 +24,13 @@ import { TouristHome } from './pages/tourist/TouristHome';
 import { TouristProfile } from './pages/tourist/TouristProfile';
 import { TouristProfileEdit } from './pages/tourist/TouristProfileEdit';
 import { TouristBlogEdit } from './pages/tourist/TouristBlogEdit';
+
+// Components
+import { ChatWidget } from './components/chatbot/ChatWidget';
 import { Inbox } from './pages/Inbox';
+import { AuthProvider } from './context/AuthContext';
 
-
-// Scroll to top on route change
+// Scroll to top
 function ScrollToTop() {
   const { pathname } = useLocation();
   useEffect(() => {
@@ -38,24 +44,9 @@ export function App() {
     <AuthProvider>
       <BrowserRouter>
         <ScrollToTop />
-        <Routes>
-          {/* <Route path="/" element={<Home />} />
-          <Route path="/browse" element={<BrowseArtists />} />
-          <Route path="/artist/:id" element={<ArtistProfile />} />
-          <Route path="/register" element={<ArtistRegistration />} />
-          <Route path="/map" element={<FullMap />} />
-          <Route path="/mobile" element={<MobileScreens />} />
-          <Route path="/admin/chat" element={<ChatAdmin />} />
-          <Route path="/book" element={<BookWorkshop />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/dashboard" element={<ArtistDashboard />} /> */}
-          {/* Tourist routes */}
-          {/* <Route path="/tourist/login" element={<TouristLogin />} />
-          <Route path="/tourist/register" element={<TouristRegister />} />
-          <Route path="/tourist/dashboard" element={<TouristDashboard />} />
-          <Route path="/tourist/blogs" element={<TouristBlogs />} /> */}
 
-          {/* Public routes */}
+        <Routes>
+          {/* Public */}
           <Route path="/" element={<Home />} />
           <Route path="/crafts" element={<CraftShop />} />
           <Route path="/artists" element={<BrowseArtists />} />
@@ -64,14 +55,14 @@ export function App() {
           <Route path="/book" element={<BookWorkshop />} />
           <Route path="/map" element={<FullMap />} />
 
-          {/* Auth routes */}
+          {/* Auth */}
           <Route path="/login" element={<UnifiedLogin />} />
           <Route path="/register" element={<RegisterSelect />} />
           <Route path="/artist/register" element={<ArtistRegistration />} />
           <Route path="/tourist/login" element={<TouristLogin />} />
           <Route path="/tourist/register" element={<TouristRegister />} />
 
-          {/* Tourist routes */}
+          {/* Tourist */}
           <Route path="/tourist/home" element={<TouristHome />} />
           <Route path="/tourist/dashboard" element={<TouristDashboard />} />
           <Route path="/tourist/blogs" element={<TouristBlogs />} />
@@ -81,13 +72,14 @@ export function App() {
           <Route path="/tourist/bookings" element={<BookWorkshop />} />
           <Route path="/inbox" element={<Inbox />} />
 
-          {/* Artist routes */}
+          {/* Artist */}
           <Route path="/artist/home" element={<ArtistHome />} />
           <Route path="/dashboard" element={<ArtistDashboard />} />
 
-          {/* Admin routes 
-          <Route path="/admin" element={<AdminDashboard />} />  */}
+          {/* Admin */}
+          <Route path="/admin" element={<AdminDashboard />} />
         </Routes>
+
         <ChatWidget />
       </BrowserRouter>
     </AuthProvider>

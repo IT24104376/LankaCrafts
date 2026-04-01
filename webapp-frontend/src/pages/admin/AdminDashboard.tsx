@@ -28,12 +28,12 @@ import {
   MessageSquareIcon } from
 'lucide-react';
 import { Link } from 'react-router-dom';
-import { ArtisanVerification } from './admin/ArtisanVerification';
-import { TouristManagement } from './admin/TouristManagement';
-import { AnalyticsReports } from './admin/AnalyticsReports';
-import { WorkshopVerification } from './admin/WorkshopVerification';
-import { UserActivity } from './admin/UserActivity';
-import { ReviewMonitoring } from './admin/ReviewMonitoring';
+import { ArtisanVerification } from '.././admin/ArtisanVerification';
+import { TouristManagement } from '.././admin/TouristManagement';
+import { AnalyticsReports } from '.././admin/AnalyticsReports';
+import { WorkshopVerification } from '.././admin/WorkshopVerification';
+import { UserActivity } from '.././admin/UserActivity';
+import { ReviewMonitoring } from '.././admin/ReviewMonitoring';
 type Section =
 'overview' |
 'artisan-verification' |
@@ -59,12 +59,14 @@ const NAV_ITEMS: NavItem[] = [
 {
   id: 'artisan-verification',
   label: 'Artisan Verification',
-  icon: <UserCheckIcon className="w-4.5 h-4.5" />
+  icon: <UserCheckIcon className="w-4.5 h-4.5" />,
+  badge: 3
 },
 {
   id: 'workshop-verification',
   label: 'Workshop Verification',
-  icon: <BuildingIcon className="w-4.5 h-4.5" />
+  icon: <BuildingIcon className="w-4.5 h-4.5" />,
+  badge: 1
 },
 {
   id: 'tourist-management',
@@ -84,7 +86,8 @@ const NAV_ITEMS: NavItem[] = [
 {
   id: 'review-monitoring',
   label: 'Review Monitoring',
-  icon: <MessageSquareIcon className="w-4.5 h-4.5" />
+  icon: <MessageSquareIcon className="w-4.5 h-4.5" />,
+  badge: 2
 },
 {
   id: 'role-management',
@@ -100,9 +103,9 @@ const NAV_ITEMS: NavItem[] = [
 const KPI_CARDS = [
 {
   title: 'Total Artisans',
-  value: '0',
-  change: null as string | null,
-  trend: 'up' as const,
+  value: '2,547',
+  change: '+12%',
+  trend: 'up',
   icon: <UserCheckIcon className="w-5 h-5" />,
   color: '#2F5D50',
   bg: 'bg-forest/10',
@@ -110,9 +113,9 @@ const KPI_CARDS = [
 },
 {
   title: 'Total Tourists',
-  value: '0',
-  change: null,
-  trend: 'up' as const,
+  value: '18,392',
+  change: '+24%',
+  trend: 'up',
   icon: <UsersIcon className="w-5 h-5" />,
   color: '#C65D3B',
   bg: 'bg-terracotta/10',
@@ -120,9 +123,9 @@ const KPI_CARDS = [
 },
 {
   title: 'Active Workshops',
-  value: '0',
-  change: null,
-  trend: 'up' as const,
+  value: '384',
+  change: '+8%',
+  trend: 'up',
   icon: <BuildingIcon className="w-5 h-5" />,
   color: '#C9A227',
   bg: 'bg-mustard/10',
@@ -130,38 +133,106 @@ const KPI_CARDS = [
 },
 {
   title: 'Pending Verifications',
-  value: '0',
-  change: null,
-  trend: 'down' as const,
+  value: '47',
+  change: '-5%',
+  trend: 'down',
   icon: <AlertCircleIcon className="w-5 h-5" />,
   color: '#6366f1',
   bg: 'bg-indigo-50',
   desc: 'Awaiting review'
 }];
 
-type VerificationRequestItem = {
-  id: number;
-  name: string;
-  type: string;
-  craft: string;
-  region: string;
-  submitted: string;
-  color: string;
-  initials: string;
-};
+const VERIFICATION_REQUESTS = [
+{
+  id: 1,
+  name: 'Nimal Perera',
+  type: 'Artisan',
+  craft: 'Lacquerwork',
+  region: 'Kandy',
+  submitted: '2h ago',
+  color: '#C65D3B',
+  initials: 'NP'
+},
+{
+  id: 2,
+  name: 'Suresh Fernando',
+  type: 'Artisan',
+  craft: 'Mask Carving',
+  region: 'Ambalangoda',
+  submitted: '4h ago',
+  color: '#C9A227',
+  initials: 'SF'
+},
+{
+  id: 3,
+  name: 'Nilmini Senanayake',
+  type: 'Artisan',
+  craft: 'Gem Polishing',
+  region: 'Ratnapura',
+  submitted: '1d ago',
+  color: '#2F5D50',
+  initials: 'NS'
+},
+{
+  id: 4,
+  name: 'Kandy Heritage Workshop',
+  type: 'Workshop',
+  craft: 'Multiple Crafts',
+  region: 'Kandy',
+  submitted: '2d ago',
+  color: '#C65D3B',
+  initials: 'KH'
+}];
 
-const VERIFICATION_REQUESTS: VerificationRequestItem[] = [];
-
-type ActivityFeedItem = {
-  id: number;
-  action: string;
-  subject: string;
-  time: string;
-  type: string;
-  color: string;
-};
-
-const ACTIVITY_FEED: ActivityFeedItem[] = [];
+const ACTIVITY_FEED = [
+{
+  id: 1,
+  action: 'New artisan registration',
+  subject: 'Rohan De Silva',
+  time: '5 min ago',
+  type: 'register',
+  color: '#2F5D50'
+},
+{
+  id: 2,
+  action: 'Workshop booking confirmed',
+  subject: 'Sarah Mitchell → Batik Workshop',
+  time: '12 min ago',
+  type: 'booking',
+  color: '#C9A227'
+},
+{
+  id: 3,
+  action: 'Artisan verified',
+  subject: 'Kamala Wijesinghe',
+  time: '1h ago',
+  type: 'verify',
+  color: '#2F5D50'
+},
+{
+  id: 4,
+  action: 'Tourist account suspended',
+  subject: 'Yuki Tanaka',
+  time: '2h ago',
+  type: 'suspend',
+  color: '#C65D3B'
+},
+{
+  id: 5,
+  action: 'New workshop listing',
+  subject: 'Galle Lace Center',
+  time: '3h ago',
+  type: 'listing',
+  color: '#C9A227'
+},
+{
+  id: 6,
+  action: 'Verification rejected',
+  subject: 'Anura Dissanayake',
+  time: '5h ago',
+  type: 'reject',
+  color: '#C65D3B'
+}];
 
 const ACTIVITY_ICONS: Record<string, React.ReactNode> = {
   register: <UserIcon className="w-3.5 h-3.5" />,
@@ -221,7 +292,6 @@ function DashboardOverview({
 
                 {card.icon}
               </div>
-              {card.change != null &&
               <div
               className={`flex items-center gap-1 text-xs font-semibold px-2 py-1 rounded-full ${card.trend === 'up' ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-500'}`}>
 
@@ -232,7 +302,6 @@ function DashboardOverview({
               }
                 {card.change}
               </div>
-              }
             </div>
             <p className="text-3xl font-black text-gray-900 mb-1 font-display">
               {card.value}
@@ -363,11 +432,7 @@ function DashboardOverview({
             </div>
           </div>
           <div className="divide-y divide-gray-50">
-            {ACTIVITY_FEED.length === 0 ?
-            <div className="py-12 text-center text-gray-400 text-sm">
-              No recent activity yet.
-            </div> :
-            ACTIVITY_FEED.map((item, i) =>
+            {ACTIVITY_FEED.map((item, i) =>
             <motion.div
               key={item.id}
               initial={{
@@ -594,7 +659,7 @@ export function AdminDashboard() {
                 </div>
                 <div>
                   <p className="text-white font-bold text-sm font-display leading-tight">
-                    Lanka Craft
+                    Lanka Crafts
                   </p>
                   <p className="text-white/50 text-[10px] uppercase tracking-widest">
                     Admin Panel

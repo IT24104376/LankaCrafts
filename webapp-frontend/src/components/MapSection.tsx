@@ -1,64 +1,22 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-const regions = [
-{
-  id: 'kandy',
-  name: 'Kandy',
-  craft: 'Lacquerwork & Batik',
-  description:
-  'The cultural capital — home to the Temple of the Tooth and centuries of highland craft.',
-  artisans: 340,
-  cx: 95,
-  cy: 130,
-  color: '#C65D3B'
-},
-{
-  id: 'galle',
-  name: 'Galle',
-  craft: 'Lace & Gem Cutting',
-  description:
-  'Dutch colonial fort town where intricate needle lace and precious gemstones meet the sea.',
-  artisans: 210,
-  cx: 80,
-  cy: 230,
-  color: '#2F5D50'
-},
-{
-  id: 'colombo',
-  name: 'Colombo',
-  craft: 'Brasswork & Silverware',
-  description:
-  'The vibrant capital where traditional metalsmithing workshops thrive alongside modernity.',
-  artisans: 180,
-  cx: 65,
-  cy: 155,
-  color: '#C9A227'
-},
-{
-  id: 'jaffna',
-  name: 'Jaffna',
-  craft: 'Palmyra Weaving',
-  description:
-  'The northern peninsula where palmyra palm is woven into baskets, mats, and fans.',
-  artisans: 120,
-  cx: 85,
-  cy: 40,
-  color: '#2F5D50'
-},
-{
-  id: 'ratnapura',
-  name: 'Ratnapura',
-  craft: 'Gem Polishing',
-  description:
-  "The City of Gems — sapphires, rubies, and cat's eye stones polished by master craftsmen.",
-  artisans: 95,
-  cx: 85,
-  cy: 185,
-  color: '#C65D3B'
-}];
+type MapRegion = {
+  id: string;
+  name: string;
+  craft: string;
+  description: string;
+  artisans: number;
+  cx: number;
+  cy: number;
+  color: string;
+};
+
+const regions: MapRegion[] = [];
 
 export function MapSection() {
-  const [activeRegion, setActiveRegion] = useState(regions[0]);
+  const [activeRegion, setActiveRegion] = useState<MapRegion | null>(
+    regions[0] ?? null
+  );
   return (
     <section
       className="py-24 px-6"
@@ -117,6 +75,16 @@ export function MapSection() {
         </motion.div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+          {regions.length === 0 ?
+          <p
+            className="col-span-2 text-center text-gray-500 py-16 font-body"
+            style={{
+              fontFamily: 'Inter, sans-serif'
+            }}>
+
+            Region listings will appear here when data is available.
+          </p> :
+          <>
           {/* SVG Map */}
           <motion.div
             initial={{
@@ -187,7 +155,7 @@ export function MapSection() {
                   className="cursor-pointer">
 
                     {/* Pulse ring */}
-                    {activeRegion.id === region.id &&
+                    {activeRegion?.id === region.id &&
                   <motion.circle
                     cx={region.cx}
                     cy={region.cy}
@@ -209,7 +177,7 @@ export function MapSection() {
                     cy={region.cy}
                     r="7"
                     fill={
-                    activeRegion.id === region.id ? region.color : '#C9A227'
+                    activeRegion?.id === region.id ? region.color : '#C9A227'
                     }
                     stroke="white"
                     strokeWidth="2" />
@@ -257,18 +225,18 @@ export function MapSection() {
               className="p-5 rounded-2xl cursor-pointer transition-all duration-300"
               style={{
                 backgroundColor:
-                activeRegion.id === region.id ? 'white' : 'transparent',
-                borderLeft: `4px solid ${activeRegion.id === region.id ? region.color : 'transparent'}`,
+                activeRegion?.id === region.id ? 'white' : 'transparent',
+                borderLeft: `4px solid ${activeRegion?.id === region.id ? region.color : 'transparent'}`,
                 boxShadow:
-                activeRegion.id === region.id ?
+                activeRegion?.id === region.id ?
                 '0 4px 20px rgba(0,0,0,0.1)' :
                 'none',
                 border:
-                activeRegion.id === region.id ?
+                activeRegion?.id === region.id ?
                 `1px solid rgba(0,0,0,0.06)` :
                 '1px solid transparent',
                 borderLeftColor:
-                activeRegion.id === region.id ?
+                activeRegion?.id === region.id ?
                 region.color :
                 'transparent',
                 borderLeftWidth: '4px'
@@ -281,7 +249,7 @@ export function MapSection() {
                     style={{
                       fontFamily: 'Fraunces, serif',
                       color:
-                      activeRegion.id === region.id ? '#1a1a1a' : '#666'
+                      activeRegion?.id === region.id ? '#1a1a1a' : '#666'
                     }}>
 
                       {region.name}
@@ -295,7 +263,7 @@ export function MapSection() {
 
                       {region.craft}
                     </p>
-                    {activeRegion.id === region.id &&
+                    {activeRegion?.id === region.id &&
                   <motion.p
                     initial={{
                       opacity: 0,
@@ -327,6 +295,8 @@ export function MapSection() {
               </div>
             )}
           </motion.div>
+          </>
+          }
         </div>
       </div>
     </section>);

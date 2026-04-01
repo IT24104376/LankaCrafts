@@ -49,77 +49,16 @@ const CRAFTS = [
   icon: '🧵'
 }];
 
-const ARTISANS = [
-{
-  id: 1,
-  name: 'Nimal Perera',
-  craftId: 'lacquer',
-  location: 'Kandy',
-  rating: 4.9,
-  image: '#C65D3B'
-},
-{
-  id: 2,
-  name: 'Kamala Wijesinghe',
-  craftId: 'batik',
-  location: 'Kandy',
-  rating: 4.8,
-  image: '#2F5D50'
-},
-{
-  id: 3,
-  name: 'Suresh Fernando',
-  craftId: 'masks',
-  location: 'Ambalangoda',
-  rating: 4.7,
-  image: '#C9A227'
-},
-{
-  id: 4,
-  name: 'Priya Rajapaksa',
-  craftId: 'weaving',
-  location: 'Jaffna',
-  rating: 4.9,
-  image: '#C65D3B'
-},
-{
-  id: 5,
-  name: 'Anura Dissanayake',
-  craftId: 'brass',
-  location: 'Colombo',
-  rating: 4.6,
-  image: '#2F5D50'
-},
-{
-  id: 6,
-  name: 'Rohan De Silva',
-  craftId: 'pottery',
-  location: 'Kelaniya',
-  rating: 4.8,
-  image: '#C65D3B'
-}];
+const ARTISANS: {
+  id: number;
+  name: string;
+  craftId: string;
+  location: string;
+  rating: number;
+  image: string;
+}[] = [];
 
-const AVAILABLE_TIMES = [
-{
-  id: 't1',
-  time: '09:00 AM',
-  label: 'Morning Session'
-},
-{
-  id: 't2',
-  time: '11:00 AM',
-  label: 'Late Morning'
-},
-{
-  id: 't3',
-  time: '02:00 PM',
-  label: 'Afternoon Session'
-},
-{
-  id: 't4',
-  time: '04:00 PM',
-  label: 'Evening Session'
-}];
+const AVAILABLE_TIMES: { id: string; time: string; label: string }[] = [];
 
 export function BookWorkshop() {
   const [searchParams] = useSearchParams();
@@ -562,7 +501,11 @@ export function BookWorkshop() {
                           Available Slots
                         </label>
                         <div className="grid grid-cols-2 gap-3">
-                          {AVAILABLE_TIMES.map((slot) =>
+                          {AVAILABLE_TIMES.length === 0 ?
+                          <p className="col-span-2 text-sm text-gray-500 py-2">
+                            No time slots configured yet.
+                          </p> :
+                          AVAILABLE_TIMES.map((slot) =>
                         <button
                           key={slot.id}
                           onClick={() => setSelectedTime(slot.id)}

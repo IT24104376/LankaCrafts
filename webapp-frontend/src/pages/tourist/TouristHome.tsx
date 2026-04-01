@@ -3,13 +3,13 @@ import { TouristNavbar } from './TouristNavbar';
 import { Hero } from '../../components/Hero';
 import { CraftCategories } from '../../components/CraftCategories';
 import { HowItWorks } from '../../components/HowItWorks';
-//import { LatestBlogs } from '../../components/LatestBlogs';
+import { LatestBlogs } from '../../components/LatestBlogs';
 import { FeaturedArtist } from '../../components/FeaturedArtist';
 import { MapTeaser } from '../../components/MapTeaser';
 import { JoinCTA } from '../../components/JoinCTA';
 import { Footer } from '../../components/Footer';
 
-/*
+/**
  * Home page shown when a Tourist clicks "Home" in their navbar.
  * Same content as the public Home but wrapped inside TouristNavbar
  * so the authenticated nav is preserved.
@@ -23,7 +23,7 @@ export function TouristHome() {
                 <Hero />
                 <CraftCategories />
                 <HowItWorks />
-                {/* <LatestBlogs /> */}
+                <LatestBlogs />
                 <FeaturedArtist />
                 <MapTeaser />
                 <JoinCTA />

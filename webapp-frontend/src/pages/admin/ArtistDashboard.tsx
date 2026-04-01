@@ -1,16 +1,9 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { Navbar } from '../components/Navbar';
-import { Footer } from '../components/Footer';
-import { Button } from '../components/ui/Button';
-import { Modal } from '../components/ui/Modal';
-import { SummaryBlurb } from '../components/SummaryBlurb';
-import { aiApi, type AiReviewSummary } from '../services/aiApi';
-import { reviewApi, type Review } from '../services/reviewApi';
-import { CheckIcon } from 'lucide-react';
-import { session } from '../services/session';
+import { Navbar } from '../../components/Navbar';
+import { Footer } from '../../components/Footer';
+import { Button } from '../../components/ui/Button';
 import {
-  User,
   Settings,
   Trash2,
   Eye,
@@ -25,11 +18,11 @@ import {
   Save,
   Lock,
   MessageCircle,
-  Check,
   SearchIcon,
   SendIcon,
   CheckCheckIcon,
-  ArrowLeftIcon } from
+  CheckIcon,
+} from
 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 // ── Inbox Data ──────────────────────────────────────────────────
@@ -53,52 +46,188 @@ interface InboxConversation {
   online: boolean;
   messages: InboxMessage[];
 }
-const INBOX_CONVERSATIONS: InboxConversation[] = [];
+const INBOX_CONVERSATIONS: InboxConversation[] = [
+{
+  id: 1,
+  name: 'Arjun Mehta',
+  initials: 'AM',
+  avatarColor: '#C1440E',
+  country: '🇮🇳 India',
+  workshopContext: 'Kandyan Lacquerwork Workshop',
+  lastMessage: "Thank you! I'll be there at 10 AM sharp.",
+  time: '10:45 AM',
+  unread: 1,
+  online: true,
+  messages: [
+  {
+    id: 1,
+    text: "Hello! I saw your lacquerwork profile and I'm very interested in booking a workshop.",
+    sender: 'them',
+    time: '9:45 AM',
+    seen: true
+  },
+  {
+    id: 2,
+    text: "Welcome! I'd be happy to have you. When are you planning to visit Kandy?",
+    sender: 'me',
+    time: '9:52 AM',
+    seen: true
+  },
+  {
+    id: 3,
+    text: "I'm thinking this Saturday morning. Is that available?",
+    sender: 'them',
+    time: '9:55 AM',
+    seen: true
+  },
+  {
+    id: 4,
+    text: "Yes, Saturday is perfect! I have a slot at 10 AM. The session is about 3 hours and you'll make your own lacquer piece to take home.",
+    sender: 'me',
+    time: '10:01 AM',
+    seen: true
+  },
+  {
+    id: 5,
+    text: 'That sounds amazing! How many people can join?',
+    sender: 'them',
+    time: '10:15 AM',
+    seen: true
+  },
+  {
+    id: 6,
+    text: 'The workshop starts at 10 AM. Please bring comfortable clothes.',
+    sender: 'me',
+    time: '10:32 AM',
+    seen: true
+  },
+  {
+    id: 7,
+    text: "Thank you! I'll be there at 10 AM sharp.",
+    sender: 'them',
+    time: '10:45 AM',
+    seen: false
+  }]
 
+},
+{
+  id: 2,
+  name: 'Sofia Reyes',
+  initials: 'SR',
+  avatarColor: '#2F5D50',
+  country: '🇪🇸 Spain',
+  workshopContext: 'Kandyan Lacquerwork Workshop',
+  lastMessage: 'Can I bring my own tools or do you provide everything?',
+  time: 'Yesterday',
+  unread: 0,
+  online: false,
+  messages: [
+  {
+    id: 1,
+    text: "Hi! I'm a craft enthusiast visiting Sri Lanka next month.",
+    sender: 'them',
+    time: 'Yesterday 2:00 PM',
+    seen: true
+  },
+  {
+    id: 2,
+    text: "Wonderful! I'd love to share the art of lacquerwork with you.",
+    sender: 'me',
+    time: 'Yesterday 2:10 PM',
+    seen: true
+  },
+  {
+    id: 3,
+    text: 'Can I bring my own tools or do you provide everything?',
+    sender: 'them',
+    time: 'Yesterday 2:30 PM',
+    seen: true
+  }]
+
+},
+{
+  id: 3,
+  name: 'Kenji Tanaka',
+  initials: 'KT',
+  avatarColor: '#C9A227',
+  country: '🇯🇵 Japan',
+  workshopContext: 'Kandyan Lacquerwork Workshop',
+  lastMessage: 'I will book for 2 people. Looking forward to it!',
+  time: 'Mon',
+  unread: 2,
+  online: false,
+  messages: [
+  {
+    id: 1,
+    text: "Your work is beautiful. I'd like to book for 2 people.",
+    sender: 'them',
+    time: 'Mon 11:00 AM',
+    seen: true
+  },
+  {
+    id: 2,
+    text: 'Thank you! I can accommodate 2 people easily. The rate is $45 per person.',
+    sender: 'me',
+    time: 'Mon 11:30 AM',
+    seen: true
+  },
+  {
+    id: 3,
+    text: 'I will book for 2 people. Looking forward to it!',
+    sender: 'them',
+    time: 'Mon 12:00 PM',
+    seen: false
+  }]
+
+}];
+
+// Mock initial data matching ArtistProfile structure
 const INITIAL_DATA = {
-  name: '',
-  username: '',
-  email: '',
-  craft: '',
-  region: '',
-  location: '',
-  bio: '',
-  rating: 0,
-  reviews: 0,
-  initials: '—',
-  specialties: [] as string[],
-  schedule: [] as { day: string; slots: string[] }[]
+  name: 'Nimal Perera',
+  username: 'nimal.p',
+  email: 'nimal@example.com',
+  craft: 'Kandyan Lacquerwork',
+  region: 'Kandy',
+  location: 'Kandy, Central Province',
+  bio: "For over four decades, I have dedicated my life to the ancient art of Kandyan lacquerwork (Laksha). Learning from my father at the age of 12, I've mastered the traditional technique of applying natural lacquer to turned wood using only the heat of friction. My workshop is not just a place of production, but a sanctuary where this dying art form is preserved and passed down to the next generation.",
+  rating: 4.9,
+  reviews: 124,
+  initials: 'NP',
+  specialties: ['Ceremonial Staffs', 'Jewelry Boxes', 'Traditional Vases'],
+  schedule: [
+  {
+    day: 'Mon',
+    slots: ['10:00 AM', '2:00 PM']
+  },
+  {
+    day: 'Tue',
+    slots: ['10:00 AM', '2:00 PM']
+  },
+  {
+    day: 'Wed',
+    slots: ['10:00 AM']
+  },
+  {
+    day: 'Thu',
+    slots: ['10:00 AM', '2:00 PM']
+  },
+  {
+    day: 'Fri',
+    slots: ['10:00 AM', '2:00 PM']
+  },
+  {
+    day: 'Sat',
+    slots: ['9:00 AM']
+  }]
+
 };
-
-const toArtistDisplayName = (value: string) =>
-  String(value || '')
-    .trim()
-    .replace(/[_\-]+/g, ' ')
-    .split(/\s+/)
-    .filter(Boolean)
-    .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
-    .join(' ');
-
 export function ArtistDashboard() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<
-    'view' | 'edit' | 'schedule' | 'reviews' | 'inbox' | 'settings'>(
+    'view' | 'edit' | 'schedule' | 'inbox' | 'settings'>(
     'view');
   const [artistData, setArtistData] = useState(INITIAL_DATA);
   const [editForm, setEditForm] = useState(INITIAL_DATA);
-  const [reviewsArtisanName, setReviewsArtisanName] = useState('');
-  const [artistReviews, setArtistReviews] = useState<Review[]>([]);
-  const [reviewsLoading, setReviewsLoading] = useState(false);
-  const [reviewsError, setReviewsError] = useState('');
-  const [aiSummary, setAiSummary] = useState<AiReviewSummary | null>(null);
-  const [aiLoading, setAiLoading] = useState(false);
-  const [aiError, setAiError] = useState('');
-  const [notice, setNotice] = useState('');
-  const [replyTargetReviewId, setReplyTargetReviewId] = useState<string | null>(null);
-  const [replyInput, setReplyInput] = useState('');
-  const [deleteProfileOpen, setDeleteProfileOpen] = useState(false);
-  const [addSlotDayIndex, setAddSlotDayIndex] = useState<number | null>(null);
-  const [newSlotTime, setNewSlotTime] = useState('');
   const [passwordForm, setPasswordForm] = useState({
     current: '',
     new: '',
@@ -107,26 +236,10 @@ export function ArtistDashboard() {
   // Inbox state
   const [inboxConversations, setInboxConversations] =
   useState(INBOX_CONVERSATIONS);
-  const [activeInboxId, setActiveInboxId] = useState<number | null>(null);
+  const [activeInboxId, setActiveInboxId] = useState<number | null>(1);
   const [inboxInput, setInboxInput] = useState('');
   const [inboxSearch, setInboxSearch] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    const user = session.get();
-    if (!user || user.role !== 'artist') {
-      navigate('/login');
-      return;
-    }
-    setArtistData((prev) => ({
-      ...prev,
-      email: user.email,
-      username: user.username || '',
-      name: toArtistDisplayName(user.username || user.email.split('@')[0])
-    }));
-    if (!reviewsArtisanName) {
-      setReviewsArtisanName(toArtistDisplayName(user.username || user.email.split('@')[0]));
-    }
-  }, [navigate, reviewsArtisanName]);
   useEffect(() => {
     if (activeTab === 'inbox') {
       messagesEndRef.current?.scrollIntoView({
@@ -162,81 +275,21 @@ export function ArtistDashboard() {
     );
     setInboxInput('');
   };
-  const handleLogout = () => {
-    session.clear();
-    navigate('/login');
-  };
-
-  const loadArtistReviews = async () => {
-    const name = (reviewsArtisanName || artistData.name).trim();
-    if (!name) {
-      setReviewsError('Enter your artisan display name to load reviews (example: Nimal Fernando).');
-      return;
-    }
-    try {
-      setReviewsLoading(true);
-      setReviewsError('');
-      const resp = await reviewApi.getReviews({
-        context: 'artisan',
-        artisanName: name,
-        workshopName: '',
-        sortBy: 'newest'
-      });
-      setArtistReviews(resp.reviews);
-      setAiSummary(null);
-      setAiError('');
-    } catch (err) {
-      setReviewsError(err instanceof Error ? err.message : 'Failed to load reviews');
-    } finally {
-      setReviewsLoading(false);
-    }
-  };
-
-  const generateAiSummary = async () => {
-    const name = (reviewsArtisanName || artistData.name).trim();
-    if (!name) {
-      setAiError('Enter an artisan name first.');
-      return;
-    }
-    if (artistReviews.length === 0) {
-      setAiError('Load reviews first.');
-      return;
-    }
-    try {
-      setAiLoading(true);
-      setAiError('');
-      const payload = await aiApi.summarizeArtistReviews({
-        artisanName: name,
-        reviews: artistReviews.map((r) => ({ rating: r.rating, text: r.text }))
-      });
-      setAiSummary(payload);
-    } catch (err) {
-      setAiError(err instanceof Error ? err.message : 'AI summary failed');
-    } finally {
-      setAiLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    if (activeTab === 'reviews' && (reviewsArtisanName || artistData.name)) {
-      loadArtistReviews();
-    }
-  }, [activeTab]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const handleReplyToReview = async (reviewId: string) => {
-    if (!replyInput.trim()) return;
-    const artistName = (reviewsArtisanName || artistData.name).trim();
-    await reviewApi.reply(reviewId, replyInput.trim(), artistName);
-    await loadArtistReviews();
-  };
+  const handleLogout = () => navigate('/login');
   const handleDeleteProfile = () => {
-    setNotice('Profile deleted successfully');
-    navigate('/');
+    if (
+    window.confirm(
+      'Are you sure you want to delete your profile? This action cannot be undone.'
+    ))
+    {
+      alert('Profile deleted successfully');
+      navigate('/');
+    }
   };
   const handleSaveProfile = (e: React.FormEvent) => {
     e.preventDefault();
     setArtistData(editForm);
-    setNotice('Profile updated successfully!');
+    alert('Profile updated successfully!');
     setActiveTab('view');
   };
   const handleSaveSchedule = () => {
@@ -244,11 +297,18 @@ export function ArtistDashboard() {
       ...prev,
       schedule: editForm.schedule
     }));
-    setNotice('Schedule updated successfully!');
+    alert('Schedule updated successfully!');
   };
   const handleAddSlot = (dayIndex: number) => {
-    setAddSlotDayIndex(dayIndex);
-    setNewSlotTime('');
+    const time = prompt('Enter time (e.g., 3:00 PM):');
+    if (time) {
+      const newSchedule = [...editForm.schedule];
+      newSchedule[dayIndex].slots.push(time);
+      setEditForm({
+        ...editForm,
+        schedule: newSchedule
+      });
+    }
   };
   const handleRemoveSlot = (dayIndex: number, slotIndex: number) => {
     const newSchedule = [...editForm.schedule];
@@ -273,12 +333,6 @@ export function ArtistDashboard() {
 
       <main className="flex-1 pt-32 pb-24 px-6">
         <div className="max-w-7xl mx-auto">
-          {notice &&
-          <div className="mb-4 rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-700 px-4 py-2 text-sm flex items-center justify-between">
-              <span>{notice}</span>
-              <button className="font-semibold" onClick={() => setNotice('')}>Close</button>
-            </div>
-          }
           {/* Dashboard Header */}
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-12 gap-6">
             <div>
@@ -327,12 +381,6 @@ export function ArtistDashboard() {
                     label="Manage Schedule"
                     active={activeTab === 'schedule'}
                     onClick={() => setActiveTab('schedule')} />
-
-                  <SidebarItem
-                    icon={<Star className="w-4 h-4" />}
-                    label="Reviews"
-                    active={activeTab === 'reviews'}
-                    onClick={() => setActiveTab('reviews')} />
 
                   <SidebarItem
                     icon={<MessageCircle className="w-4 h-4" />}
@@ -682,124 +730,6 @@ export function ArtistDashboard() {
                   </div>
                 }
 
-                {/* REVIEWS TAB */}
-                {activeTab === 'reviews' &&
-                <div className="p-8">
-                    <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-6">
-                      <div>
-                        <h2 className="text-2xl font-bold text-forest font-display">
-                          Review Inbox
-                        </h2>
-                        <p className="text-gray-500 text-sm">
-                          You can reply only to reviews that belong to your artist account.
-                        </p>
-                      </div>
-                      <div className="flex flex-wrap gap-2">
-                        <Button onClick={loadArtistReviews} variant="outline" className="gap-2">
-                          <Star className="w-4 h-4" /> Refresh
-                        </Button>
-                        <Button onClick={generateAiSummary} className="gap-2" disabled={aiLoading}>
-                          {aiLoading ? 'Summarizing…' : 'AI Summary'}
-                        </Button>
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                      <div className="lg:col-span-1">
-                        <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
-                          Logged-in artist profile
-                        </label>
-                        <input
-                          value={reviewsArtisanName || artistData.name}
-                          readOnly
-                          className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 text-gray-700 outline-none"
-                        />
-                        <p className="text-xs text-gray-400 mt-2">
-                          Replies are locked to this artist identity.
-                        </p>
-                        {reviewsLoading && <p className="text-sm text-gray-500 mt-3">Loading…</p>}
-                        {reviewsError && <p className="text-sm text-red-500 mt-3">{reviewsError}</p>}
-                        {aiError && <p className="text-sm text-red-500 mt-3">{aiError}</p>}
-
-                        {aiSummary &&
-                        <div className="mt-4 p-4 rounded-2xl border border-gray-100 bg-offwhite">
-                            <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
-                              AI Review Summary
-                            </p>
-                            <SummaryBlurb
-                              text={aiSummary.summary}
-                              note={aiSummary.providerNote}
-                            />
-                            {Array.isArray(aiSummary.highlights) && aiSummary.highlights.length > 0 &&
-                            <div className="mt-3">
-                                <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">
-                                  Highlights
-                                </p>
-                                <ul className="text-sm text-gray-700 list-disc pl-5 space-y-1">
-                                  {aiSummary.highlights.slice(0, 3).map((h, i) => (
-                                    <li key={i}>{h}</li>
-                                  ))}
-                                </ul>
-                              </div>
-                            }
-                            {Array.isArray(aiSummary.cautions) && aiSummary.cautions.length > 0 &&
-                            <div className="mt-3">
-                                <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">
-                                  Watch-outs
-                                </p>
-                                <ul className="text-sm text-gray-700 list-disc pl-5 space-y-1">
-                                  {aiSummary.cautions.slice(0, 3).map((c, i) => (
-                                    <li key={i}>{c}</li>
-                                  ))}
-                                </ul>
-                              </div>
-                            }
-                          </div>
-                        }
-                      </div>
-
-                      <div className="lg:col-span-2 space-y-4">
-                        {artistReviews.length === 0 && !reviewsLoading ?
-                        <div className="p-6 rounded-2xl border border-gray-100 bg-offwhite text-sm text-gray-500">
-                            No reviews loaded yet.
-                          </div> :
-                        artistReviews.map((r) =>
-                        <div key={r.id} className="p-5 rounded-2xl border border-gray-100">
-                              <div className="flex items-start justify-between gap-4">
-                                <div>
-                                  <p className="text-sm font-semibold text-gray-900">
-                                    {r.touristName} {r.countryFlag}
-                                  </p>
-                                  <p className="text-xs text-gray-400 mt-0.5">
-                                    {r.workshopName} · {new Date(r.datePosted).toLocaleDateString()} · {r.rating}/5
-                                  </p>
-                                </div>
-                                <Button
-                                  variant="outline"
-                                  onClick={() => {
-                                    setReplyTargetReviewId(r.id);
-                                    setReplyInput(r.artisanReply?.text || '');
-                                  }}
-                                  className="gap-2"
-                                >
-                                  <MessageCircle className="w-4 h-4" />
-                                  {r.artisanReply ? 'Update Reply' : 'Reply'}
-                                </Button>
-                              </div>
-                              <p className="text-sm text-gray-600 mt-3">{r.text}</p>
-                              {r.artisanReply &&
-                          <div className="mt-3 pl-3 border-l-2 border-forest/20 text-sm text-gray-600">
-                                  <span className="font-semibold text-gray-800">Your reply:</span> {r.artisanReply.text}
-                                </div>
-                          }
-                            </div>
-                        )
-                        }
-                      </div>
-                    </div>
-                  </div>
-                }
-
                 {/* INBOX TAB */}
                 {activeTab === 'inbox' &&
                 <div className="flex h-[600px]">
@@ -1115,7 +1045,7 @@ export function ArtistDashboard() {
                           booking history will be permanently removed.
                         </p>
                         <Button
-                        onClick={() => setDeleteProfileOpen(true)}
+                        onClick={handleDeleteProfile}
                         className="bg-red-600 hover:bg-red-700 text-white border-none shadow-none">
 
                           Delete My Profile
@@ -1131,70 +1061,6 @@ export function ArtistDashboard() {
       </main>
 
       <Footer />
-      <Modal
-        open={!!replyTargetReviewId}
-        title="Reply to this review"
-        onClose={() => {
-          setReplyTargetReviewId(null);
-          setReplyInput('');
-        }}
-        onConfirm={async () => {
-          if (!replyTargetReviewId || !replyInput.trim()) return;
-          await handleReplyToReview(replyTargetReviewId);
-          setReplyTargetReviewId(null);
-          setReplyInput('');
-        }}
-        confirmText="Send"
-        confirmDisabled={!replyInput.trim()}
-      >
-        <textarea
-          value={replyInput}
-          onChange={(e) => setReplyInput(e.target.value)}
-          rows={4}
-          className="w-full px-3 py-2 rounded-lg border border-gray-200 outline-none"
-          placeholder="Write your reply..."
-        />
-      </Modal>
-      <Modal
-        open={deleteProfileOpen}
-        title="Delete profile"
-        onClose={() => setDeleteProfileOpen(false)}
-        onConfirm={() => {
-          setDeleteProfileOpen(false);
-          handleDeleteProfile();
-        }}
-        confirmText="Delete"
-      >
-        Are you sure you want to delete your profile? This action cannot be undone.
-      </Modal>
-      <Modal
-        open={addSlotDayIndex !== null}
-        title="Add Schedule Slot"
-        onClose={() => {
-          setAddSlotDayIndex(null);
-          setNewSlotTime('');
-        }}
-        onConfirm={() => {
-          if (addSlotDayIndex == null || !newSlotTime.trim()) return;
-          const newSchedule = [...editForm.schedule];
-          newSchedule[addSlotDayIndex].slots.push(newSlotTime.trim());
-          setEditForm({
-            ...editForm,
-            schedule: newSchedule
-          });
-          setAddSlotDayIndex(null);
-          setNewSlotTime('');
-        }}
-        confirmText="Add"
-        confirmDisabled={!newSlotTime.trim()}
-      >
-        <input
-          value={newSlotTime}
-          onChange={(e) => setNewSlotTime(e.target.value)}
-          placeholder="e.g., 3:00 PM"
-          className="w-full px-3 py-2 rounded-lg border border-gray-200 outline-none"
-        />
-      </Modal>
     </div>);
 
 }
@@ -1204,6 +1070,10 @@ function SidebarItem({
   active,
   onClick,
   badge
+
+
+
+
 
 
 }: {icon: React.ReactNode;label: string;active: boolean;onClick: () => void;badge?: number;}) {

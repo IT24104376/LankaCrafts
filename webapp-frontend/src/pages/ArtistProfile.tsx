@@ -1,271 +1,133 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { MapPin, Clock, Star, MessageCircle, Calendar } from 'lucide-react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Navbar } from '../components/Navbar';
 import { Footer } from '../components/Footer';
 import { Button } from '../components/ui/Button';
 import { ReviewSection } from '../components/ReviewSection';
-// Shared artist data keyed by route ID
-const ARTISTS_DATA: Record<
-  string,
-  {
-    name: string;
-    craft: string;
-    craftId: string;
-    artisanId: number;
-    location: string;
-    bio: string;
-    specialties: string[];
-    rating: number;
-    reviews: number;
-    initials: string;
-    schedule: {
-      day: string;
-      slots: string[];
-    }[];
-  }> =
-{
-  '1': {
-    name: 'Nimal Perera',
-    craft: 'Kandyan Lacquerwork',
+import { artistsApi } from '../services/artistsApi';
+// Artist profiles: populate from API; keyed by route ID
+type ArtistProfileData = {
+  name: string;
+  craft: string;
+  craftId: string;
+  artisanId: number;
+  location: string;
+  bio: string;
+  specialties: string[];
+  rating: number;
+  reviews: number;
+  initials: string;
+  schedule: { day: string; slots: string[] }[];
+};
+
+const ARTISTS_DATA: Record<string, ArtistProfileData> = {
+  'demo-nimal': {
+    name: 'Nimal Fernando',
+    craft: 'Lacquerwork',
     craftId: 'lacquer',
     artisanId: 1,
-    location: 'Kandy, Central Province',
-    bio: "For over four decades, I have dedicated my life to the ancient art of Kandyan lacquerwork (Laksha). Learning from my father at the age of 12, I've mastered the traditional technique of applying natural lacquer to turned wood using only the heat of friction. My workshop is not just a place of production, but a sanctuary where this dying art form is preserved and passed down to the next generation.",
-    specialties: ['Ceremonial Staffs', 'Jewelry Boxes', 'Traditional Vases'],
+    location: 'Pilimathalawa, Kandy',
+    bio: 'Third-generation lacquer artisan. This demo profile is wired to seeded reviews in MongoDB — open Admin → Review Monitoring or submit a new review below.',
+    specialties: ['Traditional red/yellow lacquer', 'Heritage tools', 'Small-group workshops'],
     rating: 4.9,
-    reviews: 124,
-    initials: 'NP',
+    reviews: 42,
+    initials: 'NF',
     schedule: [
-    {
-      day: 'Mon',
-      slots: ['10:00 AM', '2:00 PM']
-    },
-    {
-      day: 'Tue',
-      slots: ['10:00 AM', '2:00 PM']
-    },
-    {
-      day: 'Wed',
-      slots: ['10:00 AM']
-    },
-    {
-      day: 'Thu',
-      slots: ['10:00 AM', '2:00 PM']
-    },
-    {
-      day: 'Fri',
-      slots: ['10:00 AM', '2:00 PM']
-    },
-    {
-      day: 'Sat',
-      slots: ['9:00 AM']
-    }]
-
-  },
-  '2': {
-    name: 'Kamala Wijesinghe',
-    craft: 'Batik Textiles',
-    craftId: 'batik',
-    artisanId: 2,
-    location: 'Kandy, Central Province',
-    bio: 'Kamala has spent nearly three decades perfecting the ancient art of batik, creating intricate wax-resist patterns on silk and cotton. Her designs draw from traditional Kandyan motifs while incorporating contemporary aesthetics that appeal to modern collectors worldwide.',
-    specialties: ['Silk Batik', 'Wall Hangings', 'Fashion Textiles'],
-    rating: 4.8,
-    reviews: 98,
-    initials: 'KW',
-    schedule: [
-    {
-      day: 'Mon',
-      slots: ['9:00 AM', '11:00 AM', '3:00 PM']
-    },
-    {
-      day: 'Tue',
-      slots: ['9:00 AM', '3:00 PM']
-    },
-    {
-      day: 'Wed',
-      slots: ['9:00 AM', '11:00 AM']
-    },
-    {
-      day: 'Thu',
-      slots: ['9:00 AM', '3:00 PM']
-    },
-    {
-      day: 'Fri',
-      slots: ['9:00 AM', '11:00 AM', '3:00 PM']
-    },
-    {
-      day: 'Sat',
-      slots: ['10:00 AM']
-    }]
-
-  },
-  '3': {
-    name: 'Suresh Fernando',
-    craft: 'Mask Carving',
-    craftId: 'masks',
-    artisanId: 3,
-    location: 'Ambalangoda, Southern Province',
-    bio: 'Suresh is a third-generation mask carver from Ambalangoda, the mask capital of Sri Lanka. His kolam and sanni masks are carved from kaduru wood and used in traditional healing rituals and dance performances. Each mask takes weeks to complete.',
-    specialties: ['Kolam Masks', 'Sanni Masks', 'Decorative Masks'],
-    rating: 4.7,
-    reviews: 87,
-    initials: 'SF',
-    schedule: [
-    {
-      day: 'Mon',
-      slots: ['10:00 AM', '1:00 PM']
-    },
-    {
-      day: 'Tue',
-      slots: ['10:00 AM', '1:00 PM']
-    },
-    {
-      day: 'Wed',
-      slots: ['10:00 AM']
-    },
-    {
-      day: 'Thu',
-      slots: ['10:00 AM', '1:00 PM']
-    },
-    {
-      day: 'Fri',
-      slots: ['10:00 AM', '1:00 PM']
-    },
-    {
-      day: 'Sat',
-      slots: ['10:00 AM']
-    }]
-
-  },
-  '4': {
-    name: 'Priya Rajapaksa',
-    craft: 'Palmyra Weaving',
-    craftId: 'weaving',
-    artisanId: 4,
-    location: 'Jaffna, Northern Province',
-    bio: 'Priya carries forward the Jaffna tradition of palmyra weaving, transforming palm leaves into beautiful baskets, mats, and fans. Her work preserves a craft that has sustained northern Sri Lankan communities for centuries.',
-    specialties: ['Palmyra Baskets', 'Woven Mats', 'Decorative Fans'],
-    rating: 4.9,
-    reviews: 65,
-    initials: 'PR',
-    schedule: [
-    {
-      day: 'Mon',
-      slots: ['9:00 AM', '2:00 PM']
-    },
-    {
-      day: 'Tue',
-      slots: ['9:00 AM', '2:00 PM']
-    },
-    {
-      day: 'Wed',
-      slots: ['9:00 AM']
-    },
-    {
-      day: 'Thu',
-      slots: ['9:00 AM', '2:00 PM']
-    },
-    {
-      day: 'Fri',
-      slots: ['9:00 AM', '2:00 PM']
-    },
-    {
-      day: 'Sat',
-      slots: ['9:00 AM']
-    }]
-
-  },
-  '5': {
-    name: 'Anura Dissanayake',
-    craft: 'Brasswork',
-    craftId: 'brass',
-    artisanId: 5,
-    location: 'Colombo, Western Province',
-    bio: 'Anura is a master metalsmith specializing in traditional brass vessels, lamps, and temple artifacts. His workshop in Colombo continues ancient techniques of casting and hand-finishing ceremonial brassware.',
-    specialties: ['Oil Lamps', 'Ceremonial Vessels', 'Temple Artifacts'],
-    rating: 4.6,
-    reviews: 72,
-    initials: 'AD',
-    schedule: [
-    {
-      day: 'Mon',
-      slots: ['10:00 AM', '3:00 PM', '5:00 PM']
-    },
-    {
-      day: 'Tue',
-      slots: ['10:00 AM', '3:00 PM']
-    },
-    {
-      day: 'Wed',
-      slots: ['10:00 AM', '5:00 PM']
-    },
-    {
-      day: 'Thu',
-      slots: ['10:00 AM', '3:00 PM', '5:00 PM']
-    },
-    {
-      day: 'Fri',
-      slots: ['10:00 AM', '3:00 PM']
-    },
-    {
-      day: 'Sat',
-      slots: ['10:00 AM']
-    }]
-
-  },
-  '6': {
-    name: 'Rohan De Silva',
-    craft: 'Pottery',
-    craftId: 'pottery',
-    artisanId: 6,
-    location: 'Kelaniya, Western Province',
-    bio: 'Rohan shapes unglazed earthenware on ancient wheels in his Kelaniya workshop. His functional pottery — from cooking vessels to water jugs — carries forward a tradition that dates back thousands of years in Sri Lanka.',
-    specialties: ['Cooking Vessels', 'Water Jugs', 'Decorative Pottery'],
-    rating: 4.8,
-    reviews: 91,
-    initials: 'RD',
-    schedule: [
-    {
-      day: 'Mon',
-      slots: ['8:00 AM', '11:00 AM', '2:00 PM']
-    },
-    {
-      day: 'Tue',
-      slots: ['8:00 AM', '2:00 PM']
-    },
-    {
-      day: 'Wed',
-      slots: ['8:00 AM', '11:00 AM']
-    },
-    {
-      day: 'Thu',
-      slots: ['8:00 AM', '11:00 AM', '2:00 PM']
-    },
-    {
-      day: 'Fri',
-      slots: ['8:00 AM', '2:00 PM']
-    },
-    {
-      day: 'Sat',
-      slots: ['9:00 AM']
-    }]
-
+      { day: 'Mon', slots: ['9:00', '14:00'] },
+      { day: 'Wed', slots: ['10:00'] },
+      { day: 'Sat', slots: ['9:00', '11:00', '15:00'] }
+    ]
   }
 };
+
+/** Set to `true` to show Book Workshop + availability sidebar. */
+const SHOW_WORKSHOP_ON_PROFILE = false;
+
 export function ArtistProfile() {
   const { id } = useParams<{
     id: string;
   }>();
   const navigate = useNavigate();
-  const artist = ARTISTS_DATA[id || '1'] || ARTISTS_DATA['1'];
+  const [artist, setArtist] = useState<ArtistProfileData | undefined>(
+    id ? ARTISTS_DATA[id] : undefined
+  );
+  const [loading, setLoading] = useState(!artist && !!id);
+
+  useEffect(() => {
+    if (!id) return;
+    if (ARTISTS_DATA[id]) {
+      setArtist(ARTISTS_DATA[id]);
+      setLoading(false);
+      return;
+    }
+    (async () => {
+      try {
+        setLoading(true);
+        const { artist } = await artistsApi.getArtistById(id);
+        const display = artist.name;
+        setArtist({
+          name: display,
+          craft: artist.craft,
+          craftId: artist.craft.toLowerCase().split(/\s+/)[0] || 'craft',
+          artisanId: Number.parseInt(id, 10) || 0,
+          location: `${artist.region}, Sri Lanka`,
+          bio: `${display} is a registered artist on Lanka Craft. Profile details can be expanded as more artisan data is added.`,
+          specialties: [artist.craft, 'Handcrafted techniques', 'Cultural heritage'],
+          rating: 4.6,
+          reviews: 0,
+          initials: display
+            .split(/\s+/)
+            .slice(0, 2)
+            .map((w) => w[0]?.toUpperCase() || '')
+            .join(''),
+          schedule: [
+            { day: 'Mon', slots: ['10:00', '14:00'] },
+            { day: 'Thu', slots: ['11:00'] }
+          ]
+        });
+      } catch {
+        setArtist(undefined);
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, [id]);
   const handleBookWorkshop = () => {
+    if (!artist) return;
     navigate(`/book?craft=${artist.craftId}&artisan=${artist.artisanId}`);
   };
   const handleMessage = () => {
     navigate('/inbox');
   };
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-offwhite font-body">
+        <Navbar />
+        <main className="pt-32 pb-24 px-6 max-w-lg mx-auto text-center">
+          <p className="text-gray-600 mb-6">Loading artisan profile...</p>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
+  if (!artist) {
+    return (
+      <div className="min-h-screen bg-offwhite font-body">
+        <Navbar />
+        <main className="pt-32 pb-24 px-6 max-w-lg mx-auto text-center">
+          <p className="text-gray-600 mb-6">
+            This artisan profile is not available yet.
+          </p>
+          <Button variant="primary" onClick={() => navigate('/browse')}>
+            Browse artisans
+          </Button>
+        </main>
+        <Footer />
+      </div>);
+
+  }
   return (
     <div className="min-h-screen bg-offwhite font-body">
       <Navbar />
@@ -313,13 +175,14 @@ export function ArtistProfile() {
               </div>
             </div>
             <div className="flex gap-3">
+              {SHOW_WORKSHOP_ON_PROFILE && (
               <Button
                 variant="primary"
                 className="gap-2"
                 onClick={handleBookWorkshop}>
-
                 <Calendar className="w-4 h-4" /> Book Workshop
               </Button>
+              )}
               <Button
                 variant="outline"
                 className="border-white text-white hover:bg-white hover:text-forest gap-2"
@@ -403,7 +266,7 @@ export function ArtistProfile() {
 
           {/* Right Column: Schedule & Location */}
           <div className="space-y-8">
-            {/* Workshop Schedule */}
+            {SHOW_WORKSHOP_ON_PROFILE && (
             <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
               <h3 className="text-xl font-bold text-forest mb-4 font-display flex items-center gap-2">
                 <Clock className="w-5 h-5" /> Workshop Availability
@@ -449,6 +312,7 @@ export function ArtistProfile() {
                 </Button>
               </div>
             </div>
+            )}
 
             {/* Location Map Placeholder */}
             <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">

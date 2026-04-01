@@ -35,153 +35,11 @@ interface Conversation {
   online: boolean;
   messages: Message[];
 }
-const CONVERSATIONS: Conversation[] = [
-{
-  id: 1,
-  name: 'Nimal Perera',
-  craft: 'Kandyan Lacquerwork',
-  location: 'Kandy',
-  avatar: 'NP',
-  avatarColor: '#C1440E',
-  lastMessage:
-  'The workshop starts at 10 AM. Please bring comfortable clothes.',
-  time: '10:32 AM',
-  unread: 2,
-  online: true,
-  messages: [
-  {
-    id: 1,
-    text: "Hello! I saw your lacquerwork profile and I'm very interested in booking a workshop.",
-    sender: 'me',
-    time: '9:45 AM',
-    seen: true
-  },
-  {
-    id: 2,
-    text: "Welcome! I'd be happy to have you. When are you planning to visit Kandy?",
-    sender: 'them',
-    time: '9:52 AM',
-    seen: true
-  },
-  {
-    id: 3,
-    text: "I'm thinking this Saturday morning. Is that available?",
-    sender: 'me',
-    time: '9:55 AM',
-    seen: true
-  },
-  {
-    id: 4,
-    text: "Yes, Saturday is perfect! I have a slot at 10 AM. The session is about 3 hours and you'll make your own lacquer piece to take home.",
-    sender: 'them',
-    time: '10:01 AM',
-    seen: true
-  },
-  {
-    id: 5,
-    text: 'That sounds amazing! How many people can join?',
-    sender: 'me',
-    time: '10:15 AM',
-    seen: true
-  },
-  {
-    id: 6,
-    text: 'The workshop starts at 10 AM. Please bring comfortable clothes.',
-    sender: 'them',
-    time: '10:32 AM',
-    seen: false
-  }]
-
-},
-{
-  id: 2,
-  name: 'Kamala Wijesinghe',
-  craft: 'Batik Textiles',
-  location: 'Kandy',
-  avatar: 'KW',
-  avatarColor: '#2F5D50',
-  lastMessage: 'I can show you both silk and cotton batik techniques.',
-  time: 'Yesterday',
-  unread: 0,
-  online: false,
-  messages: [
-  {
-    id: 1,
-    text: "Hi Kamala! I'm a textile designer from India and I'd love to learn batik from you.",
-    sender: 'me',
-    time: 'Yesterday 2:00 PM',
-    seen: true
-  },
-  {
-    id: 2,
-    text: 'How wonderful! Batik is such a beautiful art form. I can show you both silk and cotton batik techniques.',
-    sender: 'them',
-    time: 'Yesterday 2:15 PM',
-    seen: true
-  }]
-
-},
-{
-  id: 3,
-  name: 'Suresh Fernando',
-  craft: 'Mask Carving',
-  location: 'Ambalangoda',
-  avatar: 'SF',
-  avatarColor: '#C9A227',
-  lastMessage: 'Each mask takes about 2 weeks to complete by hand.',
-  time: 'Mon',
-  unread: 1,
-  online: true,
-  messages: [
-  {
-    id: 1,
-    text: 'Your kolam masks are incredible! Can I visit your workshop?',
-    sender: 'me',
-    time: 'Mon 11:00 AM',
-    seen: true
-  },
-  {
-    id: 2,
-    text: 'Of course! Ambalangoda is the mask capital of Sri Lanka. Each mask takes about 2 weeks to complete by hand.',
-    sender: 'them',
-    time: 'Mon 11:30 AM',
-    seen: false
-  }]
-
-},
-{
-  id: 4,
-  name: 'Priya Rajapaksa',
-  craft: 'Palmyra Weaving',
-  location: 'Jaffna',
-  avatar: 'PR',
-  avatarColor: '#1A6B6B',
-  lastMessage:
-  'The best time to visit is early morning when the light is beautiful.',
-  time: 'Sun',
-  unread: 0,
-  online: false,
-  messages: [
-  {
-    id: 1,
-    text: "I'm planning a trip to Jaffna and would love to see palmyra weaving.",
-    sender: 'me',
-    time: 'Sun 3:00 PM',
-    seen: true
-  },
-  {
-    id: 2,
-    text: 'The best time to visit is early morning when the light is beautiful.',
-    sender: 'them',
-    time: 'Sun 3:45 PM',
-    seen: true
-  }]
-
-}];
+const CONVERSATIONS: Conversation[] = [];
 
 export function Inbox() {
   const [conversations, setConversations] = useState(CONVERSATIONS);
-  const [activeId, setActiveId] = useState<number | null>(1);
+  const [activeId, setActiveId] = useState<number | null>(null);
   const [inputText, setInputText] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [mobileView, setMobileView] = useState<'list' | 'chat'>('list');
@@ -295,7 +153,11 @@ export function Inbox() {
 
               {/* Conversation List */}
               <div className="flex-1 overflow-y-auto">
-                {filteredConversations.map((conv) =>
+                {filteredConversations.length === 0 ?
+                <div className="p-8 text-center text-sm text-gray-400">
+                  No conversations yet.
+                </div> :
+                filteredConversations.map((conv) =>
                 <button
                   key={conv.id}
                   onClick={() => handleSelectConversation(conv.id)}

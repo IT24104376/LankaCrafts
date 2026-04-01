@@ -5,6 +5,9 @@ import { Navbar } from '../components/Navbar';
 import { Footer } from '../components/Footer';
 import { Button } from '../components/ui/Button';
 import { User, Lock } from 'lucide-react';
+import { authApi } from '../services/authApi';
+import { session } from '../services/session';
+
 export function Login() {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
@@ -12,13 +15,23 @@ export function Login() {
     password: ''
   });
   const [error, setError] = useState('');
-  const handleSubmit = (e: React.FormEvent) => {
+  const [loading, setLoading] = useState(false);
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Mock authentication
-    if (formData.username && formData.password) {
-      navigate('/dashboard');
-    } else {
+    if (!formData.username || !formData.password) {
       setError('Please enter both username and password');
+      return;
+    }
+    setError('');
+    setLoading(true);
+    try {
+      const user = await authApi.loginWithIdentifier(formData.username, formData.password, 'artist');
+      session.set(user);
+      navigate('/dashboard');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Sign-in failed');
+    } finally {
+      setLoading(false);
     }
   };
   return (
@@ -69,7 +82,7 @@ export function Login() {
                   })
                   }
                   className="w-full pl-12 pr-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-mustard focus:border-transparent outline-none"
-                  placeholder="Enter your username" />
+                  placeholder="Email or username" />
 
               </div>
             </div>
@@ -95,8 +108,8 @@ export function Login() {
               </div>
             </div>
 
-            <Button type="submit" className="w-full">
-              Login
+            <Button type="submit" className="w-full" disabled={loading}>
+              {loading ? 'Signing in…' : 'Login'}
             </Button>
 
             <div className="text-center mt-4">

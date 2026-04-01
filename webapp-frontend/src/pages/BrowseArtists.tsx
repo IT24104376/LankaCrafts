@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Search, MapPin, ArrowRight } from 'lucide-react';
 import { Navbar } from '../components/Navbar';
 import { Footer } from '../components/Footer';
 import { Link } from 'react-router-dom';
+import { artistsApi, type ArtistListItem } from '../services/artistsApi';
 const regions = ['All', 'Kandy', 'Galle', 'Colombo', 'Jaffna', 'Ratnapura'];
 const crafts = [
 'All',
@@ -14,66 +15,41 @@ const crafts = [
 'Brasswork',
 'Weaving'];
 
-const artists = [
-{
-  id: 1,
-  name: 'Nimal Perera',
-  craft: 'Kandyan Lacquerwork',
-  region: 'Kandy',
-  years: '40 years',
-  gradient: 'linear-gradient(135deg, #C65D3B 0%, #C9A227 100%)',
-  accent: '#C65D3B'
-},
-{
-  id: 2,
-  name: 'Kamala Wijesinghe',
-  craft: 'Batik Textiles',
-  region: 'Kandy',
-  years: '28 years',
-  gradient: 'linear-gradient(135deg, #2F5D50 0%, #C65D3B 100%)',
-  accent: '#2F5D50'
-},
-{
-  id: 3,
-  name: 'Suresh Fernando',
-  craft: 'Mask Carving',
-  region: 'Ambalangoda',
-  years: '35 years',
-  gradient: 'linear-gradient(135deg, #C9A227 0%, #2F5D50 100%)',
-  accent: '#C9A227'
-},
-{
-  id: 4,
-  name: 'Priya Rajapaksa',
-  craft: 'Palmyra Weaving',
-  region: 'Jaffna',
-  years: '22 years',
-  gradient: 'linear-gradient(135deg, #C65D3B 0%, #2F5D50 100%)',
-  accent: '#C65D3B'
-},
-{
-  id: 5,
-  name: 'Anura Dissanayake',
-  craft: 'Brasswork',
-  region: 'Colombo',
-  years: '31 years',
-  gradient: 'linear-gradient(135deg, #2F5D50 0%, #C9A227 100%)',
-  accent: '#2F5D50'
-},
-{
-  id: 6,
-  name: 'Nilmini Senanayake',
-  craft: 'Gem Polishing',
-  region: 'Ratnapura',
-  years: '18 years',
-  gradient: 'linear-gradient(135deg, #C9A227 0%, #C65D3B 100%)',
-  accent: '#C9A227'
-}];
+type ArtistCard = ArtistListItem & { gradient: string; accent: string };
 
 export function BrowseArtists() {
+  const [artists, setArtists] = useState<ArtistCard[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const [selectedRegion, setSelectedRegion] = useState('All');
   const [selectedCraft, setSelectedCraft] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
+
+  useEffect(() => {
+    (async () => {
+      try {
+        setLoading(true);
+        setError('');
+        const { artists } = await artistsApi.getArtists();
+        const gradients = [
+          'linear-gradient(135deg, #2F5D50 0%, #C65D3B 100%)',
+          'linear-gradient(135deg, #1A6B6B 0%, #C9A227 100%)',
+          'linear-gradient(135deg, #C1440E 0%, #8B2E08 100%)'
+        ];
+        setArtists(
+          artists.map((a, i) => ({
+            ...a,
+            gradient: gradients[i % gradients.length],
+            accent: '#C9A227'
+          }))
+        );
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to load artists');
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
   const filteredArtists = artists.filter((artist) => {
     const matchesRegion =
     selectedRegion === 'All' || artist.region === selectedRegion;
@@ -149,6 +125,8 @@ export function BrowseArtists() {
           </div>
 
           {/* Grid */}
+          {error && <p className="text-sm text-red-500 text-center mb-6">{error}</p>}
+          {loading && <p className="text-sm text-gray-500 text-center mb-6">Loading artists...</p>}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {filteredArtists.map((artist, i) =>
             <motion.div
