@@ -4,17 +4,15 @@ import {
   getConversations,
   getConversationMessages,
   markConversationRead,
-  searchArtists,
   updateMessage,
   deleteMessage,
   sendMessage,
 } from '../controllers/chatController.js';
-import { verifyAnyFirebaseToken } from '../middleware/auth.js';
+import { verifyFirebaseToken } from '../middleware/auth.js';
 
 const router = express.Router();
 
-router.use(verifyAnyFirebaseToken);
-router.get('/artists/search', searchArtists);
+router.use(verifyFirebaseToken);
 router.get('/conversations', getConversations);
 router.post('/conversations', createConversation);
 router.get('/conversations/:id/messages', getConversationMessages);

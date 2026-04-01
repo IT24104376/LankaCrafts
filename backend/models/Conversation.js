@@ -4,13 +4,13 @@ const conversationSchema = new mongoose.Schema(
   {
     artistUserId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'Artist',
+      ref: 'User',
       required: true,
       index: true,
     },
     touristUserId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'Tourist',
+      ref: 'User',
       required: true,
       index: true,
     },
@@ -21,13 +21,12 @@ const conversationSchema = new mongoose.Schema(
     },
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'Tourist',
+      ref: 'User',
       required: true,
     },
     lastMessage: {
       text: { type: String, default: '' },
-      senderId: { type: mongoose.Schema.Types.ObjectId, refPath: 'lastMessage.senderModel', default: null },
-      senderModel: { type: String, enum: ['Artist', 'Tourist', 'Admin'], default: 'Tourist' },
+      senderId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
       createdAt: { type: Date, default: null },
     },
     lastMessageAt: {
