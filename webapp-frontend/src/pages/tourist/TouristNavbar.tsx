@@ -144,9 +144,8 @@ export function TouristNavbar({ activeTab }: TouristNavbarProps) {
             <Link
               key={href}
               to={href}
-              className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-150 font-body ${isActive(href) ? 'text-[#C1440E] bg-[#FDF0EB]' : 'text-[#1E1E1E] hover:text-[#C1440E] hover:bg-[#FDF0EB]'}`}>
-
-              <Icon className="w-4 h-4" />
+              className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 font-body ${isActive(href) ? 'text-[#C1440E] bg-[#FDF0EB] shadow-sm' : 'text-[#1E1E1E] hover:text-[#C1440E] hover:bg-[#FDF0EB]'}`}>
+              <Icon className={`w-4 h-4 ${isActive(href) ? 'text-[#000000] fill-[#C1440E]' : 'text-[#C1440E] fill-none'}`} />
               {label}
             </Link>
           )}
@@ -154,25 +153,27 @@ export function TouristNavbar({ activeTab }: TouristNavbarProps) {
 
         {/* Right: Bell + User */}
         <div className="flex items-center gap-3">
-          <button
-            className="relative w-9 h-9 flex items-center justify-center rounded-full transition-colors"
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            className="relative w-9 h-9 flex items-center justify-center rounded-full transition-all duration-200"
             style={{
-              backgroundColor: '#FDF0EB'
+              backgroundColor: '#f4e8e8'
             }}
             aria-label="Notifications">
 
             <BellIcon
-              className="w-5 h-5"
+              className="w-5 h-5 hover:fill-[#C1440E]"
               style={{
                 color: '#C1440E'
               }} />
 
             <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-[#C1440E] rounded-full border-2 border-white" />
-          </button>
+          </motion.button>
 
           {/* User Dropdown */}
           <div className="relative">
-            <button onClick={() => setDropdownOpen(!dropdownOpen)} className="flex items-center gap-2 pl-1 pr-3 py-1 rounded-full hover:bg-gray-50 transition-colors border border-gray-100">
+            <button onClick={() => setDropdownOpen(!dropdownOpen)} className="flex items-center gap-2 pl-1 pr-3 py-1 rounded-full hover:bg-gray-50 transition-colors border-2 border-gray-400">
               <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold font-body overflow-hidden"
                 style={{ backgroundColor: '#C1440E' }}>
                 {userProfilePic ? (
@@ -250,9 +251,8 @@ export function TouristNavbar({ activeTab }: TouristNavbarProps) {
                           key={label}
                           to={href}
                           onClick={() => setDropdownOpen(false)}
-                          className="flex items-center gap-3 px-3 py-2 rounded-xl text-sm text-[#1E1E1E] hover:bg-[#FAF6F0] transition-colors font-body">
-
-                          <Icon className="w-4 h-4 text-[#1A6B6B]" />
+                          className="group flex items-center gap-3 px-3 py-2 rounded-xl text-sm text-[#1E1E1E] hover:bg-[#FAF6F0] hover:text-[#C1440E] transition-colors font-body">
+                          <Icon className="w-4 h-4 text-[#C1440E] group-hover:fill-[#C1440E] group-hover:text-[#000000] " />
                           {label}
                         </Link>
                       )}
@@ -260,9 +260,9 @@ export function TouristNavbar({ activeTab }: TouristNavbarProps) {
                     <Link
                       to="/tourist/login"
                       onClick={() => handleLogout()}
-                      className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm text-red-500 hover:bg-red-50 transition-colors font-body">
+                      className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm text-red-500 hover:bg-red-50 transition-colors font-body group">
 
-                      <LogOutIcon className="w-4 h-4" />
+                      <LogOutIcon className="w-4 h-4 group-hover:animate-pulse" />
                       Logout
                     </Link>
                   </div>

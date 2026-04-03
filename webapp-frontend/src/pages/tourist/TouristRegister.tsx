@@ -7,11 +7,8 @@ import {
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { INTERESTS, REGIONS } from '../../constants/touristConstants'; 
+import { INTERESTS, REGIONS, COUNTRIES } from '../../constants/touristConstants';
 
-
-
-const COUNTRIES = ['Sri Lanka', 'India', 'United Kingdom', 'United States', 'Australia', 'Germany', 'France', 'Japan', 'Canada', 'Singapore', 'Other'];
 const LANGUAGES = ['English', 'Sinhala', 'Tamil', 'Other'];
 const STEP_LABELS = ['Account Setup', 'Personal Info', 'Your Interests'];
 
@@ -31,6 +28,7 @@ export function TouristRegister() {
   const navigate = useNavigate();
 
   const isSriLankan = step1.country === 'Sri Lanka';
+  const isValidNIC = !isSriLankan || !step2.idNumber || /^[0-9]{9}[vVxX]$/.test(step2.idNumber) || /^[0-9]{12}$/.test(step2.idNumber);
 
   const toggleInterest = (id: string) =>
     setSelectedInterests((prev) => prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]);
@@ -93,9 +91,22 @@ export function TouristRegister() {
   };
 
   return (
-    <div className="min-h-screen flex font-body" style={{ backgroundColor: '#FAF6F0' }}>
+    <div className="min-h-screen flex font-body relative" style={{ backgroundColor: '#ddede7' }}>
+      {/* Subtle SVG background pattern */}
+      <div className="absolute inset-0 pointer-events-none opacity-5" aria-hidden="true">
+        <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <pattern id="batik-bg-register" x="0" y="0" width="60" height="60" patternUnits="userSpaceOnUse">
+              <polygon points="30,4 56,30 30,56 4,30" fill="none" stroke="#2F5D50" strokeWidth="1.5" />
+              <circle cx="30" cy="30" r="3" fill="#2F5D50" />
+            </pattern>
+          </defs>
+          <rect width="100%" height="100%" fill="url(#batik-bg-register)" />
+        </svg>
+      </div>
+
       {/* LEFT PANEL */}
-      <div className="hidden lg:flex w-[40%] relative overflow-hidden flex-col">
+      <div className="hidden lg:flex w-[40%] relative overflow-hidden flex-col z-10">
         <img
           src="https://images.unsplash.com/photo-1566552881560-0be862a7c445?w=800&auto=format&fit=crop"
           alt="Sri Lankan cultural artisan"
@@ -137,7 +148,7 @@ export function TouristRegister() {
       </div>
 
       {/* RIGHT PANEL */}
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto relative z-10">
         <div className="max-w-xl mx-auto px-8 py-12">
           {/* Progress Bar */}
           <div className="mb-8">
@@ -260,6 +271,9 @@ export function TouristRegister() {
                       <input type="text" required value={step2.idNumber} onChange={(e) => setStep2({ ...step2, idNumber: e.target.value })} placeholder={isSriLankan ? 'e.g. 199012345678' : 'e.g. A12345678'} className="w-full pl-12 pr-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-[#C1440E] focus:border-transparent outline-none text-sm font-body" />
                     </div>
                     <p className="text-xs text-gray-400 mt-1.5 font-body">{isSriLankan ? 'Enter your 12-digit NIC number or old 9-digit NIC with V/X' : 'Enter your passport number as it appears on your travel document'}</p>
+                    {isSriLankan && step2.idNumber && !isValidNIC && (
+                      <p className="text-xs text-red-500 mt-1.5 font-body">Invalid NIC format. Must be 12 digits or 9 digits followed by v or x.</p>
+                    )}
                   </div>
                   <div>
                     <label className="block text-sm font-semibold text-[#1E1E1E] mb-1.5 font-body">Date of Birth</label>
@@ -288,7 +302,7 @@ export function TouristRegister() {
                   </div>
                   <div className="flex gap-3 pt-2">
                     <button type="button" onClick={() => setStep(1)} className="flex items-center gap-2 px-5 py-3.5 rounded-xl border border-gray-200 text-sm font-semibold text-gray-500 font-body hover:bg-gray-50 transition-colors"><ArrowLeftIcon className="w-4 h-4" /> Back</button>
-                    <motion.button type="button" onClick={() => setStep(3)} disabled={!step2.idNumber || !step2.dateOfBirth || !step2.addressLine1 || !step2.city} whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.98 }} className="flex-1 py-3.5 rounded-xl text-white font-semibold text-sm font-body transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed" style={{ backgroundColor: '#C1440E' }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#A33A0C'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#C1440E'}>
+                    <motion.button type="button" onClick={() => setStep(3)} disabled={!step2.idNumber || !step2.dateOfBirth || !step2.addressLine1 || !step2.city || !isValidNIC} whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.98 }} className="flex-1 py-3.5 rounded-xl text-white font-semibold text-sm font-body transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed" style={{ backgroundColor: '#C1440E' }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#A33A0C'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#C1440E'}>
                       Continue <ArrowRightIcon className="w-4 h-4" />
                     </motion.button>
                   </div>

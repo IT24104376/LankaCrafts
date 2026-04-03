@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { TouristNavbar } from './TouristNavbar';
+import { BatikBackground } from '../../components/BatikBackground';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { getMyBlogs, getBookings, getMockUpcomingWorkshops, MockWorkshop } from '../../services/api';
-import { INTEREST_MAP, REGIONS_MAP } from '../../constants/touristConstants';
+import { INTEREST_MAP, REGIONS_MAP, COUNTRY_CODES } from '../../constants/touristConstants';
+import ReactCountryFlag from 'react-country-flag';
 import {
   CalendarIcon,
   HeartIcon,
@@ -23,15 +25,10 @@ const itemVariants = {
   show: { opacity: 1, y: 0, transition: { duration: 0.45, ease: 'easeOut' } }
 };
 
-const COUNTRY_FLAGS: Record<string, string> = {
-  India: '🇮🇳', 'United Kingdom': '🇬🇧', UK: '🇬🇧', USA: '🇺🇸', 'United States': '🇺🇸',
-  France: '🇫🇷', Germany: '🇩🇪', Japan: '🇯🇵', Australia: '🇦🇺',
-  Canada: '🇨🇦', China: '🇨🇳', Italy: '🇮🇹', Spain: '🇪🇸', Brazil: '🇧🇷',
-  'Sri Lanka': '🇱🇰',
-};
-
-function getFlag(country: string): string {
-  return COUNTRY_FLAGS[country] ?? '🌍';
+function getFlag(country: string) {
+  const code = COUNTRY_CODES[country];
+  if (!code) return <span className="mr-1">🌍</span>;
+  return <ReactCountryFlag countryCode={code} svg className="mr-1" style={{ width: '1.2em', height: '1.2em' }} title={country} />;
 }
 
 function SkeletonBlock({ className }: { className?: string }) {
@@ -93,7 +90,8 @@ export function TouristProfile() {
   const userInitials = tourist?.initials ?? 'LC';
 
   return (
-    <div className="min-h-screen font-body" style={{ backgroundColor: '#FAF6F0' }}>
+    <div className="min-h-screen font-body relative">
+      <BatikBackground />
       <TouristNavbar activeTab="profile" />
 
       <div className="pt-16">
@@ -182,23 +180,31 @@ export function TouristProfile() {
                   )}
                 </div>
 
-                <div className="flex flex-col items-end gap-3 shrink-0">
-                  <Link
-                    to="/tourist/profile/edit"
-                    className="flex items-center gap-2 px-4 py-2 bg-white text-[#1A6B6B] rounded-xl text-sm font-bold shadow hover:bg-gray-100 transition-colors">
-                    <EditIcon className="w-4 h-4" /> Edit Profile
-                  </Link>
+                <div className="shrink-0 flex flex-col items-end gap-4">
 
+                  {/* Edit Button */}
+                  <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                    <Link
+                      to="/tourist/profile/edit"
+                      className="flex items-center gap-2 px-4 py-2 bg-[#E8F4F4] text-[#1A6B6B] rounded-xl text-sm font-bold shadow-sm hover:bg-[#FAF6F0] hover:text-[#C1440E] transition-all border border-[#1A6B6B]/10">
+                      <EditIcon className="w-4 h-4" /> Edit Profile
+                    </Link>
+                  </motion.div>
+
+                  {/* Interests */}
                   <div className="hidden md:flex flex-col items-end gap-2 mt-2">
                     <p className="text-white/50 text-xs font-body uppercase tracking-wider mb-1">
                       Your Interests
                     </p>
+
                     {isLoading ? (
                       <SkeletonBlock className="h-7 w-28 rounded-full bg-white/20" />
                     ) : interests.length > 0 ? (
                       <div className="grid grid-cols-2 gap-2 justify-items-end">
                         {interests.map((craft: string) => (
-                          <span key={craft} className="px-3 py-1.5 rounded-full text-xs font-semibold font-body border border-white/30 bg-white/15 text-white whitespace-nowrap">
+                          <span
+                            key={craft}
+                            className="px-3 py-1.5 rounded-full text-xs font-semibold font-body border border-white/30 bg-white/15 text-white whitespace-nowrap">
                             {craft}
                           </span>
                         ))}
@@ -209,6 +215,7 @@ export function TouristProfile() {
                       </span>
                     )}
                   </div>
+
                 </div>
               </div>
             </motion.div>
@@ -281,10 +288,10 @@ export function TouristProfile() {
                 ) : blogs.length > 0 ? (
                   blogs.map((b: any) => (
                     <div key={b._id} className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden flex flex-col sm:flex-row items-stretch hover:shadow-md transition-shadow">
-                      {/* Show first media item from media[] array only — no legacy fallback */}
-                      {b.media && b.media.length > 0 && (() => {
+                      {/* Show first media item from media[] array only */}
+                      {b.media && b.media.length >= 0 && (() => {
                         const sorted = [...b.media].sort((x: any, y: any) => x.order - y.order);
-                        const first = sorted[0];
+                        const first = sorted[0] || { url: "https://res.cloudinary.com/dv5axw4kb/image/upload/v1775051320/No-media_lq9t0c.png", mediaType: "image" };
                         const extraCount = sorted.length - 1;
                         return (
                           <div className="relative w-40 h-32 shrink-0 bg-gray-100">
@@ -324,7 +331,7 @@ export function TouristProfile() {
                           </div>
                           <Link
                             to={`/tourist/blogs/edit/${b._id}`}
-                            className="p-2 border border-gray-200 rounded-lg hover:bg-gray-50 text-gray-600 transition-colors shrink-0">
+                            className="p-2 border border-gray-200 rounded-lg hover:bg-[#FAF6F0] hover:text-[#C1440E] transition-all shrink-0">
                             <EditIcon className="w-4 h-4" />
                           </Link>
                         </div>

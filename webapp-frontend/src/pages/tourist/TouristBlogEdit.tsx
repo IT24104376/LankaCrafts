@@ -1,5 +1,7 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { TouristNavbar } from './TouristNavbar';
+import { BatikBackground } from '../../components/BatikBackground';
+import { motion } from 'framer-motion';
 import { useNavigate, useParams } from 'react-router-dom';
 import { getMyBlogs, updateBlog } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
@@ -137,10 +139,9 @@ export function TouristBlogEdit() {
     }
   };
 
-  if (loading) return <div className="min-h-screen bg-[#FAF6F0] pt-20 text-center">Loading...</div>;
-
   return (
-    <div className="min-h-screen font-body" style={{ backgroundColor: '#FAF6F0' }}>
+    <div className="min-h-screen font-body relative">
+      <BatikBackground />
       <TouristNavbar activeTab="profile" />
 
       <div className="pt-20 pb-12">
@@ -291,13 +292,13 @@ export function TouristBlogEdit() {
                 {uploadError && <p className="text-xs text-red-500 mt-1.5">{uploadError}</p>}
               </div>
 
-              <div className="pt-6 border-t flex flex-col sm:flex-row gap-4 justify-between items-center">
+              <div className="pt-6 border-t flex flex-col sm:flex-row gap-4 justify-between items-center relative z-10">
                 <div className="flex gap-3 w-full sm:w-auto">
-                  <button onClick={() => navigate('/tourist/profile')} disabled={submitting || deleting} className="px-6 py-3 rounded-xl border bg-white font-semibold text-gray-600 hover:bg-gray-50">Cancel</button>
-                  <button type="button" onClick={() => handlePublish('draft')} disabled={submitting || deleting} className="px-6 py-3 rounded-xl border font-semibold text-[#1A6B6B] border-[#1A6B6B] hover:bg-[#1A6B6B] hover:text-white transition-colors">Save as Draft</button>
-                  <button type="button" onClick={() => handlePublish('published')} disabled={submitting || deleting} className="px-8 py-3 rounded-xl bg-[#C1440E] text-white font-semibold hover:bg-[#A33A0C] transition-colors">
+                  <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={() => navigate('/tourist/profile')} disabled={submitting || deleting} className="px-6 py-3 rounded-xl border bg-white font-semibold text-gray-600 hover:bg-gray-50 flex-1 sm:flex-none shadow-sm transition-all">Cancel</motion.button>
+                  <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} type="button" onClick={() => handlePublish('draft')} disabled={submitting || deleting} className="px-6 py-3 rounded-xl border font-semibold text-[#1A6B6B] border-[#1A6B6B] hover:bg-[#E8F4F4] hover:border-[#1A6B6B] transition-all flex-1 sm:flex-none">Save as Draft</motion.button>
+                  <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} type="button" onClick={() => handlePublish('published')} disabled={submitting || deleting} className="px-8 py-3 rounded-xl bg-[#C1440E] text-white font-semibold hover:bg-[#A33A0C] shadow-lg shadow-[#C1440E]/20 transition-all flex-1 sm:flex-none">
                     {submitting ? 'Saving...' : 'Publish'}
-                  </button>
+                  </motion.button>
                 </div>
 
                 <button onClick={handleDelete} disabled={submitting || deleting} className="flex items-center gap-2 text-red-500 font-semibold px-4 py-2 hover:bg-red-50 rounded-lg transition-colors w-full sm:w-auto justify-center">

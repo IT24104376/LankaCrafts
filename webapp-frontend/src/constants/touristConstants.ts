@@ -59,3 +59,28 @@ export const TRENDING_TAGS = [
   '#Colombo', '#Kandy', '#Galle', '#Jaffna', '#Anuradhapura', '#Sigiriya', '#Ella', '#Trincomalee', '#Negombo',
   '#SriLanka',
 ];
+
+//-------------------- Countries -----------------------------------
+
+export const COUNTRIES = [
+  'Sri Lanka', 'India', 'Pakistan', 'United Kingdom', 'United States',
+  'Australia', 'Russia', 'Ukraine', 'China', 'Germany', 'France',
+  'Japan', 'Canada', 'Singapore', 'Other'
+];
+
+export const COUNTRY_CODES: Record<string, string> = {
+  'Sri Lanka': 'LK',
+  'India': 'IN',
+  'Pakistan': 'PK',
+  'United Kingdom': 'GB',
+  'United States': 'US',
+  'Australia': 'AU',
+  'Russia': 'RU',
+  'Ukraine': 'UA',
+  'China': 'CN',
+  'Germany': 'DE',
+  'France': 'FR',
+  'Japan': 'JP',
+  'Canada': 'CA',
+  'Singapore': 'SG'
+};

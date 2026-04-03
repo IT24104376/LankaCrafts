@@ -12,9 +12,11 @@ import {
   AlertCircleIcon,
 } from 'lucide-react';
 import { TouristNavbar } from './TouristNavbar';
+import { BatikBackground } from '../../components/BatikBackground';
 import { getBlogs, likeBlog, createBlog, getBlog } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
-import { TRENDING_TAGS } from '../../constants/touristConstants'
+import { TRENDING_TAGS, COUNTRY_CODES } from '../../constants/touristConstants';
+import ReactCountryFlag from 'react-country-flag';
 
 // ── Tab → sort param mapping ───────────────────────────────────
 const TABS = ['All', 'Most Recent', 'Most Liked', 'By Workshop'] as const;
@@ -72,14 +74,12 @@ function formatDate(iso: string) {
   return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
-// ── Country flag helper (simple map) ───────────────────────────
-const COUNTRY_FLAGS: Record<string, string> = {
-  India: '🇮🇳', 'United Kingdom': '🇬🇧', UK: '🇬🇧', USA: '🇺🇸',
-  France: '🇫🇷', Germany: '🇩🇪', Japan: '🇯🇵', Australia: '🇦🇺',
-  Canada: '🇨🇦', Italy: '🇮🇹', Spain: '🇪🇸', Brazil: '🇧🇷',
-  'Sri Lanka': '🇱🇰',
-};
-function getFlag(country: string) { return COUNTRY_FLAGS[country] ?? '🌍'; }
+// ── Country flag helper ───────────────────────────
+function getFlag(country: string) {
+  const code = COUNTRY_CODES[country];
+  if (!code) return <span className="mr-1">🌍</span>;
+  return <ReactCountryFlag countryCode={code} svg className="mr-1" style={{ width: '1.2em', height: '1.2em' }} title={country} />;
+}
 
 // ── Skeleton Card ─────────────────────────────────────────────
 function SkeletonCard() {
@@ -323,7 +323,8 @@ export function TouristBlogs() {
   const rightCol = blogs.filter((_, i) => i % 2 !== 0);
 
   return (
-    <div className="min-h-screen font-body" style={{ backgroundColor: '#FAF6F0' }}>
+    <div className="min-h-screen font-body relative">
+      <BatikBackground />
       <TouristNavbar activeTab="blogs" />
 
       <div className="pt-16">
@@ -336,10 +337,10 @@ export function TouristBlogs() {
               <p className="text-gray-400 font-body mt-1 text-sm">Shared by our community of explorers</p>
             </div>
             <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.97 }}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
               onClick={() => setShowModal(true)}
-              className="flex items-center gap-2 px-5 py-3 rounded-xl text-white font-semibold text-sm font-body shadow-md"
+              className="flex items-center gap-2 px-5 py-3 rounded-xl text-white font-semibold text-sm font-body shadow-lg shadow-[#C1440E]/20 transition-all"
               style={{ backgroundColor: '#C1440E' }}>
               <PenLineIcon className="w-4 h-4" />
               Share Your Experience
@@ -983,7 +984,7 @@ function BlogCard({ post, liked, likeDelta, onLike, onReadMore, delay }: BlogCar
       <div className="relative">
         {primaryType === 'video' && primaryUrl ? (
           <video
-            src={primaryUrl}
+            src={primaryUrl || 'https://res.cloudinary.com/dv5axw4kb/video/upload/v1775051320/No-media_lq9t0c.png'}
             className="w-full h-52 object-cover"
             muted
             playsInline
@@ -991,7 +992,7 @@ function BlogCard({ post, liked, likeDelta, onLike, onReadMore, delay }: BlogCar
             loop
           />
         ) : (
-          <img src={primaryUrl} alt={post.title} className="w-full h-52 object-cover" />
+          <img src={primaryUrl || 'https://res.cloudinary.com/dv5axw4kb/image/upload/v1775051320/No-media_lq9t0c.png'} alt={post.title} className="w-full h-52 object-cover" />
         )}
         {mediaCount > 1 && (
           <span className="absolute top-2 right-2 bg-black/60 text-white text-xs font-semibold px-2 py-0.5 rounded-full font-body">
