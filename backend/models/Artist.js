@@ -32,7 +32,6 @@ const artistSchema = new mongoose.Schema(
 
     craftType: {
       type: String,
-      enum: ['Pottery','Wood Carving','Handloom','Batik','Jewelry','Mask Making','Lacquer Work','Cane & Bamboo','Ceramics','Painting','Sculpture','Embroidery','Leather Craft','Paper Craft','Other'],
       required: [true, 'Craft type is required'],
     },
     bio: {
@@ -48,21 +47,31 @@ const artistSchema = new mongoose.Schema(
       number: { type: String, default: '' },
       street: { type: String, default: '' },
       village: { type: String, default: '' },
-      city: { 
-        type: String, 
-        required: [true, 'City is required'] 
-      },
-      district: { 
-        type: String, 
-        enum: ['Colombo', 'Gampaha', 'Kalutara', 'Kandy', 'Matale', 'Nuwara Eliya', 'Galle', 'Matara', 'Hambantota', 'Jaffna', 'Kilinochchi', 'Mannar', 'Vavuniya', 'Mullaitivu', 'Batticaloa', 'Ampara', 'Trincomalee', 'Kurunegala', 'Puttalam', 'Anuradhapura', 'Polonnaruwa', 'Badulla', 'Moneragala', 'Ratnapura', 'Kegalle'],
-        required: [true, 'District is required'] 
-      },
-      province: { 
-        type: String, 
-        enum: ['Western', 'Central', 'Southern', 'Northern', 'Eastern', 'North Western', 'North Central', 'Uva', 'Sabaragamuwa'],
-        required: [true, 'Province is required'] 
-      },
+      city: { type: String, required: [true, 'City is required'] },
+      district: { type: String, required: [true, 'District is required'] },
+      province: { type: String, required: [true, 'Province is required'] },
       postalCode: { type: String, default: '' },
+    },
+
+    location: {
+      type: {
+        type: String,
+        enum: ['Point'],
+        default: 'Point',
+      },
+      coordinates: {
+        type: [Number],
+        default: [0, 0],
+      },
+      formattedAddress: {
+        type: String,
+        default: '',
+      },
+    },
+
+    specialties: {
+      type: [String],
+      default: [],
     },
 
     availability: {
@@ -94,9 +103,19 @@ const artistSchema = new mongoose.Schema(
       enum: ['active', 'deactivated', 'pending'],
       default: 'active',
     },
+
+    isFeatured: {
+      type: Boolean,
+      default: false,
+    },
+    featuredWeekStart: {
+      type: Date,
+    },
   },
   { timestamps: true }
 );
+
+artistSchema.index({ location: '2dsphere' });
 
 artistSchema.virtual('initials').get(function () {
   if (!this.fullName) return 'LC';

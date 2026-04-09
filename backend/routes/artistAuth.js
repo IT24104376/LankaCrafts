@@ -1,5 +1,5 @@
 import express from 'express';
-import { verifyToken, registerArtist, loginArtist } from '../services/authService.js';
+import { verifyToken, registerArtist, loginArtist } from '../services/artistService.js';
 
 const router = express.Router();
 
@@ -24,13 +24,11 @@ router.post('/register', async (req, res) => {
       craftType: artist.craftType,
       bio: artist.bio,
       address: artist.address,
+      location: artist.location,
+      specialties: artist.specialties,
       availability: artist.availability,
       initials: artist.initials,
       profilePicUrl: artist.profilePicUrl,
-      rating: artist.rating,
-      reviewCount: artist.reviewCount,
-      workshopsConducted: artist.workshopsConducted,
-      status: artist.status,
     },
   });
 });
@@ -53,16 +51,17 @@ router.post('/login', async (req, res) => {
       fullName: artist.fullName,
       callingName: artist.callingName,
       email: artist.email,
+      phone: artist.phone,
       craftType: artist.craftType,
       bio: artist.bio,
       address: artist.address,
+      location: artist.location,
+      specialties: artist.specialties,
       availability: artist.availability,
-      initials: artist.initials,
-      profilePicUrl: artist.profilePicUrl,
       rating: artist.rating,
       reviewCount: artist.reviewCount,
-      workshopsConducted: artist.workshopsConducted,
-      status: artist.status,
+      initials: artist.initials,
+      profilePicUrl: artist.profilePicUrl,
     },
   });
 });

@@ -1,62 +1,92 @@
 import express from 'express';
-import multer from 'multer';
-import { verifyAnyFirebaseToken } from '../middleware/auth.js';
-import {
-  createCraft,
-  getCraftsByArtist,
-  getCraftById,
-  updateCraft,
+import { verifyToken } from '../services/artistService.js';
+import { 
+  createCraft, 
+  getCraftsByArtist, 
+  getCraftById, 
+  updateCraft, 
   deleteCraft,
   getAllCrafts,
   getCraftsByCategory,
   searchCrafts,
   incrementCraftViews
 } from '../services/craftService.js';
+import Artist from '../models/Artist.js';
 
 const router = express.Router();
-const upload = multer({ storage: multer.memoryStorage() });
 
-router.post('/', verifyAnyFirebaseToken, upload.array('images', 10), async (req, res) => {
+const authenticate = async (req, res, next) => {
+  const authHeader = req.headers.authorization || '';
+  if (!authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({ error: 'Firebase ID token required.' });
+  }
+  
+  const idToken = authHeader.split('Bearer ')[1];
   try {
-    // Ensure user is an artist
-    if (req.user.role !== 'artist') {
-      return res.status(403).json({ error: 'Access denied. Artist account required.' });
+    const decoded = await verifyToken(idToken);
+    req.uid = decoded.uid;
+    next();
+  } catch (err) {
+    return res.status(401).json({ error: err.message });
+  }
+};
+
+router.post('/crafts', authenticate, async (req, res) => {
+  try {
+    const artist = await Artist.findOne({ firebaseUid: req.uid });
+    if (!artist) {
+      return res.status(404).json({ error: 'Artist profile not found.' });
     }
-    const artistId = req.user.uid;
-    const craft = await createCraft(artistId, req.body, req.files || []);
-    res.status(201).json({
+    
+    const craft = await createCraft(artist._id, req.body);
+    res.status(201).json({ 
       message: 'Craft created successfully.',
-      craft
+      craft 
     });
   } catch (err) {
     res.status(err.status || 500).json({ error: err.message });
   }
 });
 
-
-router.patch('/:id', verifyAnyFirebaseToken, upload.array('images', 10), async (req, res) => {
+router.get('/crafts/my', authenticate, async (req, res) => {
   try {
-    if (req.user.role !== 'artist') {
-      return res.status(403).json({ error: 'Access denied. Artist account required.' });
+    const artist = await Artist.findOne({ firebaseUid: req.uid });
+    if (!artist) {
+      return res.status(404).json({ error: 'Artist profile not found.' });
     }
-    const artistId = req.user.uid;
-    const craft = await updateCraft(req.params.id, artistId, req.body, req.files || []);
-    res.json({
+    
+    const crafts = await getCraftsByArtist(artist._id);
+    res.json({ crafts });
+  } catch (err) {
+    res.status(err.status || 500).json({ error: err.message });
+  }
+});
+
+router.patch('/crafts/:id', authenticate, async (req, res) => {
+  try {
+    const artist = await Artist.findOne({ firebaseUid: req.uid });
+    if (!artist) {
+      return res.status(404).json({ error: 'Artist profile not found.' });
+    }
+    
+    const craft = await updateCraft(req.params.id, artist._id, req.body);
+    res.json({ 
       message: 'Craft updated successfully.',
-      craft
+      craft 
     });
   } catch (err) {
     res.status(err.status || 500).json({ error: err.message });
   }
 });
 
-router.delete('/:id', verifyAnyFirebaseToken, async (req, res) => {
+router.delete('/crafts/:id', authenticate, async (req, res) => {
   try {
-    if (req.user.role !== 'artist') {
-      return res.status(403).json({ error: 'Access denied. Artist account required.' });
+    const artist = await Artist.findOne({ firebaseUid: req.uid });
+    if (!artist) {
+      return res.status(404).json({ error: 'Artist profile not found.' });
     }
-    const artistId = req.user.uid;
-    await deleteCraft(req.params.id, artistId);
+    
+    await deleteCraft(req.params.id, artist._id);
     res.json({ message: 'Craft deleted successfully.' });
   } catch (err) {
     res.status(err.status || 500).json({ error: err.message });
@@ -65,19 +95,17 @@ router.delete('/:id', verifyAnyFirebaseToken, async (req, res) => {
 
 router.get('/public/crafts', async (req, res) => {
   try {
-    const { page = 1, limit = 20, category, search, artistId } = req.query;
-
+    const { page = 1, limit = 20, category, search } = req.query;
+    
     let result;
     if (search) {
       result = await searchCrafts(search, parseInt(page), parseInt(limit));
+    } else if (category) {
+      result = await getCraftsByCategory(category, parseInt(page), parseInt(limit));
     } else {
-      const filters = {};
-      if (category) filters.category = category;
-      if (artistId) filters.artistId = artistId;
-      
-      result = await getAllCrafts(filters, { createdAt: -1 }, parseInt(page), parseInt(limit));
+      result = await getAllCrafts({}, { createdAt: -1 }, parseInt(page), parseInt(limit));
     }
-
+    
     res.json(result);
   } catch (err) {
     res.status(err.status || 500).json({ error: err.message });

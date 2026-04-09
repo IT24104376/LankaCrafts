@@ -1,30 +1,13 @@
-import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useEffect, useState } from 'react';
 import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   signOut,
   onAuthStateChanged,
   User,
-  UserCredential,
 } from 'firebase/auth';
 import { auth } from '../config/firebase';
-import {
-  registerTourist,
-  getProfile,
-  registerArtist,
-  loginArtist,
-  getArtistProfile
-} from '../services/api';
-import { loginAdmin, getMe } from '../api/adminApi';
-
-// --- Interfaces ---
-
-interface AdminUser {
-  id: string;
-  name: string;
-  email: string;
-  role: string;
-}
+import { registerTourist, loginTourist, getProfile } from '../services/api';
 
 interface TouristProfile {
   id: string;
@@ -36,7 +19,6 @@ interface TouristProfile {
   preferredLanguages: string[];
   preferredRegions: string[];
   savedWorkshops: string[];
-  savedCrafts: string[];
   initials: string;
   idNumber?: string;
   dateOfBirth?: string;
@@ -47,7 +29,6 @@ interface TouristProfile {
     postalCode?: string;
   };
   profilePicUrl?: string;
-  reviews?: string[];
 }
 
 interface ArtistProfile {
@@ -81,130 +62,74 @@ interface ArtistProfile {
 }
 
 interface AuthContextType {
-  loading: boolean;
   firebaseUser: User | null;
   tourist: TouristProfile | null;
   artist: ArtistProfile | null;
+  loading: boolean;
   login: (email: string, password: string) => Promise<void>;
-  register: (email: string, password: string, profileData: object) => Promise<void>;
+  register: (
+    email: string,
+    password: string,
+    profileData: object
+  ) => Promise<void>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
   loginArtist: (email: string, password: string) => Promise<void>;
-  registerArtist: (email: string, password: string, profileData: object) => Promise<void>;
+  registerArtist: (
+    email: string,
+    password: string,
+    profileData: object
+  ) => Promise<void>;
   logoutArtist: () => Promise<void>;
   refreshArtist: () => Promise<void>;
-  admin: AdminUser | null;
-  adminToken: string | null;
-  adminLogin: (email: string, password: string) => Promise<void>;
-  adminLogout: () => void;
-  isAdminAuthenticated: boolean;
-  isTouristAuthenticated: boolean;
-  isArtistAuthenticated: boolean;
-  isAuthenticated: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export function AuthProvider({ children }: { children: ReactNode }) {
+export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [firebaseUser, setFirebaseUser] = useState<User | null>(null);
   const [tourist, setTourist] = useState<TouristProfile | null>(null);
   const [artist, setArtist] = useState<ArtistProfile | null>(null);
-  const [admin, setAdmin] = useState<AdminUser | null>(null);
-  const [adminToken, setAdminToken] = useState<string | null>(localStorage.getItem('admin_token'));
   const [loading, setLoading] = useState(true);
 
-   // --- Profile Resolver Logic ---
-   // This helper tries to find who the user is after they log in
-   const fetchCorrectProfile = async () => {
-     try {
-       // 1. Try Tourist first
-       const res = await getProfile();
-       setTourist(res.data.tourist);
-       setArtist(null);
-     } catch {
-       try {
-         // 2. If not a tourist, try Artist
-         const res = await getArtistProfile();
-         setArtist(res.data.artist);
-         setTourist(null);
-       } catch {
-         setTourist(null);
-         setArtist(null);
-         // No valid profile found; sign out to clear inconsistent state
-         try {
-           await signOut(auth);
-         } catch (err) {
-           console.error('Failed to sign out after profile not found:', err);
-         }
-       }
-     }
-   };
-
   useEffect(() => {
-    let firebaseReady = false;
-    let adminReady = false;
-
-    const checkReady = () => {
-      if (firebaseReady && adminReady) {
-        setLoading(false);
-      }
-    };
-
-    // Initialize Firebase Auth Listener
-    const unsubscribeFirebase = onAuthStateChanged(auth, async (user) => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setFirebaseUser(user);
+
       if (user) {
-        await fetchCorrectProfile();
+        try {
+          const res = await loginTourist();
+          setTourist(res.data.tourist);
+        } catch {
+          setTourist(null);
+        }
       } else {
         setTourist(null);
-        setArtist(null);
       }
-      firebaseReady = true;
-      checkReady();
+
+      setLoading(false);
     });
 
-    // Initialize Admin Auth
-    const initAdmin = async () => {
-      const storedToken = localStorage.getItem('admin_token');
-      if (storedToken) {
-        try {
-          const res = await getMe();
-          setAdmin(res.data.admin);
-        } catch {
-          adminLogout();
-        }
-      }
-      adminReady = true;
-      checkReady();
-    };
-
-    initAdmin();
-    return () => unsubscribeFirebase();
+    return unsubscribe;
   }, []);
 
-  // --- Tourist Actions ---
   const login = async (email: string, password: string) => {
     await signInWithEmailAndPassword(auth, email, password);
-    // Profile is handled by onAuthStateChanged
   };
 
-  const register = async (email: string, password: string, profileData: object) => {
-    let userCredential: UserCredential | undefined = undefined;
-    try {
-      userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      const res = await registerTourist({ email, ...profileData });
-      setTourist(res.data.tourist);
-      setArtist(null);
-    } catch (err) {
-      if (userCredential?.user) {
-        try {
-          await userCredential.user.delete();
-        } catch (delErr) {
-          console.error('Failed to delete Firebase user after registration failure:', delErr);
-        }
-      }
-      throw err;
-    }
+  const register = async (
+    email: string,
+    password: string,
+    profileData: object
+  ) => {
+    const userCredential = await createUserWithEmailAndPassword(
+      auth,
+      email,
+      password
+    );
+    const res = await registerTourist({ email, ...profileData });
+    setTourist(res.data.tourist);
+    void userCredential;
   };
 
   const logout = async () => {
@@ -218,35 +143,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const res = await getProfile();
       setTourist(res.data.tourist);
     } catch (err) {
-      console.error('Failed to refresh tourist profile:', err);
+      console.error('Failed to refresh user profile:', err);
     }
   };
 
-  // --- Artist Actions ---
-  const handleLoginArtist = async (email: string, password: string) => {
+  const loginArtist = async (email: string, password: string) => {
     await signInWithEmailAndPassword(auth, email, password);
-    const res = await loginArtist(); // Handled by API helper
-    setArtist(res.data.artist);
-    setTourist(null);
   };
 
-  const handleRegisterArtist = async (email: string, password: string, profileData: object) => {
-    let userCredential: UserCredential | undefined = undefined;
-    try {
-      userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      const res = await registerArtist({ email, ...profileData });
-      setArtist(res.data.artist);
-      setTourist(null);
-    } catch (err) {
-      if (userCredential?.user) {
-        try {
-          await userCredential.user.delete();
-        } catch (delErr) {
-          console.error('Failed to delete Firebase user after registration failure:', delErr);
-        }
-      }
-      throw err;
-    }
+  const registerArtist = async (
+    email: string,
+    password: string,
+    profileData: object
+  ) => {
+    const userCredential = await createUserWithEmailAndPassword(
+      auth,
+      email,
+      password
+    );
+    void userCredential;
   };
 
   const logoutArtist = async () => {
@@ -257,53 +172,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const refreshArtist = async () => {
     try {
-      const res = await getArtistProfile();
-      setArtist(res.data.artist);
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/artist/profile`, {
+        headers: {
+          'Authorization': `Bearer ${await auth.currentUser?.getIdToken()}`
+        }
+      });
+      const data = await res.json();
+      setArtist(data.artist);
     } catch (err) {
       console.error('Failed to refresh artist profile:', err);
     }
   };
 
-  // --- Admin Actions ---
-  const adminLogin = async (email: string, password: string) => {
-    const res = await loginAdmin(email, password);
-    const { token: newToken, admin: adminData } = res.data;
-    localStorage.setItem('admin_token', newToken);
-    localStorage.setItem('admin_user', JSON.stringify(adminData));
-    setAdminToken(newToken);
-    setAdmin(adminData);
-  };
-
-  const adminLogout = () => {
-    localStorage.removeItem('admin_token');
-    localStorage.removeItem('admin_user');
-    setAdminToken(null);
-    setAdmin(null);
-  };
-
   return (
     <AuthContext.Provider
-      value={{
-        loading,
-        firebaseUser,
-        tourist,
-        artist,
-        login,
-        register,
-        logout,
+      value={{ 
+        firebaseUser, 
+        tourist, 
+        artist, 
+        loading, 
+        login, 
+        register, 
+        logout, 
         refreshUser,
-        loginArtist: handleLoginArtist,
-        registerArtist: handleRegisterArtist,
+        loginArtist,
+        registerArtist,
         logoutArtist,
-        refreshArtist,
-        admin,
-        adminToken,
-        adminLogin,
-        adminLogout,
-        isAdminAuthenticated: !!adminToken && !!admin,
-        isTouristAuthenticated: !!tourist,
-        isArtistAuthenticated: !!artist,
-        isAuthenticated: !!firebaseUser || !!tourist || !!artist || !!admin
+        refreshArtist
       }}
     >
       {children}
@@ -311,8 +206,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 }
 
-export function useAuth() {
+export function useAuth(): AuthContextType {
   const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error('useAuth must be used within AuthProvider');
+  if (!ctx) throw new Error('useAuth must be used within <AuthProvider>');
   return ctx;
 }

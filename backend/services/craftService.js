@@ -1,9 +1,6 @@
 import Craft from '../models/Craft.js';
-import { uploadBufferToCloudinary, deleteFromCloudinary } from '../utils/cloudinaryHelper.js';
 
-const MAX_IMAGES = 10;
-
-export async function createCraft(artistId, craftData, files = []) {
+export async function createCraft(artistId, craftData) {
   const {
     name,
     description,
@@ -24,63 +21,23 @@ export async function createCraft(artistId, craftData, files = []) {
     throw e;
   }
 
-  // VALIDATE IMAGE COUNT
-  if (files && files.length > MAX_IMAGES) {
-    const e = new Error(`Maximum ${MAX_IMAGES} images allowed.`);
-    e.status = 400;
-    throw e;
-  }
+  const craft = await Craft.create({
+    artistId,
+    name,
+    description: description || '',
+    price,
+    currency: currency || 'LKR',
+    category,
+    images: images || [],
+    stock: stock ?? 1,
+    dimensions: dimensions || {},
+    weight: weight || {},
+    materials: materials || [],
+    tags: tags || [],
+    isAvailable: true,
+  });
 
-  const uploadedImages = [];
-  const uploadedPublicIds = [];
-
-  try {
-    // Upload images to Cloudinary
-    if (files && files.length > 0) {
-      for (let i = 0; i < files.length; i++) {
-        const file = files[i];
-        const isImage = file.mimetype.startsWith('image/');
-        
-        if (!isImage) {
-          throw new Error('Only image files are allowed.');
-        }
-
-        const result = await uploadBufferToCloudinary(
-          file.buffer,
-          'lankacrafts/crafts',
-          'image'
-        );
-
-        uploadedPublicIds.push(result.public_id);
-        uploadedImages.push(result.secure_url);
-      }
-    }
-
-    const craft = await Craft.create({
-      artistId,
-      name,
-      description: description || '',
-      price,
-      currency: currency || 'LKR',
-      category,
-      images: uploadedImages,
-      stock: stock ?? 1,
-      dimensions: dimensions || {},
-      weight: weight || {},
-      materials: materials || [],
-      tags: tags || [],
-      isAvailable: true,
-    });
-
-    return craft;
-
-  } catch (err) {
-    // Rollback uploaded files if something fails
-    if (uploadedPublicIds.length > 0) {
-      await deleteFromCloudinary(uploadedPublicIds);
-    }
-    throw err;
-  }
+  return craft;
 }
 
 export async function getCraftsByArtist(artistId) {
@@ -97,7 +54,7 @@ export async function getCraftById(craftId) {
   return craft;
 }
 
-export async function updateCraft(craftId, artistId, updates, files = []) {
+export async function updateCraft(craftId, artistId, updates) {
   const craft = await Craft.findOne({ _id: craftId, artistId });
   if (!craft) {
     const e = new Error('Craft not found or unauthorized.');
@@ -107,7 +64,7 @@ export async function updateCraft(craftId, artistId, updates, files = []) {
 
   const allowedUpdates = [
     'name', 'description', 'price', 'currency', 'category',
-    'stock', 'isAvailable', 'dimensions', 'weight',
+    'images', 'stock', 'isAvailable', 'dimensions', 'weight',
     'materials', 'tags'
   ];
 
@@ -117,50 +74,8 @@ export async function updateCraft(craftId, artistId, updates, files = []) {
     }
   }
 
-  // VALIDATE IMAGE COUNT
-  if (files && files.length > MAX_IMAGES) {
-    const e = new Error(`Maximum ${MAX_IMAGES} images allowed.`);
-    e.status = 400;
-    throw e;
-  }
-
-  const uploadedImages = [];
-  const uploadedPublicIds = [];
-
-  try {
-    // Upload new images to Cloudinary
-    if (files && files.length > 0) {
-      for (let i = 0; i < files.length; i++) {
-        const file = files[i];
-        const isImage = file.mimetype.startsWith('image/');
-        
-        if (!isImage) {
-          throw new Error('Only image files are allowed.');
-        }
-
-        const result = await uploadBufferToCloudinary(
-          file.buffer,
-          'lankacrafts/crafts',
-          'image'
-        );
-
-        uploadedPublicIds.push(result.public_id);
-        uploadedImages.push(result.secure_url);
-      }
-      // Append new images to existing ones
-      craft.images = [...craft.images, ...uploadedImages];
-    }
-
-    await craft.save();
-    return craft;
-
-  } catch (err) {
-    // Rollback new uploads if error
-    if (uploadedPublicIds.length > 0) {
-      await deleteFromCloudinary(uploadedPublicIds);
-    }
-    throw err;
-  }
+  await craft.save();
+  return craft;
 }
 
 export async function deleteCraft(craftId, artistId) {
@@ -175,9 +90,9 @@ export async function deleteCraft(craftId, artistId) {
 
 export async function getAllCrafts(filters = {}, sort = { createdAt: -1 }, page = 1, limit = 20) {
   const query = { isAvailable: true, ...filters };
-
+  
   const skip = (page - 1) * limit;
-
+  
   const [crafts, total] = await Promise.all([
     Craft.find(query)
       .populate('artistId', 'fullName craftType location profilePicUrl')
@@ -211,7 +126,7 @@ export async function searchCrafts(query, page = 1, limit = 20) {
     ],
     isAvailable: true
   };
-
+  
   return await getAllCrafts(searchQuery, { createdAt: -1 }, page, limit);
 }
 

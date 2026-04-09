@@ -1,27 +1,5 @@
 import admin from '../config/firebase.js';
 import Artist from '../models/Artist.js';
-import { uploadBufferToCloudinary, deleteByUrl } from '../utils/cloudinaryHelper.js';
-
-export async function uploadProfilePicture(artist, fileBuffer) {
-  // Delete old image from Cloudinary if present
-  if (artist.profilePicUrl) {
-    try {
-      await deleteByUrl(artist.profilePicUrl);
-    } catch (delErr) {
-      console.error('Failed to delete old image from Cloudinary:', delErr);
-    }
-  }
-
-  const result = await uploadBufferToCloudinary(fileBuffer, 'lankacrafts/artists', 'image');
-
-  const updated = await Artist.findByIdAndUpdate(
-    artist._id,
-    { $set: { profilePicUrl: result.secure_url } },
-    { new: true }
-  );
-
-  return { profilePicUrl: result.secure_url, artist: updated };
-}
 
 export async function verifyToken(idToken) {
   try {
@@ -109,7 +87,7 @@ export async function updateArtistProfile(uid, updates) {
     'fullName', 'callingName', 'phone', 'craftType', 'bio', 'profilePicUrl',
     'address', 'location', 'specialties', 'availability'
   ];
-
+  
   const filteredUpdates = {};
   for (const key of allowedUpdates) {
     if (updates[key] !== undefined) {
@@ -122,13 +100,13 @@ export async function updateArtistProfile(uid, updates) {
     filteredUpdates,
     { new: true, runValidators: true }
   );
-
+  
   if (!artist) {
     const e = new Error('Artist profile not found.');
     e.status = 404;
     throw e;
   }
-
+  
   return artist;
 }
 
