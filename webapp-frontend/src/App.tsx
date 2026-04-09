@@ -12,6 +12,8 @@ import { UnifiedLogin } from './pages/UnifiedLogin';
 import { RegisterSelect } from './pages/RegisterSelect';
 import { ArtistDashboard } from './pages/ArtistDashboard';
 import { ArtistHome } from './pages/ArtistHome';
+import { ArtistLogin } from './pages/ArtistLogin';
+import { ArtistRegister } from './pages/ArtistRegister';
 import { AuthProvider } from './context/AuthContext';
 import { TouristLogin } from './pages/tourist/TouristLogin';
 import { TouristRegister } from './pages/tourist/TouristRegister';
@@ -23,8 +25,6 @@ import { TouristProfileEdit } from './pages/tourist/TouristProfileEdit';
 import { TouristBlogEdit } from './pages/tourist/TouristBlogEdit';
 import { Inbox } from './pages/Inbox';
 
-
-// Scroll to top on route change
 function ScrollToTop() {
   const { pathname } = useLocation();
   useEffect(() => {
@@ -39,23 +39,6 @@ export function App() {
       <BrowserRouter>
         <ScrollToTop />
         <Routes>
-          {/* <Route path="/" element={<Home />} />
-          <Route path="/browse" element={<BrowseArtists />} />
-          <Route path="/artist/:id" element={<ArtistProfile />} />
-          <Route path="/register" element={<ArtistRegistration />} />
-          <Route path="/map" element={<FullMap />} />
-          <Route path="/mobile" element={<MobileScreens />} />
-          <Route path="/admin/chat" element={<ChatAdmin />} />
-          <Route path="/book" element={<BookWorkshop />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/dashboard" element={<ArtistDashboard />} /> */}
-          {/* Tourist routes */}
-          {/* <Route path="/tourist/login" element={<TouristLogin />} />
-          <Route path="/tourist/register" element={<TouristRegister />} />
-          <Route path="/tourist/dashboard" element={<TouristDashboard />} />
-          <Route path="/tourist/blogs" element={<TouristBlogs />} /> */}
-
-          {/* Public routes */}
           <Route path="/" element={<Home />} />
           <Route path="/crafts" element={<CraftShop />} />
           <Route path="/artists" element={<BrowseArtists />} />
@@ -64,14 +47,13 @@ export function App() {
           <Route path="/book" element={<BookWorkshop />} />
           <Route path="/map" element={<FullMap />} />
 
-          {/* Auth routes */}
           <Route path="/login" element={<UnifiedLogin />} />
           <Route path="/register" element={<RegisterSelect />} />
-          <Route path="/artist/register" element={<ArtistRegistration />} />
+          <Route path="/artist/register" element={<ArtistRegister />} />
+          <Route path="/artist/login" element={<ArtistLogin />} />
           <Route path="/tourist/login" element={<TouristLogin />} />
           <Route path="/tourist/register" element={<TouristRegister />} />
 
-          {/* Tourist routes */}
           <Route path="/tourist/home" element={<TouristHome />} />
           <Route path="/tourist/dashboard" element={<TouristDashboard />} />
           <Route path="/tourist/blogs" element={<TouristBlogs />} />
@@ -81,12 +63,8 @@ export function App() {
           <Route path="/tourist/bookings" element={<BookWorkshop />} />
           <Route path="/inbox" element={<Inbox />} />
 
-          {/* Artist routes */}
           <Route path="/artist/home" element={<ArtistHome />} />
           <Route path="/dashboard" element={<ArtistDashboard />} />
-
-          {/* Admin routes 
-          <Route path="/admin" element={<AdminDashboard />} />  */}
         </Routes>
         <ChatWidget />
       </BrowserRouter>

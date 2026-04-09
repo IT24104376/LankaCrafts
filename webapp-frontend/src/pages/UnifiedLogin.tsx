@@ -231,6 +231,20 @@ export function UnifiedLogin() {
                       Go to Tourist Portal
                     </motion.button>
                   </div>
+                ) : selectedRole === 'artist' ? (
+                  <div className="space-y-4">
+                    <p className="text-sm font-semibold text-gray-700 text-center mb-6">
+                      Enter the Artist Portal to manage your crafts!
+                    </p>
+                    <motion.button
+                      onClick={() => navigate('/artist/login')}
+                      whileHover={{ scale: 1.01 }}
+                      whileTap={{ scale: 0.98 }}
+                      className="w-full py-3.5 rounded-xl text-white font-bold text-sm transition-all flex items-center justify-center gap-2"
+                      style={{ backgroundColor: config.color }}>
+                      Go to Artist Login Portal
+                    </motion.button>
+                  </div>
                 ) : (
                 <form onSubmit={handleSubmit} className="space-y-4">
                   {error &&

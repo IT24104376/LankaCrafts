@@ -9,6 +9,11 @@ import authRoutes from './routes/auth.js';
 import touristRoutes from './routes/tourist.js';
 import blogRoutes from './routes/blogs.js';
 import bookingRoutes from './routes/bookings.js';
+import artistAuthRoutes from './routes/artistAuth.js';
+import artistProfileRoutes from './routes/artistProfile.js';
+import artistRoutes from './routes/artists.js';
+import craftRoutes from './routes/crafts.js';
+import paymentRoutes from './routes/payments.js';
 
 // ── App setup ─────────────────────────────────────────────────────────────────
 const app = express();
@@ -44,6 +49,12 @@ app.use('/api/tourist/auth', authRoutes);          // /register  /login
 app.use('/api/tourist', touristRoutes);            // /profile  /stats
 app.use('/api/tourist/blogs', blogRoutes);         // CRUD + like
 app.use('/api/tourist/bookings', bookingRoutes);   // GET, POST, PATCH cancel
+
+app.use('/api/artist/auth', artistAuthRoutes);    // /register  /login
+app.use('/api/artist', artistProfileRoutes);      // /profile  /crafts
+app.use('/api/artists', artistRoutes);            // public artist endpoints
+app.use('/api/crafts', craftRoutes);              // public craft endpoints
+app.use('/api/payments', paymentRoutes);          // PayHere payment notification
 
 // ── 404 handler ───────────────────────────────────────────────────────────────
 app.use((_req, res) => {
