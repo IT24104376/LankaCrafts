@@ -8,7 +8,8 @@ import mongoose from 'mongoose';
 import authRoutes from './routes/auth.js';
 import touristRoutes from './routes/tourist.js';
 import blogRoutes from './routes/blogs.js';
-import bookingRoutes from './routes/bookings.js';
+import workshopBookingRoutes from './routes/bookingRoutes.js';
+
 import artistAuthRoutes from './routes/artistAuth.js';
 import artistProfileRoutes from './routes/artistProfile.js';
 import artistRoutes from './routes/artists.js';
@@ -48,7 +49,7 @@ app.get('/health', (_req, res) => {
 app.use('/api/tourist/auth', authRoutes);          // /register  /login
 app.use('/api/tourist', touristRoutes);            // /profile  /stats
 app.use('/api/tourist/blogs', blogRoutes);         // CRUD + like
-app.use('/api/tourist/bookings', bookingRoutes);   // GET, POST, PATCH cancel
+app.use('/api/bookings', workshopBookingRoutes);    // workshop bookings
 
 app.use('/api/artist/auth', artistAuthRoutes);    // /register  /login
 app.use('/api/artist', artistProfileRoutes);      // /profile  /crafts

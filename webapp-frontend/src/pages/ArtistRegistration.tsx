@@ -51,11 +51,11 @@ export function ArtistRegistration() {
     },
     // Step 4
     listings: [
-    {
-      name: '',
-      price: '',
-      description: ''
-    }]
+      {
+        name: '',
+        price: '',
+        description: ''
+      }]
 
   });
   const nextStep = () => setStep((s) => Math.min(s + 1, 4));
@@ -87,9 +87,9 @@ export function ArtistRegistration() {
 
             <div className="relative z-10 flex justify-between">
               {[1, 2, 3, 4].map((s) =>
-              <div
-                key={s}
-                className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm transition-all duration-300 ${s <= step ? 'bg-mustard text-forest shadow-lg scale-110' : 'bg-gray-200 text-gray-500'}`}>
+                <div
+                  key={s}
+                  className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm transition-all duration-300 ${s <= step ? 'bg-mustard text-forest shadow-lg scale-110' : 'bg-gray-200 text-gray-500'}`}>
 
                   {s < step ? <Check className="w-5 h-5" /> : s}
                 </div>
@@ -116,7 +116,7 @@ export function ArtistRegistration() {
 
             {/* Step 1: Account */}
             {step === 1 &&
-            <div className="space-y-6">
+              <div className="space-y-6">
                 <h2 className="text-2xl font-bold text-forest font-display mb-6">
                   Create your Account
                 </h2>
@@ -126,9 +126,9 @@ export function ArtistRegistration() {
                       Email Address
                     </label>
                     <input
-                    type="email"
-                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-mustard focus:border-transparent outline-none"
-                    placeholder="you@example.com" />
+                      type="email"
+                      className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-mustard focus:border-transparent outline-none"
+                      placeholder="you@example.com" />
 
                   </div>
                   <div>
@@ -136,9 +136,9 @@ export function ArtistRegistration() {
                       Username
                     </label>
                     <input
-                    type="text"
-                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-mustard focus:border-transparent outline-none"
-                    placeholder="Choose a username" />
+                      type="text"
+                      className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-mustard focus:border-transparent outline-none"
+                      placeholder="Choose a username" />
 
                   </div>
                   <div>
@@ -146,9 +146,9 @@ export function ArtistRegistration() {
                       Password
                     </label>
                     <input
-                    type="password"
-                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-mustard focus:border-transparent outline-none"
-                    placeholder="••••••••" />
+                      type="password"
+                      className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-mustard focus:border-transparent outline-none"
+                      placeholder="••••••••" />
 
                   </div>
                 </div>
@@ -157,7 +157,7 @@ export function ArtistRegistration() {
 
             {/* Step 2: Profile */}
             {step === 2 &&
-            <div className="space-y-6">
+              <div className="space-y-6">
                 <h2 className="text-2xl font-bold text-forest font-display mb-6">
                   Your Craft Profile
                 </h2>
@@ -190,9 +190,9 @@ export function ArtistRegistration() {
                       Bio / Story
                     </label>
                     <textarea
-                    rows={4}
-                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-mustard outline-none resize-none"
-                    placeholder="Tell us about your history with the craft..." />
+                      rows={4}
+                      className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-mustard outline-none resize-none"
+                      placeholder="Tell us about your history with the craft..." />
 
                   </div>
                   <div className="md:col-span-2">
@@ -212,7 +212,7 @@ export function ArtistRegistration() {
 
             {/* Step 3: Availability */}
             {step === 3 &&
-            <div className="space-y-6">
+              <div className="space-y-6">
                 <h2 className="text-2xl font-bold text-forest font-display mb-6">
                   Workshop Availability
                 </h2>
@@ -240,21 +240,21 @@ export function ArtistRegistration() {
                     </thead>
                     <tbody className="space-y-2">
                       {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) =>
-                    <tr
-                      key={day}
-                      className="border-b border-gray-50 last:border-0">
+                        <tr
+                          key={day}
+                          className="border-b border-gray-50 last:border-0">
 
                           <td className="py-3 font-bold text-forest">{day}</td>
                           {['morning', 'afternoon', 'evening'].map((slot) =>
-                      <td key={slot} className="py-3 text-center">
+                            <td key={slot} className="py-3 text-center">
                               <input
-                          type="checkbox"
-                          className="w-5 h-5 rounded border-gray-300 text-mustard focus:ring-mustard" />
+                                type="checkbox"
+                                className="w-5 h-5 rounded border-gray-300 text-mustard focus:ring-mustard" />
 
                             </td>
-                      )}
+                          )}
                         </tr>
-                    )}
+                      )}
                     </tbody>
                   </table>
                 </div>
@@ -263,7 +263,7 @@ export function ArtistRegistration() {
 
             {/* Step 4: Listings */}
             {step === 4 &&
-            <div className="space-y-6">
+              <div className="space-y-6">
                 <h2 className="text-2xl font-bold text-forest font-display mb-6">
                   Add Craft Listings
                 </h2>
@@ -275,9 +275,9 @@ export function ArtistRegistration() {
                         Item Name
                       </label>
                       <input
-                      type="text"
-                      className="w-full px-3 py-2 rounded-lg border border-gray-200"
-                      placeholder="e.g. Hand-carved Mask" />
+                        type="text"
+                        className="w-full px-3 py-2 rounded-lg border border-gray-200"
+                        placeholder="e.g. Hand-carved Mask" />
 
                     </div>
                     <div>
@@ -285,9 +285,9 @@ export function ArtistRegistration() {
                         Price (LKR)
                       </label>
                       <input
-                      type="text"
-                      className="w-full px-3 py-2 rounded-lg border border-gray-200"
-                      placeholder="5000" />
+                        type="text"
+                        className="w-full px-3 py-2 rounded-lg border border-gray-200"
+                        placeholder="5000" />
 
                     </div>
                     <div className="md:col-span-2">
@@ -295,9 +295,9 @@ export function ArtistRegistration() {
                         Description
                       </label>
                       <textarea
-                      rows={2}
-                      className="w-full px-3 py-2 rounded-lg border border-gray-200"
-                      placeholder="Short description..." />
+                        rows={2}
+                        className="w-full px-3 py-2 rounded-lg border border-gray-200"
+                        placeholder="Short description..." />
 
                     </div>
                   </div>
@@ -312,14 +312,14 @@ export function ArtistRegistration() {
             {/* Navigation Buttons */}
             <div className="flex justify-between mt-10 pt-6 border-t border-gray-100">
               {step > 1 ?
-              <button
-                onClick={prevStep}
-                className="flex items-center gap-2 text-gray-500 font-bold hover:text-forest transition-colors">
+                <button
+                  onClick={prevStep}
+                  className="flex items-center gap-2 text-gray-500 font-bold hover:text-forest transition-colors">
 
                   <ChevronLeft className="w-5 h-5" /> Back
                 </button> :
 
-              <div />
+                <div />
               }
 
               <Button

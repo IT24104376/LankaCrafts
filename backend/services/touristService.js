@@ -2,7 +2,7 @@ import streamifier from 'streamifier';
 import cloudinary from '../config/cloudinary.js';
 import Tourist from '../models/Tourist.js';
 import Blog from '../models/Blog.js';
-import Booking from '../models/Booking.js';
+import Booking from '../models/workshopBooking.js';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 

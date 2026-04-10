@@ -43,7 +43,7 @@ export function FeaturedArtist() {
   }, []);
 
   const craftName = artist?.craftType || 'Kandyan Lacquerwork';
-  const locationText = artist?.address?.city && artist?.address?.province 
+  const locationText = artist?.address?.city && artist?.address?.province
     ? `${artist.address.city}, ${artist.address.province.replace(' Province', '')}`
     : 'Kandy, Sri Lanka';
 
@@ -249,7 +249,7 @@ export function FeaturedArtist() {
                   className="absolute inset-0 flex items-center justify-center"
                   style={{
                     background:
-                    'linear-gradient(135deg, #C65D3B 0%, #C9A227 50%, #2F5D50 100%)'
+                      'linear-gradient(135deg, #C65D3B 0%, #C9A227 50%, #2F5D50 100%)'
                   }}>
 
                   <div className="absolute inset-0 opacity-20">

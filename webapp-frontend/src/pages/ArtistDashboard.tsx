@@ -20,7 +20,7 @@ import {
   PhoneIcon,
   MailIcon,
 } from 'lucide-react';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '../context/AuthContext';
 import {
   getArtistProfile,
   updateArtistProfile,
@@ -29,9 +29,9 @@ import {
   createCraft,
   updateCraft,
   deleteCraft,
-} from '../../services/api';
-import { Navbar } from '../../components/Navbar';
-import { Footer } from '../../components/Footer';
+} from '../services/api';
+import { Navbar } from '../components/Navbar';
+import { Footer } from '../components/Footer';
 
 interface Craft {
   _id: string;

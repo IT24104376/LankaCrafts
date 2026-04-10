@@ -87,7 +87,7 @@ export async function updateArtistProfile(uid, updates) {
     'fullName', 'callingName', 'phone', 'craftType', 'bio', 'profilePicUrl',
     'address', 'location', 'specialties', 'availability'
   ];
-  
+
   const filteredUpdates = {};
   for (const key of allowedUpdates) {
     if (updates[key] !== undefined) {
@@ -100,13 +100,13 @@ export async function updateArtistProfile(uid, updates) {
     filteredUpdates,
     { new: true, runValidators: true }
   );
-  
+
   if (!artist) {
     const e = new Error('Artist profile not found.');
     e.status = 404;
     throw e;
   }
-  
+
   return artist;
 }
 
