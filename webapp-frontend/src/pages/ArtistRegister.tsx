@@ -19,7 +19,7 @@ import {
   Save,
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '../context/AuthContext';
 import {
   registerArtist as registerArtistApi,
   updateArtistProfile,
@@ -27,7 +27,7 @@ import {
   getMyCrafts,
   updateCraft,
   deleteCraft,
-} from '../../services/api';
+} from '../services/api';
 
 const CRAFT_TYPES = [
   'Batik',
