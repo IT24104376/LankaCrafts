@@ -238,10 +238,10 @@ export function ArtistRegister() {
         },
         location: coords
           ? {
-              type: 'Point',
-              coordinates: [coords.lng, coords.lat],
-              formattedAddress: location?.formattedAddress || '',
-            }
+            type: 'Point',
+            coordinates: [coords.lng, coords.lat],
+            formattedAddress: location?.formattedAddress || '',
+          }
           : undefined,
         specialties,
         availability,

@@ -2,8 +2,8 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { MailIcon, LockIcon, EyeIcon, EyeOffIcon } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext';
-import { auth } from '../../config/firebase';
+import { useAuth } from '../context/AuthContext';
+import { auth } from '../config/firebase';
 import { sendPasswordResetEmail } from 'firebase/auth';
 
 export function ArtistLogin() {

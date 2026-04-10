@@ -24,6 +24,8 @@ import { TouristProfile } from './pages/tourist/TouristProfile';
 import { TouristProfileEdit } from './pages/tourist/TouristProfileEdit';
 import { TouristBlogEdit } from './pages/tourist/TouristBlogEdit';
 import { Inbox } from './pages/Inbox';
+import EditBooking from "./pages/EditBooking";
+import MyBookings from "./pages/MyBookings";
 
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -65,6 +67,8 @@ export function App() {
 
           <Route path="/artist/home" element={<ArtistHome />} />
           <Route path="/dashboard" element={<ArtistDashboard />} />
+          <Route path="/edit-booking/:id" element={<EditBooking />} />
+          <Route path="/my-bookings" element={<MyBookings />} />
         </Routes>
         <ChatWidget />
       </BrowserRouter>

@@ -25,8 +25,9 @@ import {
   ClockIcon,
   AlertCircleIcon,
   UserIcon,
-  MessageSquareIcon } from
-'lucide-react';
+  MessageSquareIcon
+} from
+  'lucide-react';
 import { Link } from 'react-router-dom';
 import { ArtisanVerification } from './admin/ArtisanVerification';
 import { TouristManagement } from './admin/TouristManagement';
@@ -35,15 +36,15 @@ import { WorkshopVerification } from './admin/WorkshopVerification';
 import { UserActivity } from './admin/UserActivity';
 import { ReviewMonitoring } from './admin/ReviewMonitoring';
 type Section =
-'overview' |
-'artisan-verification' |
-'workshop-verification' |
-'tourist-management' |
-'user-activity' |
-'analytics' |
-'review-monitoring' |
-'role-management' |
-'settings';
+  'overview' |
+  'artisan-verification' |
+  'workshop-verification' |
+  'tourist-management' |
+  'user-activity' |
+  'analytics' |
+  'review-monitoring' |
+  'role-management' |
+  'settings';
 interface NavItem {
   id: Section;
   label: string;
@@ -51,188 +52,188 @@ interface NavItem {
   badge?: number;
 }
 const NAV_ITEMS: NavItem[] = [
-{
-  id: 'overview',
-  label: 'Dashboard Overview',
-  icon: <LayoutDashboardIcon className="w-4.5 h-4.5" />
-},
-{
-  id: 'artisan-verification',
-  label: 'Artisan Verification',
-  icon: <UserCheckIcon className="w-4.5 h-4.5" />,
-  badge: 3
-},
-{
-  id: 'workshop-verification',
-  label: 'Workshop Verification',
-  icon: <BuildingIcon className="w-4.5 h-4.5" />,
-  badge: 1
-},
-{
-  id: 'tourist-management',
-  label: 'Tourist Management',
-  icon: <UsersIcon className="w-4.5 h-4.5" />
-},
-{
-  id: 'user-activity',
-  label: 'User Activity Monitoring',
-  icon: <ActivityIcon className="w-4.5 h-4.5" />
-},
-{
-  id: 'analytics',
-  label: 'Analytics & Reports',
-  icon: <BarChart3Icon className="w-4.5 h-4.5" />
-},
-{
-  id: 'review-monitoring',
-  label: 'Review Monitoring',
-  icon: <MessageSquareIcon className="w-4.5 h-4.5" />,
-  badge: 2
-},
-{
-  id: 'role-management',
-  label: 'Role Management',
-  icon: <ShieldIcon className="w-4.5 h-4.5" />
-},
-{
-  id: 'settings',
-  label: 'Settings',
-  icon: <SettingsIcon className="w-4.5 h-4.5" />
-}];
+  {
+    id: 'overview',
+    label: 'Dashboard Overview',
+    icon: <LayoutDashboardIcon className="w-4.5 h-4.5" />
+  },
+  {
+    id: 'artisan-verification',
+    label: 'Artisan Verification',
+    icon: <UserCheckIcon className="w-4.5 h-4.5" />,
+    badge: 3
+  },
+  {
+    id: 'workshop-verification',
+    label: 'Workshop Verification',
+    icon: <BuildingIcon className="w-4.5 h-4.5" />,
+    badge: 1
+  },
+  {
+    id: 'tourist-management',
+    label: 'Tourist Management',
+    icon: <UsersIcon className="w-4.5 h-4.5" />
+  },
+  {
+    id: 'user-activity',
+    label: 'User Activity Monitoring',
+    icon: <ActivityIcon className="w-4.5 h-4.5" />
+  },
+  {
+    id: 'analytics',
+    label: 'Analytics & Reports',
+    icon: <BarChart3Icon className="w-4.5 h-4.5" />
+  },
+  {
+    id: 'review-monitoring',
+    label: 'Review Monitoring',
+    icon: <MessageSquareIcon className="w-4.5 h-4.5" />,
+    badge: 2
+  },
+  {
+    id: 'role-management',
+    label: 'Role Management',
+    icon: <ShieldIcon className="w-4.5 h-4.5" />
+  },
+  {
+    id: 'settings',
+    label: 'Settings',
+    icon: <SettingsIcon className="w-4.5 h-4.5" />
+  }];
 
 const KPI_CARDS = [
-{
-  title: 'Total Artisans',
-  value: '2,547',
-  change: '+12%',
-  trend: 'up',
-  icon: <UserCheckIcon className="w-5 h-5" />,
-  color: '#2F5D50',
-  bg: 'bg-forest/10',
-  desc: 'Registered artisans'
-},
-{
-  title: 'Total Tourists',
-  value: '18,392',
-  change: '+24%',
-  trend: 'up',
-  icon: <UsersIcon className="w-5 h-5" />,
-  color: '#C65D3B',
-  bg: 'bg-terracotta/10',
-  desc: 'Platform visitors'
-},
-{
-  title: 'Active Workshops',
-  value: '384',
-  change: '+8%',
-  trend: 'up',
-  icon: <BuildingIcon className="w-5 h-5" />,
-  color: '#C9A227',
-  bg: 'bg-mustard/10',
-  desc: 'Running this month'
-},
-{
-  title: 'Pending Verifications',
-  value: '47',
-  change: '-5%',
-  trend: 'down',
-  icon: <AlertCircleIcon className="w-5 h-5" />,
-  color: '#6366f1',
-  bg: 'bg-indigo-50',
-  desc: 'Awaiting review'
-}];
+  {
+    title: 'Total Artisans',
+    value: '2,547',
+    change: '+12%',
+    trend: 'up',
+    icon: <UserCheckIcon className="w-5 h-5" />,
+    color: '#2F5D50',
+    bg: 'bg-forest/10',
+    desc: 'Registered artisans'
+  },
+  {
+    title: 'Total Tourists',
+    value: '18,392',
+    change: '+24%',
+    trend: 'up',
+    icon: <UsersIcon className="w-5 h-5" />,
+    color: '#C65D3B',
+    bg: 'bg-terracotta/10',
+    desc: 'Platform visitors'
+  },
+  {
+    title: 'Active Workshops',
+    value: '384',
+    change: '+8%',
+    trend: 'up',
+    icon: <BuildingIcon className="w-5 h-5" />,
+    color: '#C9A227',
+    bg: 'bg-mustard/10',
+    desc: 'Running this month'
+  },
+  {
+    title: 'Pending Verifications',
+    value: '47',
+    change: '-5%',
+    trend: 'down',
+    icon: <AlertCircleIcon className="w-5 h-5" />,
+    color: '#6366f1',
+    bg: 'bg-indigo-50',
+    desc: 'Awaiting review'
+  }];
 
 const VERIFICATION_REQUESTS = [
-{
-  id: 1,
-  name: 'Nimal Perera',
-  type: 'Artisan',
-  craft: 'Lacquerwork',
-  region: 'Kandy',
-  submitted: '2h ago',
-  color: '#C65D3B',
-  initials: 'NP'
-},
-{
-  id: 2,
-  name: 'Suresh Fernando',
-  type: 'Artisan',
-  craft: 'Mask Carving',
-  region: 'Ambalangoda',
-  submitted: '4h ago',
-  color: '#C9A227',
-  initials: 'SF'
-},
-{
-  id: 3,
-  name: 'Nilmini Senanayake',
-  type: 'Artisan',
-  craft: 'Gem Polishing',
-  region: 'Ratnapura',
-  submitted: '1d ago',
-  color: '#2F5D50',
-  initials: 'NS'
-},
-{
-  id: 4,
-  name: 'Kandy Heritage Workshop',
-  type: 'Workshop',
-  craft: 'Multiple Crafts',
-  region: 'Kandy',
-  submitted: '2d ago',
-  color: '#C65D3B',
-  initials: 'KH'
-}];
+  {
+    id: 1,
+    name: 'Nimal Perera',
+    type: 'Artisan',
+    craft: 'Lacquerwork',
+    region: 'Kandy',
+    submitted: '2h ago',
+    color: '#C65D3B',
+    initials: 'NP'
+  },
+  {
+    id: 2,
+    name: 'Suresh Fernando',
+    type: 'Artisan',
+    craft: 'Mask Carving',
+    region: 'Ambalangoda',
+    submitted: '4h ago',
+    color: '#C9A227',
+    initials: 'SF'
+  },
+  {
+    id: 3,
+    name: 'Nilmini Senanayake',
+    type: 'Artisan',
+    craft: 'Gem Polishing',
+    region: 'Ratnapura',
+    submitted: '1d ago',
+    color: '#2F5D50',
+    initials: 'NS'
+  },
+  {
+    id: 4,
+    name: 'Kandy Heritage Workshop',
+    type: 'Workshop',
+    craft: 'Multiple Crafts',
+    region: 'Kandy',
+    submitted: '2d ago',
+    color: '#C65D3B',
+    initials: 'KH'
+  }];
 
 const ACTIVITY_FEED = [
-{
-  id: 1,
-  action: 'New artisan registration',
-  subject: 'Rohan De Silva',
-  time: '5 min ago',
-  type: 'register',
-  color: '#2F5D50'
-},
-{
-  id: 2,
-  action: 'Workshop booking confirmed',
-  subject: 'Sarah Mitchell → Batik Workshop',
-  time: '12 min ago',
-  type: 'booking',
-  color: '#C9A227'
-},
-{
-  id: 3,
-  action: 'Artisan verified',
-  subject: 'Kamala Wijesinghe',
-  time: '1h ago',
-  type: 'verify',
-  color: '#2F5D50'
-},
-{
-  id: 4,
-  action: 'Tourist account suspended',
-  subject: 'Yuki Tanaka',
-  time: '2h ago',
-  type: 'suspend',
-  color: '#C65D3B'
-},
-{
-  id: 5,
-  action: 'New workshop listing',
-  subject: 'Galle Lace Center',
-  time: '3h ago',
-  type: 'listing',
-  color: '#C9A227'
-},
-{
-  id: 6,
-  action: 'Verification rejected',
-  subject: 'Anura Dissanayake',
-  time: '5h ago',
-  type: 'reject',
-  color: '#C65D3B'
-}];
+  {
+    id: 1,
+    action: 'New artisan registration',
+    subject: 'Rohan De Silva',
+    time: '5 min ago',
+    type: 'register',
+    color: '#2F5D50'
+  },
+  {
+    id: 2,
+    action: 'Workshop booking confirmed',
+    subject: 'Sarah Mitchell → Batik Workshop',
+    time: '12 min ago',
+    type: 'booking',
+    color: '#C9A227'
+  },
+  {
+    id: 3,
+    action: 'Artisan verified',
+    subject: 'Kamala Wijesinghe',
+    time: '1h ago',
+    type: 'verify',
+    color: '#2F5D50'
+  },
+  {
+    id: 4,
+    action: 'Tourist account suspended',
+    subject: 'Yuki Tanaka',
+    time: '2h ago',
+    type: 'suspend',
+    color: '#C65D3B'
+  },
+  {
+    id: 5,
+    action: 'New workshop listing',
+    subject: 'Galle Lace Center',
+    time: '3h ago',
+    type: 'listing',
+    color: '#C9A227'
+  },
+  {
+    id: 6,
+    action: 'Verification rejected',
+    subject: 'Anura Dissanayake',
+    time: '5h ago',
+    type: 'reject',
+    color: '#C65D3B'
+  }];
 
 const ACTIVITY_ICONS: Record<string, React.ReactNode> = {
   register: <UserIcon className="w-3.5 h-3.5" />,
@@ -246,7 +247,7 @@ function DashboardOverview({
   onNavigate
 
 
-}: {onNavigate: (s: Section) => void;}) {
+}: { onNavigate: (s: Section) => void; }) {
   const [verificationRequests, setVerificationRequests] = useState(
     VERIFICATION_REQUESTS
   );
@@ -261,45 +262,45 @@ function DashboardOverview({
       {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
         {KPI_CARDS.map((card, i) =>
-        <motion.div
-          key={card.title}
-          initial={{
-            opacity: 0,
-            y: 16
-          }}
-          animate={{
-            opacity: 1,
-            y: 0
-          }}
-          transition={{
-            delay: i * 0.07
-          }}
-          className="bg-white rounded-2xl border border-gray-200 p-5 relative overflow-hidden">
+          <motion.div
+            key={card.title}
+            initial={{
+              opacity: 0,
+              y: 16
+            }}
+            animate={{
+              opacity: 1,
+              y: 0
+            }}
+            transition={{
+              delay: i * 0.07
+            }}
+            className="bg-white rounded-2xl border border-gray-200 p-5 relative overflow-hidden">
 
             {/* Left accent bar */}
             <div
-            className="absolute left-0 top-0 bottom-0 w-1 rounded-l-2xl"
-            style={{
-              backgroundColor: card.color
-            }} />
+              className="absolute left-0 top-0 bottom-0 w-1 rounded-l-2xl"
+              style={{
+                backgroundColor: card.color
+              }} />
 
             <div className="flex items-start justify-between mb-4">
               <div
-              className={`w-10 h-10 ${card.bg} rounded-xl flex items-center justify-center`}
-              style={{
-                color: card.color
-              }}>
+                className={`w-10 h-10 ${card.bg} rounded-xl flex items-center justify-center`}
+                style={{
+                  color: card.color
+                }}>
 
                 {card.icon}
               </div>
               <div
-              className={`flex items-center gap-1 text-xs font-semibold px-2 py-1 rounded-full ${card.trend === 'up' ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-500'}`}>
+                className={`flex items-center gap-1 text-xs font-semibold px-2 py-1 rounded-full ${card.trend === 'up' ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-500'}`}>
 
                 {card.trend === 'up' ?
-              <TrendingUpIcon className="w-3 h-3" /> :
+                  <TrendingUpIcon className="w-3 h-3" /> :
 
-              <TrendingDownIcon className="w-3 h-3" />
-              }
+                  <TrendingDownIcon className="w-3 h-3" />
+                }
                 {card.change}
               </div>
             </div>
@@ -348,20 +349,20 @@ function DashboardOverview({
 
           <div className="divide-y divide-gray-50">
             {verificationRequests.length === 0 ?
-            <div className="py-12 text-center text-gray-400">
+              <div className="py-12 text-center text-gray-400">
                 <CheckCircleIcon className="w-10 h-10 mx-auto mb-2 text-emerald-300" />
                 <p className="font-medium text-sm">
                   All caught up! No pending requests.
                 </p>
               </div> :
 
-            verificationRequests.map((req) =>
-            <div key={req.id} className="flex items-center gap-4 px-6 py-4">
+              verificationRequests.map((req) =>
+                <div key={req.id} className="flex items-center gap-4 px-6 py-4">
                   <div
-                className="w-10 h-10 rounded-xl flex items-center justify-center text-white text-sm font-bold shrink-0"
-                style={{
-                  backgroundColor: req.color
-                }}>
+                    className="w-10 h-10 rounded-xl flex items-center justify-center text-white text-sm font-bold shrink-0"
+                    style={{
+                      backgroundColor: req.color
+                    }}>
 
                     {req.initials}
                   </div>
@@ -371,7 +372,7 @@ function DashboardOverview({
                         {req.name}
                       </p>
                       <span
-                    className={`text-xs px-2 py-0.5 rounded-full font-medium shrink-0 ${req.type === 'Artisan' ? 'bg-forest/10 text-forest' : 'bg-mustard/10 text-mustard-dark'}`}>
+                        className={`text-xs px-2 py-0.5 rounded-full font-medium shrink-0 ${req.type === 'Artisan' ? 'bg-forest/10 text-forest' : 'bg-mustard/10 text-mustard-dark'}`}>
 
                         {req.type}
                       </span>
@@ -387,14 +388,14 @@ function DashboardOverview({
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
                     <button
-                  onClick={() => handleApprove(req.id)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg text-xs font-bold transition-colors">
+                      onClick={() => handleApprove(req.id)}
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg text-xs font-bold transition-colors">
 
                       <CheckCircleIcon className="w-3.5 h-3.5" /> Approve
                     </button>
                     <button
-                  onClick={() => handleReject(req.id)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg text-xs font-bold transition-colors">
+                      onClick={() => handleReject(req.id)}
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg text-xs font-bold transition-colors">
 
                       <XCircleIcon className="w-3.5 h-3.5" /> Reject
                     </button>
@@ -403,7 +404,7 @@ function DashboardOverview({
                     </button>
                   </div>
                 </div>
-            )
+              )
             }
           </div>
         </motion.div>
@@ -433,26 +434,26 @@ function DashboardOverview({
           </div>
           <div className="divide-y divide-gray-50">
             {ACTIVITY_FEED.map((item, i) =>
-            <motion.div
-              key={item.id}
-              initial={{
-                opacity: 0,
-                x: 10
-              }}
-              animate={{
-                opacity: 1,
-                x: 0
-              }}
-              transition={{
-                delay: 0.4 + i * 0.05
-              }}
-              className="flex items-start gap-3 px-6 py-3.5">
+              <motion.div
+                key={item.id}
+                initial={{
+                  opacity: 0,
+                  x: 10
+                }}
+                animate={{
+                  opacity: 1,
+                  x: 0
+                }}
+                transition={{
+                  delay: 0.4 + i * 0.05
+                }}
+                className="flex items-start gap-3 px-6 py-3.5">
 
                 <div
-                className="w-7 h-7 rounded-lg flex items-center justify-center text-white shrink-0 mt-0.5"
-                style={{
-                  backgroundColor: item.color
-                }}>
+                  className="w-7 h-7 rounded-lg flex items-center justify-center text-white shrink-0 mt-0.5"
+                  style={{
+                    backgroundColor: item.color
+                  }}>
 
                   {ACTIVITY_ICONS[item.type]}
                 </div>
@@ -535,7 +536,7 @@ function PlaceholderSection({
 
 
 
-}: {title: string;description: string;icon: React.ReactNode;}) {
+}: { title: string; description: string; icon: React.ReactNode; }) {
   return (
     <div className="flex flex-col items-center justify-center h-full min-h-[400px] text-center">
       <div className="w-16 h-16 bg-forest/10 rounded-2xl flex items-center justify-center text-forest mb-4">
@@ -597,50 +598,50 @@ export function AdminDashboard() {
       {/* Sidebar */}
       <AnimatePresence initial={false}>
         {sidebarOpen &&
-        <motion.aside
-          initial={{
-            width: 0,
-            opacity: 0
-          }}
-          animate={{
-            width: 256,
-            opacity: 1
-          }}
-          exit={{
-            width: 0,
-            opacity: 0
-          }}
-          transition={{
-            duration: 0.25,
-            ease: [0.22, 1, 0.36, 1]
-          }}
-          className="bg-forest flex flex-col shrink-0 overflow-hidden h-full z-20">
+          <motion.aside
+            initial={{
+              width: 0,
+              opacity: 0
+            }}
+            animate={{
+              width: 256,
+              opacity: 1
+            }}
+            exit={{
+              width: 0,
+              opacity: 0
+            }}
+            transition={{
+              duration: 0.25,
+              ease: [0.22, 1, 0.36, 1]
+            }}
+            className="bg-forest flex flex-col shrink-0 overflow-hidden h-full z-20">
 
             {/* Sidebar Header */}
             <div className="relative px-5 py-5 border-b border-white/10 shrink-0 overflow-hidden">
               {/* Subtle batik pattern */}
               <div className="absolute inset-0 opacity-[0.06]">
                 <svg
-                width="100%"
-                height="100%"
-                xmlns="http://www.w3.org/2000/svg">
+                  width="100%"
+                  height="100%"
+                  xmlns="http://www.w3.org/2000/svg">
 
                   <defs>
                     <pattern
-                    id="sidebar-batik"
-                    x="0"
-                    y="0"
-                    width="24"
-                    height="24"
-                    patternUnits="userSpaceOnUse">
+                      id="sidebar-batik"
+                      x="0"
+                      y="0"
+                      width="24"
+                      height="24"
+                      patternUnits="userSpaceOnUse">
 
                       <circle
-                      cx="12"
-                      cy="12"
-                      r="7"
-                      fill="none"
-                      stroke="white"
-                      strokeWidth="1" />
+                        cx="12"
+                        cy="12"
+                        r="7"
+                        fill="none"
+                        stroke="white"
+                        strokeWidth="1" />
 
                       <circle cx="12" cy="12" r="3" fill="white" />
                     </pattern>
@@ -652,8 +653,8 @@ export function AdminDashboard() {
                 <div className="w-8 h-8 bg-mustard rounded-lg flex items-center justify-center shrink-0">
                   <svg width="16" height="16" viewBox="0 0 32 32" fill="none">
                     <path
-                    d="M16 8 L18 14 L24 14 L19 18 L21 24 L16 20 L11 24 L13 18 L8 14 L14 14 Z"
-                    fill="#2F5D50" />
+                      d="M16 8 L18 14 L24 14 L19 18 L21 24 L16 20 L11 24 L13 18 L8 14 L14 14 Z"
+                      fill="#2F5D50" />
 
                   </svg>
                 </div>
@@ -675,21 +676,21 @@ export function AdminDashboard() {
               </p>
               <div className="space-y-0.5">
                 {NAV_ITEMS.map((item) => {
-                const isActive = activeSection === item.id;
-                return (
-                  <button
-                    key={item.id}
-                    onClick={() => setActiveSection(item.id)}
-                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 group relative ${isActive ? 'bg-white/15 text-white' : 'text-white/60 hover:text-white hover:bg-white/8'}`}>
+                  const isActive = activeSection === item.id;
+                  return (
+                    <button
+                      key={item.id}
+                      onClick={() => setActiveSection(item.id)}
+                      className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 group relative ${isActive ? 'bg-white/15 text-white' : 'text-white/60 hover:text-white hover:bg-white/8'}`}>
 
                       {isActive &&
-                    <motion.div
-                      layoutId="sidebar-active"
-                      className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-mustard rounded-r-full" />
+                        <motion.div
+                          layoutId="sidebar-active"
+                          className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-mustard rounded-r-full" />
 
-                    }
+                      }
                       <span
-                      className={`shrink-0 transition-colors ${isActive ? 'text-mustard' : 'text-white/50 group-hover:text-white/80'}`}>
+                        className={`shrink-0 transition-colors ${isActive ? 'text-mustard' : 'text-white/50 group-hover:text-white/80'}`}>
 
                         {item.icon}
                       </span>
@@ -697,13 +698,13 @@ export function AdminDashboard() {
                         {item.label}
                       </span>
                       {item.badge &&
-                    <span className="bg-terracotta text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full shrink-0">
+                        <span className="bg-terracotta text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full shrink-0">
                           {item.badge}
                         </span>
-                    }
+                      }
                     </button>);
 
-              })}
+                })}
               </div>
             </nav>
 
@@ -722,8 +723,8 @@ export function AdminDashboard() {
                   </p>
                 </div>
                 <Link
-                to="/login"
-                className="text-white/40 hover:text-white transition-colors">
+                  to="/login"
+                  className="text-white/40 hover:text-white transition-colors">
 
                   <LogOutIcon className="w-4 h-4" />
                 </Link>
@@ -769,7 +770,7 @@ export function AdminDashboard() {
           <button className="relative p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
             <BellIcon className="w-5 h-5" />
             {notifCount > 0 &&
-            <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-terracotta rounded-full" />
+              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-terracotta rounded-full" />
             }
           </button>
 

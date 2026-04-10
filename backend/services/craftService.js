@@ -90,9 +90,9 @@ export async function deleteCraft(craftId, artistId) {
 
 export async function getAllCrafts(filters = {}, sort = { createdAt: -1 }, page = 1, limit = 20) {
   const query = { isAvailable: true, ...filters };
-  
+
   const skip = (page - 1) * limit;
-  
+
   const [crafts, total] = await Promise.all([
     Craft.find(query)
       .populate('artistId', 'fullName craftType location profilePicUrl')
@@ -126,7 +126,7 @@ export async function searchCrafts(query, page = 1, limit = 20) {
     ],
     isAvailable: true
   };
-  
+
   return await getAllCrafts(searchQuery, { createdAt: -1 }, page, limit);
 }
 

@@ -1,10 +1,10 @@
 import express from 'express';
 import { verifyToken } from '../services/artistService.js';
-import { 
-  createCraft, 
-  getCraftsByArtist, 
-  getCraftById, 
-  updateCraft, 
+import {
+  createCraft,
+  getCraftsByArtist,
+  getCraftById,
+  updateCraft,
   deleteCraft,
   getAllCrafts,
   getCraftsByCategory,
@@ -20,7 +20,7 @@ const authenticate = async (req, res, next) => {
   if (!authHeader.startsWith('Bearer ')) {
     return res.status(401).json({ error: 'Firebase ID token required.' });
   }
-  
+
   const idToken = authHeader.split('Bearer ')[1];
   try {
     const decoded = await verifyToken(idToken);
@@ -37,11 +37,11 @@ router.post('/crafts', authenticate, async (req, res) => {
     if (!artist) {
       return res.status(404).json({ error: 'Artist profile not found.' });
     }
-    
+
     const craft = await createCraft(artist._id, req.body);
-    res.status(201).json({ 
+    res.status(201).json({
       message: 'Craft created successfully.',
-      craft 
+      craft
     });
   } catch (err) {
     res.status(err.status || 500).json({ error: err.message });
@@ -54,7 +54,7 @@ router.get('/crafts/my', authenticate, async (req, res) => {
     if (!artist) {
       return res.status(404).json({ error: 'Artist profile not found.' });
     }
-    
+
     const crafts = await getCraftsByArtist(artist._id);
     res.json({ crafts });
   } catch (err) {
@@ -68,11 +68,11 @@ router.patch('/crafts/:id', authenticate, async (req, res) => {
     if (!artist) {
       return res.status(404).json({ error: 'Artist profile not found.' });
     }
-    
+
     const craft = await updateCraft(req.params.id, artist._id, req.body);
-    res.json({ 
+    res.json({
       message: 'Craft updated successfully.',
-      craft 
+      craft
     });
   } catch (err) {
     res.status(err.status || 500).json({ error: err.message });
@@ -85,7 +85,7 @@ router.delete('/crafts/:id', authenticate, async (req, res) => {
     if (!artist) {
       return res.status(404).json({ error: 'Artist profile not found.' });
     }
-    
+
     await deleteCraft(req.params.id, artist._id);
     res.json({ message: 'Craft deleted successfully.' });
   } catch (err) {
@@ -96,7 +96,7 @@ router.delete('/crafts/:id', authenticate, async (req, res) => {
 router.get('/public/crafts', async (req, res) => {
   try {
     const { page = 1, limit = 20, category, search } = req.query;
-    
+
     let result;
     if (search) {
       result = await searchCrafts(search, parseInt(page), parseInt(limit));
@@ -105,7 +105,7 @@ router.get('/public/crafts', async (req, res) => {
     } else {
       result = await getAllCrafts({}, { createdAt: -1 }, parseInt(page), parseInt(limit));
     }
-    
+
     res.json(result);
   } catch (err) {
     res.status(err.status || 500).json({ error: err.message });

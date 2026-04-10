@@ -246,136 +246,136 @@ export function UnifiedLogin() {
                     </motion.button>
                   </div>
                 ) : (
-                <form onSubmit={handleSubmit} className="space-y-4">
-                  {error &&
-                    <div className="bg-red-50 text-red-600 px-4 py-3 rounded-xl text-sm text-center border border-red-100">
-                      {error}
+                  <form onSubmit={handleSubmit} className="space-y-4">
+                    {error &&
+                      <div className="bg-red-50 text-red-600 px-4 py-3 rounded-xl text-sm text-center border border-red-100">
+                        {error}
+                      </div>
+                    }
+
+                    {/* Email */}
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                        Email Address
+                      </label>
+                      <div className="relative">
+                        <MailIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                        <input
+                          type="email"
+                          required
+                          value={email}
+                          onChange={(e) => setEmail(e.target.value)}
+                          placeholder="you@example.com"
+                          className="w-full pl-12 pr-4 py-3 rounded-xl border border-gray-200 outline-none text-sm transition-shadow"
+                          style={
+                            {
+                              '--tw-ring-color': config.color
+                            } as React.CSSProperties
+                          }
+                          onFocus={(e) => {
+                            e.currentTarget.style.borderColor = config.color;
+                            e.currentTarget.style.boxShadow = `0 0 0 3px ${config.color}22`;
+                          }}
+                          onBlur={(e) => {
+                            e.currentTarget.style.borderColor = '#E5E7EB';
+                            e.currentTarget.style.boxShadow = 'none';
+                          }} />
+
+                      </div>
                     </div>
-                  }
 
-                  {/* Email */}
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-                      Email Address
-                    </label>
-                    <div className="relative">
-                      <MailIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                      <input
-                        type="email"
-                        required
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        placeholder="you@example.com"
-                        className="w-full pl-12 pr-4 py-3 rounded-xl border border-gray-200 outline-none text-sm transition-shadow"
-                        style={
-                          {
-                            '--tw-ring-color': config.color
-                          } as React.CSSProperties
-                        }
-                        onFocus={(e) => {
-                          e.currentTarget.style.borderColor = config.color;
-                          e.currentTarget.style.boxShadow = `0 0 0 3px ${config.color}22`;
-                        }}
-                        onBlur={(e) => {
-                          e.currentTarget.style.borderColor = '#E5E7EB';
-                          e.currentTarget.style.boxShadow = 'none';
-                        }} />
+                    {/* Password */}
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                        Password
+                      </label>
+                      <div className="relative">
+                        <LockIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                        <input
+                          type={showPassword ? 'text' : 'password'}
+                          required
+                          value={password}
+                          onChange={(e) => setPassword(e.target.value)}
+                          placeholder="••••••••"
+                          className="w-full pl-12 pr-12 py-3 rounded-xl border border-gray-200 outline-none text-sm transition-shadow"
+                          onFocus={(e) => {
+                            e.currentTarget.style.borderColor = config.color;
+                            e.currentTarget.style.boxShadow = `0 0 0 3px ${config.color}22`;
+                          }}
+                          onBlur={(e) => {
+                            e.currentTarget.style.borderColor = '#E5E7EB';
+                            e.currentTarget.style.boxShadow = 'none';
+                          }} />
 
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword(!showPassword)}
+                          className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors">
+
+                          {showPassword ?
+                            <EyeOffIcon className="w-5 h-5" /> :
+
+                            <EyeIcon className="w-5 h-5" />
+                          }
+                        </button>
+                      </div>
                     </div>
-                  </div>
 
-                  {/* Password */}
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-                      Password
-                    </label>
-                    <div className="relative">
-                      <LockIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                      <input
-                        type={showPassword ? 'text' : 'password'}
-                        required
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        placeholder="••••••••"
-                        className="w-full pl-12 pr-12 py-3 rounded-xl border border-gray-200 outline-none text-sm transition-shadow"
-                        onFocus={(e) => {
-                          e.currentTarget.style.borderColor = config.color;
-                          e.currentTarget.style.boxShadow = `0 0 0 3px ${config.color}22`;
-                        }}
-                        onBlur={(e) => {
-                          e.currentTarget.style.borderColor = '#E5E7EB';
-                          e.currentTarget.style.boxShadow = 'none';
-                        }} />
+                    <div className="flex justify-end">
+                      <a
+                        href="#"
+                        className="text-xs font-semibold hover:underline"
+                        style={{
+                          color: config.color
+                        }}>
 
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors">
-
-                        {showPassword ?
-                          <EyeOffIcon className="w-5 h-5" /> :
-
-                          <EyeIcon className="w-5 h-5" />
-                        }
-                      </button>
+                        Forgot Password?
+                      </a>
                     </div>
-                  </div>
 
-                  <div className="flex justify-end">
-                    <a
-                      href="#"
-                      className="text-xs font-semibold hover:underline"
+                    {/* Submit */}
+                    <motion.button
+                      type="submit"
+                      disabled={isLoading}
+                      whileHover={{
+                        scale: 1.01
+                      }}
+                      whileTap={{
+                        scale: 0.98
+                      }}
+                      className="w-full py-3.5 rounded-xl text-white font-bold text-sm transition-all disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                       style={{
-                        color: config.color
+                        backgroundColor: config.color
                       }}>
 
-                      Forgot Password?
-                    </a>
-                  </div>
+                      {isLoading ?
+                        <>
+                          <svg
+                            className="animate-spin w-4 h-4"
+                            viewBox="0 0 24 24"
+                            fill="none">
 
-                  {/* Submit */}
-                  <motion.button
-                    type="submit"
-                    disabled={isLoading}
-                    whileHover={{
-                      scale: 1.01
-                    }}
-                    whileTap={{
-                      scale: 0.98
-                    }}
-                    className="w-full py-3.5 rounded-xl text-white font-bold text-sm transition-all disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                    style={{
-                      backgroundColor: config.color
-                    }}>
+                            <circle
+                              className="opacity-25"
+                              cx="12"
+                              cy="12"
+                              r="10"
+                              stroke="currentColor"
+                              strokeWidth="4" />
 
-                    {isLoading ?
-                      <>
-                        <svg
-                          className="animate-spin w-4 h-4"
-                          viewBox="0 0 24 24"
-                          fill="none">
+                            <path
+                              className="opacity-75"
+                              fill="currentColor"
+                              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
 
-                          <circle
-                            className="opacity-25"
-                            cx="12"
-                            cy="12"
-                            r="10"
-                            stroke="currentColor"
-                            strokeWidth="4" />
+                          </svg>
+                          Signing in...
+                        </> :
 
-                          <path
-                            className="opacity-75"
-                            fill="currentColor"
-                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-
-                        </svg>
-                        Signing in...
-                      </> :
-
-                      `Sign in as ${config.label}`
-                    }
-                  </motion.button>
-                </form>
+                        `Sign in as ${config.label}`
+                      }
+                    </motion.button>
+                  </form>
                 )}
 
                 {selectedRole !== 'tourist' && (
