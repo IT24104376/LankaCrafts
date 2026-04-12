@@ -1,9 +1,22 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { TouristNavbar } from './TouristNavbar';
+import { BatikBackground } from '../../components/BatikBackground';
+import { motion } from 'framer-motion';
 import { useNavigate, useParams } from 'react-router-dom';
 import { getMyBlogs, updateBlog } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
-import { UploadCloudIcon, AlertCircleIcon, Trash2Icon } from 'lucide-react';
+import { UploadCloudIcon, AlertCircleIcon, Trash2Icon, XIcon } from 'lucide-react';
+import { TRENDING_TAGS } from '../../constants/touristConstants';
+
+const TOTAL_LIMIT = 40 * 1024 * 1024; // 40 MB — matches backend
+
+interface MediaItem {
+  _id?: string;
+  url: string;
+  publicId: string;
+  mediaType: 'image' | 'video';
+  order: number;
+}
 
 export function TouristBlogEdit() {
   const { id } = useParams();
@@ -22,8 +35,12 @@ export function TouristBlogEdit() {
     status: 'published'
   });
 
-  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
-  const [currentMediaUrl, setCurrentMediaUrl] = useState('');
+  const [selectedHashtags, setSelectedHashtags] = useState<string[]>([]);
+
+  const [newFiles, setNewFiles] = useState<File[]>([]);        // newly staged uploads
+  const [existingMedia, setExistingMedia] = useState<MediaItem[]>([]); // current saved media
+  const [removeIds, setRemoveIds] = useState<string[]>([]);    // publicIds to delete on save
+  const [uploadError, setUploadError] = useState('');
 
   // Fetch initial blog data
   useEffect(() => {
@@ -42,7 +59,12 @@ export function TouristBlogEdit() {
             content: myBlog.content,
             status: myBlog.status
           });
-          setCurrentMediaUrl(myBlog.mediaUrl);
+          setSelectedHashtags(myBlog.hashtags || []);
+          if (myBlog.media && myBlog.media.length > 0) {
+            setExistingMedia([...myBlog.media].sort((a: MediaItem, b: MediaItem) => a.order - b.order));
+          } else if (myBlog.mediaUrl) {
+            setExistingMedia([{ url: myBlog.mediaUrl, publicId: myBlog.mediaPublicId || '', mediaType: myBlog.mediaType || 'image', order: 0 }]);
+          }
         } else {
           setError('Blog not found.');
         }
@@ -58,10 +80,25 @@ export function TouristBlogEdit() {
   }, [id, tourist]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file && file.size <= 30 * 1024 * 1024) {
-      setUploadedFile(file);
+    const selected = Array.from(e.target.files ?? []);
+    if (!selected.length) return;
+    const next = [...newFiles, ...selected];
+    const totalSize = next.reduce((s, f) => s + f.size, 0);
+    if (totalSize > TOTAL_LIMIT) {
+      setUploadError(`Total size exceeds 40 MB. Current: ${(totalSize / 1024 / 1024).toFixed(1)} MB.`);
+      return;
     }
+    setUploadError('');
+    setNewFiles(next);
+    e.target.value = '';
+  };
+
+  const removeNewFile = (idx: number) => setNewFiles((p) => p.filter((_, i) => i !== idx));
+
+  const toggleRemoveExisting = (publicId: string) => {
+    setRemoveIds((prev) =>
+      prev.includes(publicId) ? prev.filter((id) => id !== publicId) : [...prev, publicId]
+    );
   };
 
   const handlePublish = async (newStatus?: string) => {
@@ -75,12 +112,10 @@ export function TouristBlogEdit() {
       fd.append('title', formData.title.trim());
       fd.append('content', formData.content.trim());
       fd.append('workshopTag', formData.workshop);
-      if (newStatus) {
-        fd.append('status', newStatus);
-      } else {
-        fd.append('status', formData.status);
-      }
-      if (uploadedFile) fd.append('media', uploadedFile);
+      fd.append('status', newStatus || formData.status);
+      fd.append('hashtags', JSON.stringify(selectedHashtags));
+      newFiles.forEach((f) => fd.append('media', f));
+      if (removeIds.length > 0) fd.append('removeMediaIds', removeIds.join(','));
 
       await updateBlog(id!, fd);
       navigate('/tourist/profile');
@@ -104,10 +139,9 @@ export function TouristBlogEdit() {
     }
   };
 
-  if (loading) return <div className="min-h-screen bg-[#FAF6F0] pt-20 text-center">Loading...</div>;
-
   return (
-    <div className="min-h-screen font-body" style={{ backgroundColor: '#FAF6F0' }}>
+    <div className="min-h-screen font-body relative">
+      <BatikBackground />
       <TouristNavbar activeTab="profile" />
 
       <div className="pt-20 pb-12">
@@ -138,7 +172,47 @@ export function TouristBlogEdit() {
                   <option>Wood Carving — Ambalangoda</option>
                   <option>Weaving — Jaffna</option>
                   <option>Lacquer Work — Kandy</option>
+                  <option>Drumming — Kandy</option>
+                  <option>Cooking — Colombo</option>
                 </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-[#1E1E1E] mb-1.5 font-body">
+                  Hashtags
+                  <span className="text-gray-400 font-normal ml-1">(tap to select)</span>
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  {TRENDING_TAGS.map((tag) => {
+                    const active = selectedHashtags.includes(tag);
+                    return (
+                      <button
+                        key={tag}
+                        type="button"
+                        onClick={() =>
+                          setSelectedHashtags((prev) =>
+                            active ? prev.filter((t) => t !== tag) : [...prev, tag]
+                          )
+                        }
+                        className="px-3 py-1.5 rounded-full text-xs font-medium font-body border transition-all duration-150"
+                        style={{
+                          backgroundColor: active ? '#C1440E' : '#FAF6F0',
+                          color: active ? 'white' : '#1E1E1E',
+                          borderColor: active ? '#C1440E' : '#E5E7EB',
+                          fontWeight: active ? 700 : 500,
+                          boxShadow: active ? '0 2px 8px rgba(193,68,14,0.25)' : 'none',
+                        }}
+                      >
+                        {tag}
+                      </button>
+                    );
+                  })}
+                </div>
+                {selectedHashtags.length > 0 && (
+                  <p className="text-xs text-gray-400 font-body mt-2">
+                    Selected: {selectedHashtags.join(' ')}
+                  </p>
+                )}
               </div>
 
               <div>
@@ -148,29 +222,83 @@ export function TouristBlogEdit() {
 
               <div>
                 <label className="block text-sm font-semibold text-[#1E1E1E] mb-1.5">Media</label>
-                {currentMediaUrl && !uploadedFile && (
-                  <div className="mb-3 relative w-48 h-32 rounded-lg overflow-hidden border">
-                    <img src={currentMediaUrl} alt="Current media" className="w-full h-full object-cover" />
+
+                {/* Existing media thumbnails */}
+                {existingMedia.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mb-3">
+                    {existingMedia.map((m) => {
+                      const markedForRemoval = removeIds.includes(m.publicId);
+                      return (
+                        <div key={m._id || m.publicId} className={`relative w-24 h-24 rounded-lg overflow-hidden border-2 transition-all ${markedForRemoval ? 'border-red-400 opacity-50' : 'border-gray-200'
+                          }`}>
+                          {m.mediaType === 'video' ? (
+                            <video src={m.url} className="w-full h-full object-cover" muted playsInline />
+                          ) : (
+                            <img src={m.url} alt="media" className="w-full h-full object-cover" />
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => toggleRemoveExisting(m.publicId)}
+                            title={markedForRemoval ? 'Undo remove' : 'Remove this media'}
+                            className={`absolute top-1 right-1 w-6 h-6 rounded-full flex items-center justify-center text-white transition-colors ${markedForRemoval ? 'bg-green-500 hover:bg-green-600' : 'bg-red-500 hover:bg-red-600'
+                              }`}>
+                            <XIcon className="w-3 h-3" />
+                          </button>
+                          {markedForRemoval && (
+                            <div className="absolute inset-0 flex items-center justify-center">
+                              <span className="text-xs text-red-600 font-bold bg-white/80 px-1 rounded">Remove</span>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
-                <label className="border-2 border-dashed rounded-xl p-6 flex flex-col items-center justify-center gap-2 cursor-pointer transition-colors border-gray-200 hover:border-[#C1440E]/40">
-                  <input type="file" accept="image/*,video/*" className="hidden" onChange={handleFileChange} />
-                  <UploadCloudIcon className={`w-8 h-8 ${uploadedFile ? 'text-[#1A6B6B]' : 'text-gray-300'}`} />
-                  {uploadedFile ? (
-                    <p className="text-sm font-semibold text-[#1A6B6B]">New file: {uploadedFile.name}</p>
+
+                {/* New file previews */}
+                {newFiles.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mb-3">
+                    {newFiles.map((f, i) => (
+                      <div key={i} className="relative group w-24 h-24 rounded-lg overflow-hidden border-2 border-[#1A6B6B] bg-gray-50">
+                        {f.type.startsWith('video/') ? (
+                          <video src={URL.createObjectURL(f)} className="w-full h-full object-cover" muted playsInline />
+                        ) : (
+                          <img src={URL.createObjectURL(f)} alt={f.name} className="w-full h-full object-cover" />
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => removeNewFile(i)}
+                          className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg">
+                          <XIcon className="w-4 h-4 text-white" />
+                        </button>
+                        <span className="absolute bottom-0 left-0 right-0 text-center text-[10px] text-white bg-[#1A6B6B]/80 py-0.5">New</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <label className="border-2 border-dashed rounded-xl p-5 flex flex-col items-center justify-center gap-2 cursor-pointer transition-colors border-gray-200 hover:border-[#C1440E]/40">
+                  <input type="file" multiple accept="image/*,video/*" className="hidden" onChange={handleFileChange} />
+                  <UploadCloudIcon className={`w-7 h-7 ${newFiles.length > 0 ? 'text-[#1A6B6B]' : 'text-gray-300'}`} />
+                  {newFiles.length > 0 ? (
+                    <p className="text-sm font-semibold text-[#1A6B6B]">
+                      {newFiles.length} new file{newFiles.length !== 1 ? 's' : ''} staged — {(newFiles.reduce((s, f) => s + f.size, 0) / 1024 / 1024).toFixed(1)} MB
+                      <span className="font-normal text-gray-400 ml-1">(click to add more)</span>
+                    </p>
                   ) : (
-                    <p className="text-sm text-gray-400">Click to upload new media (replaces old)</p>
+                    <p className="text-sm text-gray-400">Click to add media <span className="text-gray-300 text-xs">(40 MB total, up to 10 files)</span></p>
                   )}
                 </label>
+                {uploadError && <p className="text-xs text-red-500 mt-1.5">{uploadError}</p>}
               </div>
 
-              <div className="pt-6 border-t flex flex-col sm:flex-row gap-4 justify-between items-center">
+              <div className="pt-6 border-t flex flex-col sm:flex-row gap-4 justify-between items-center relative z-10">
                 <div className="flex gap-3 w-full sm:w-auto">
-                  <button onClick={() => navigate('/tourist/profile')} disabled={submitting || deleting} className="px-6 py-3 rounded-xl border bg-white font-semibold text-gray-600 hover:bg-gray-50">Cancel</button>
-                  <button type="button" onClick={() => handlePublish('draft')} disabled={submitting || deleting} className="px-6 py-3 rounded-xl border font-semibold text-[#1A6B6B] border-[#1A6B6B] hover:bg-[#1A6B6B] hover:text-white transition-colors">Save as Draft</button>
-                  <button type="button" onClick={() => handlePublish('published')} disabled={submitting || deleting} className="px-8 py-3 rounded-xl bg-[#C1440E] text-white font-semibold hover:bg-[#A33A0C] transition-colors">
+                  <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={() => navigate('/tourist/profile')} disabled={submitting || deleting} className="px-6 py-3 rounded-xl border bg-white font-semibold text-gray-600 hover:bg-gray-50 flex-1 sm:flex-none shadow-sm transition-all">Cancel</motion.button>
+                  <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} type="button" onClick={() => handlePublish('draft')} disabled={submitting || deleting} className="px-6 py-3 rounded-xl border font-semibold text-[#1A6B6B] border-[#1A6B6B] hover:bg-[#E8F4F4] hover:border-[#1A6B6B] transition-all flex-1 sm:flex-none">Save as Draft</motion.button>
+                  <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} type="button" onClick={() => handlePublish('published')} disabled={submitting || deleting} className="px-8 py-3 rounded-xl bg-[#C1440E] text-white font-semibold hover:bg-[#A33A0C] shadow-lg shadow-[#C1440E]/20 transition-all flex-1 sm:flex-none">
                     {submitting ? 'Saving...' : 'Publish'}
-                  </button>
+                  </motion.button>
                 </div>
 
                 <button onClick={handleDelete} disabled={submitting || deleting} className="flex items-center gap-2 text-red-500 font-semibold px-4 py-2 hover:bg-red-50 rounded-lg transition-colors w-full sm:w-auto justify-center">

@@ -17,13 +17,26 @@ function uploadToCloudinary(buffer, folder, resourceType = 'auto') {
   });
 }
 
+// NEW (minimal helper for cleanup)
+async function deleteFromCloudinary(publicIds = []) {
+  for (const id of publicIds) {
+    try {
+      await cloudinary.uploader.destroy(id);
+    } catch (err) {
+      console.error('Cloudinary delete failed:', id);
+    }
+  }
+}
+
+const MAX_MEDIA_COUNT = 10;
+
 // ─── Service functions ────────────────────────────────────────────────────────
 
 /**
  * Return a paginated, sorted list of published blogs.
  * sort: 'recent' | 'liked' | 'workshop'
  */
-export async function listBlogs(page, limit, sort) {
+export async function listBlogs(page, limit, sort, tag) {
   page = Math.max(1, parseInt(page) || 1);
   limit = Math.min(50, parseInt(limit) || 12);
 
@@ -31,11 +44,17 @@ export async function listBlogs(page, limit, sort) {
   if (sort === 'liked') sortObj = { likeCount: -1, createdAt: -1 };
   if (sort === 'workshop') sortObj = { workshopTag: 1, createdAt: -1 };
 
+  // Base match: always published, optionally filtered by hashtag
+  const baseMatch = { status: 'published' };
+  if (sort === 'hashtag' && tag) {
+    baseMatch.hashtags = tag; // MongoDB: "hashtag value is in the array"
+  }
+
   let blogs, total;
 
   if (sort === 'liked') {
     const pipeline = [
-      { $match: { status: 'published' } },
+      { $match: baseMatch },
       { $addFields: { likeCount: { $size: '$likes' } } },
       { $sort: { likeCount: -1, createdAt: -1 } },
       { $skip: (page - 1) * limit },
@@ -62,10 +81,10 @@ export async function listBlogs(page, limit, sort) {
       { $project: { authorData: 0 } },
     ];
     blogs = await Blog.aggregate(pipeline);
-    total = await Blog.countDocuments({ status: 'published' });
+    total = await Blog.countDocuments(baseMatch);
   } else {
-    total = await Blog.countDocuments({ status: 'published' });
-    blogs = await Blog.find({ status: 'published' })
+    total = await Blog.countDocuments(baseMatch);
+    blogs = await Blog.find(baseMatch)
       .sort(sortObj)
       .skip((page - 1) * limit)
       .limit(limit)
@@ -84,6 +103,14 @@ export async function listBlogs(page, limit, sort) {
 }
 
 /**
+ * Return the published blog belonging to a specific id.
+ */
+export async function getBlog(blogId) {
+  return Blog.findOne({ _id: blogId, status: 'published' })
+    .populate('author', 'fullName country initials profilePicUrl');
+}
+
+/**
  * Return all published + draft blogs belonging to a specific tourist.
  */
 export async function listMyBlogs(touristId) {
@@ -94,10 +121,20 @@ export async function listMyBlogs(touristId) {
 }
 
 /**
- * Create a new blog, optionally uploading media to Cloudinary.
+ * Create a new blog, optionally uploading multiple media files to Cloudinary.
+ * Accepts an array of files from multer (.array('media', 10)).
  */
-export async function createBlog(touristId, body, file) {
+export async function createBlog(touristId, body, files) {
   const { title, content, workshopTag, status } = body;
+
+  let extractedHashtags = [];
+  if (body.hashtags) {
+    try {
+      extractedHashtags = JSON.parse(body.hashtags);
+    } catch (e) {
+      extractedHashtags = Array.isArray(body.hashtags) ? body.hashtags : [body.hashtags];
+    }
+  }
 
   if (!title || !content) {
     const e = new Error('title and content are required.');
@@ -105,42 +142,67 @@ export async function createBlog(touristId, body, file) {
     throw e;
   }
 
-  let mediaUrl = '';
-  let mediaPublicId = '';
-  let mediaType = '';
-
-  if (file) {
-    const isVideo = file.mimetype.startsWith('video/');
-    const result = await uploadToCloudinary(
-      file.buffer,
-      'lankacrafts/blogs',
-      isVideo ? 'video' : 'image'
-    );
-    mediaUrl = result.secure_url;
-    mediaPublicId = result.public_id;
-    mediaType = isVideo ? 'video' : 'image';
+  // VALIDATE COUNT BEFORE UPLOAD
+  if (files && files.length > MAX_MEDIA_COUNT) {
+    const e = new Error(`Maximum ${MAX_MEDIA_COUNT} media files allowed.`);
+    e.status = 400;
+    throw e;
   }
 
-  const blog = await Blog.create({
-    title,
-    content,
-    workshopTag: workshopTag || '',
-    mediaUrl,
-    mediaPublicId,
-    mediaType,
-    author: touristId,
-    status: status === 'draft' ? 'draft' : 'published',
-  });
+  const mediaItems = [];
+  const uploadedPublicIds = [];
 
-  const populated = await blog.populate('author', 'fullName country initials profilePicUrl');
-  return populated;
+  try {
+    if (files && files.length > 0) {
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const isVideo = file.mimetype.startsWith('video/');
+        const result = await uploadToCloudinary(
+          file.buffer,
+          'lankacrafts/blogs',
+          isVideo ? 'video' : 'image'
+        );
+
+        uploadedPublicIds.push(result.public_id);
+
+        mediaItems.push({
+          url: result.secure_url,
+          publicId: result.public_id,
+          mediaType: isVideo ? 'video' : 'image',
+          order: i,
+        });
+      }
+    }
+
+    const blog = await Blog.create({
+      title,
+      content,
+      workshopTag: workshopTag || '',
+      media: mediaItems,
+      hashtags: extractedHashtags,
+      author: touristId,
+      status: status === 'draft' ? 'draft' : 'published',
+    });
+
+    const populated = await blog.populate('author', 'fullName country initials profilePicUrl');
+    return populated;
+
+  } catch (err) {
+    // rollback uploaded files if something fails
+    await deleteFromCloudinary(uploadedPublicIds);
+    throw err;
+  }
 }
 
 /**
  * Update an existing blog owned by the tourist.
  * Throws 404 if not found, 403 if not the owner.
+ *
+ * New files are APPENDED to media[].
+ * Pass a comma-separated list of Cloudinary publicIds in body.removeMediaIds
+ * to remove specific existing media items.
  */
-export async function updateBlog(blogId, touristId, body, file) {
+export async function updateBlog(blogId, touristId, body, files) {
   const blog = await Blog.findById(blogId);
   if (!blog) {
     const e = new Error('Blog not found.');
@@ -153,29 +215,86 @@ export async function updateBlog(blogId, touristId, body, file) {
     throw e;
   }
 
-  const { title, content, workshopTag, status } = body;
+  const { title, content, workshopTag, status, removeMediaIds } = body;
 
-  if (file) {
-    const isVideo = file.mimetype.startsWith('video/');
-    const result = await uploadToCloudinary(
-      file.buffer,
-      'lankacrafts/blogs',
-      isVideo ? 'video' : 'image'
-    );
-    blog.mediaUrl = result.secure_url;
-    blog.mediaPublicId = result.public_id;
-    blog.mediaType = isVideo ? 'video' : 'image';
+  let extractedHashtags;
+  if (body.hashtags !== undefined) {
+    try {
+      extractedHashtags = JSON.parse(body.hashtags);
+    } catch (e) {
+      extractedHashtags = Array.isArray(body.hashtags) ? body.hashtags : [body.hashtags];
+    }
   }
 
-  if (title) blog.title = title;
-  if (content) blog.content = content;
-  if (workshopTag !== undefined) blog.workshopTag = workshopTag;
-  if (status) blog.status = status;
+  // — Remove requested media items —
+  let removedIds = [];
+  if (removeMediaIds) {
+    const idsToRemove = removeMediaIds.split(',').map((s) => s.trim()).filter(Boolean);
 
-  await blog.save();
+    removedIds = blog.media
+      .filter((m) => idsToRemove.includes(m.publicId))
+      .map((m) => m.publicId);
 
-  const populated = await blog.populate('author', 'fullName country initials profilePicUrl');
-  return populated;
+    blog.media = blog.media.filter((m) => !idsToRemove.includes(m.publicId));
+  }
+
+  // VALIDATE COUNT BEFORE UPLOAD
+  const existingCount = blog.media.length;
+  const newCount = files?.length || 0;
+
+  if (existingCount + newCount > MAX_MEDIA_COUNT) {
+    const e = new Error(`Maximum ${MAX_MEDIA_COUNT} media files allowed per blog.`);
+    e.status = 400;
+    throw e;
+  }
+
+  const uploadedPublicIds = [];
+
+  try {
+    // — Upload and append new files —
+    if (files && files.length > 0) {
+      const startOrder = blog.media.length;
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const isVideo = file.mimetype.startsWith('video/');
+        const result = await uploadToCloudinary(
+          file.buffer,
+          'lankacrafts/blogs',
+          isVideo ? 'video' : 'image'
+        );
+
+        uploadedPublicIds.push(result.public_id);
+
+        blog.media.push({
+          url: result.secure_url,
+          publicId: result.public_id,
+          mediaType: isVideo ? 'video' : 'image',
+          order: startOrder + i,
+        });
+      }
+    }
+
+    if (title) blog.title = title;
+    if (content) blog.content = content;
+    if (extractedHashtags !== undefined) blog.hashtags = extractedHashtags;
+    if (workshopTag !== undefined) blog.workshopTag = workshopTag;
+    if (status) blog.status = status;
+
+    await blog.save();
+
+    // delete removed media AFTER success
+    if (removedIds.length > 0) {
+      await deleteFromCloudinary(removedIds);
+    }
+
+    const populated = await blog.populate('author', 'fullName country initials profilePicUrl');
+    return populated;
+
+  } catch (err) {
+    // rollback new uploads if error
+    await deleteFromCloudinary(uploadedPublicIds);
+    throw err;
+  }
 }
 
 /**

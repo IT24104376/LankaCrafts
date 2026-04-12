@@ -31,9 +31,40 @@ interface TouristProfile {
   profilePicUrl?: string;
 }
 
+interface ArtistProfile {
+  id: string;
+  fullName: string;
+  callingName: string;
+  email: string;
+  phone?: string;
+  craftType: string;
+  bio: string;
+  address?: {
+    number?: string;
+    street?: string;
+    village?: string;
+    city?: string;
+    district?: string;
+    province?: string;
+    postalCode?: string;
+  };
+  location?: {
+    type: string;
+    coordinates: number[];
+    formattedAddress: string;
+  };
+  specialties: string[];
+  availability: Record<string, { morning: boolean; afternoon: boolean; evening: boolean }>;
+  rating: number;
+  reviewCount: number;
+  initials: string;
+  profilePicUrl?: string;
+}
+
 interface AuthContextType {
   firebaseUser: User | null;
   tourist: TouristProfile | null;
+  artist: ArtistProfile | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
   register: (
@@ -43,6 +74,14 @@ interface AuthContextType {
   ) => Promise<void>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
+  loginArtist: (email: string, password: string) => Promise<void>;
+  registerArtist: (
+    email: string,
+    password: string,
+    profileData: object
+  ) => Promise<void>;
+  logoutArtist: () => Promise<void>;
+  refreshArtist: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -50,20 +89,18 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [firebaseUser, setFirebaseUser] = useState<User | null>(null);
   const [tourist, setTourist] = useState<TouristProfile | null>(null);
+  const [artist, setArtist] = useState<ArtistProfile | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Listen for Firebase auth state changes
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setFirebaseUser(user);
 
       if (user) {
-        // Try to load profile from backend on page reload
         try {
           const res = await loginTourist();
           setTourist(res.data.tourist);
         } catch {
-          // Profile may not exist yet (during registration)
           setTourist(null);
         }
       } else {
@@ -78,7 +115,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = async (email: string, password: string) => {
     await signInWithEmailAndPassword(auth, email, password);
-    // onAuthStateChanged will fire and load the profile automatically
   };
 
   const register = async (
@@ -86,18 +122,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     password: string,
     profileData: object
   ) => {
-    // 1. Create Firebase user
     const userCredential = await createUserWithEmailAndPassword(
       auth,
       email,
       password
     );
-
-    // 2. Create MongoDB profile (token is auto-attached by api.ts interceptor)
     const res = await registerTourist({ email, ...profileData });
     setTourist(res.data.tourist);
-
-    // Silence unused variable warning
     void userCredential;
   };
 
@@ -116,9 +147,59 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const loginArtist = async (email: string, password: string) => {
+    await signInWithEmailAndPassword(auth, email, password);
+  };
+
+  const registerArtist = async (
+    email: string,
+    password: string,
+    profileData: object
+  ) => {
+    const userCredential = await createUserWithEmailAndPassword(
+      auth,
+      email,
+      password
+    );
+    void userCredential;
+  };
+
+  const logoutArtist = async () => {
+    await signOut(auth);
+    setArtist(null);
+    setFirebaseUser(null);
+  };
+
+  const refreshArtist = async () => {
+    try {
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/artist/profile`, {
+        headers: {
+          'Authorization': `Bearer ${await auth.currentUser?.getIdToken()}`
+        }
+      });
+      const data = await res.json();
+      setArtist(data.artist);
+    } catch (err) {
+      console.error('Failed to refresh artist profile:', err);
+    }
+  };
+
   return (
     <AuthContext.Provider
-      value={{ firebaseUser, tourist, loading, login, register, logout, refreshUser }}
+      value={{
+        firebaseUser,
+        tourist,
+        artist,
+        loading,
+        login,
+        register,
+        logout,
+        refreshUser,
+        loginArtist,
+        registerArtist,
+        logoutArtist,
+        refreshArtist
+      }}
     >
       {children}
     </AuthContext.Provider>

@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     ShoppingCartIcon,
@@ -17,14 +17,19 @@ import {
 import { Navbar } from '../components/Navbar';
 import { Footer } from '../components/Footer';
 import { Link } from 'react-router-dom';
+import { getCrafts } from '../services/api';
 
 // ── Types ──────────────────────────────────────────────────────
 interface Product {
-    id: number;
+    id: string;
+    _id: string;
     name: string;
-    artisan: string;
-    artisanId: number;
-    region: string;
+    artisan?: {
+        fullName: string;
+        _id: string;
+    };
+    artisanId?: string;
+    region?: string;
     category: string;
     price: number;
     originalPrice?: number;
@@ -33,159 +38,13 @@ interface Product {
     image: string;
     badge?: string;
     description: string;
-    materials: string[];
+    materials?: string[];
     stock: number;
 }
 
 // ── Product Data ───────────────────────────────────────────────
-const PRODUCTS: Product[] = [
-    {
-        id: 1,
-        name: 'Kandyan Lacquer Vase',
-        artisan: 'Nimal Perera',
-        artisanId: 1,
-        region: 'Kandy',
-        category: 'Lacquerwork',
-        price: 4800,
-        originalPrice: 6200,
-        rating: 4.9,
-        reviews: 128,
-        image: 'https://images.unsplash.com/photo-1565193566173-7a0ee3dbe261?w=600&auto=format&fit=crop',
-        badge: 'Best Seller',
-        description: 'Hand-turned vase with traditional Kandyan geometric patterns applied using natural lacquer dyes.',
-        materials: ['Kaduru Wood', 'Natural Lacquer', 'Mineral Dyes'],
-        stock: 5,
-    },
-    {
-        id: 2,
-        name: 'Batik Silk Sarong',
-        artisan: 'Kamala Wijesinghe',
-        artisanId: 2,
-        region: 'Kandy',
-        category: 'Batik',
-        price: 3200,
-        rating: 4.8,
-        reviews: 94,
-        image: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=600&auto=format&fit=crop',
-        badge: 'Handmade',
-        description: 'Wax-resist dyed silk sarong featuring flora and fauna motifs inspired by ancient Sinhala art.',
-        materials: ['Pure Silk', 'Natural Wax', 'Resist Dyes'],
-        stock: 12,
-    },
-    {
-        id: 3,
-        name: 'Ceremonial Kolam Mask',
-        artisan: 'Suresh Fernando',
-        artisanId: 3,
-        region: 'Ambalangoda',
-        category: 'Mask Carving',
-        price: 8500,
-        originalPrice: 10000,
-        rating: 5.0,
-        reviews: 61,
-        image: 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=600&auto=format&fit=crop',
-        badge: 'Heritage Piece',
-        description: 'Traditional healing mask carved from kaduru wood and painted with natural pigments. Each mask is unique.',
-        materials: ['Kaduru Wood', 'Herbal Pigments', 'Coconut-Shell Lacquer'],
-        stock: 3,
-    },
-    {
-        id: 4,
-        name: 'Hand-Thrown Pottery Set (3pc)',
-        artisan: 'Rohan De Silva',
-        artisanId: 4,
-        region: 'Kelaniya',
-        category: 'Pottery',
-        price: 5600,
-        rating: 4.7,
-        reviews: 76,
-        image: 'https://images.unsplash.com/photo-1590736704728-f4730bb30770?w=600&auto=format&fit=crop',
-        badge: 'Eco-Friendly',
-        description: 'Set of 3 unglazed earthenware pieces thrown on an ancient kick-wheel. Perfect for table decor.',
-        materials: ['Red Clay', 'Natural Glaze', 'Kiln-fired'],
-        stock: 8,
-    },
-    {
-        id: 5,
-        name: 'Dumbara Mat (Traditional)',
-        artisan: 'Priya Bandara',
-        artisanId: 5,
-        region: 'Dumbara Valley',
-        category: 'Handloom',
-        price: 6800,
-        rating: 4.9,
-        reviews: 43,
-        image: 'https://images.unsplash.com/photo-1606722590560-4f4c1e4ea1a4?w=600&auto=format&fit=crop',
-        badge: 'GI Tagged',
-        description: 'Authentic Dumbara mat woven with highland grass using geometric patterns that encode ancestral stories.',
-        materials: ['Hana Grass', 'Natural Fibres', 'Plant-based Dyes'],
-        stock: 6,
-    },
-    {
-        id: 6,
-        name: 'Temple Brass Oil Lamp',
-        artisan: 'Anura Mendis',
-        artisanId: 6,
-        region: 'Colombo',
-        category: 'Brasswork',
-        price: 7200,
-        originalPrice: 9000,
-        rating: 4.8,
-        reviews: 88,
-        image: 'https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=600&auto=format&fit=crop',
-        badge: 'Artisan Pick',
-        description: 'Five-pronged Pahana crafted using lost-wax casting, a 2000-year-old Sri Lankan metalworking technique.',
-        materials: ['Pure Brass', 'Cast Bronze Base', 'Etched Detailing'],
-        stock: 10,
-    },
-    {
-        id: 7,
-        name: 'Lacquer Jewelry Box',
-        artisan: 'Nimal Perera',
-        artisanId: 1,
-        region: 'Kandy',
-        category: 'Lacquerwork',
-        price: 2900,
-        rating: 4.6,
-        reviews: 55,
-        image: 'https://images.unsplash.com/photo-1611269154421-4e27233ac5c7?w=600&auto=format&fit=crop',
-        description: 'Small lacquerwork box with satin interior. Ideal for storing jewellery or as a keepsake gift.',
-        materials: ['Kaduru Wood', 'Red Lacquer', 'Velvet Lining'],
-        stock: 15,
-    },
-    {
-        id: 8,
-        name: 'Batik Wall Hanging',
-        artisan: 'Kamala Wijesinghe',
-        artisanId: 2,
-        region: 'Kandy',
-        category: 'Batik',
-        price: 4100,
-        rating: 4.7,
-        reviews: 37,
-        image: 'https://images.unsplash.com/photo-1536924940846-227afb31e2a5?w=600&auto=format&fit=crop',
-        badge: 'New Arrival',
-        description: 'Large batik panel depicting the sacred Sigiriya rock fortress. Perfect statement art for any home.',
-        materials: ['Cotton Canvas', 'Reactive Dyes', 'Wooden Frame'],
-        stock: 7,
-    },
-    {
-        id: 9,
-        name: 'Brasswork Elephant Statuette',
-        artisan: 'Anura Mendis',
-        artisanId: 6,
-        region: 'Colombo',
-        category: 'Brasswork',
-        price: 3600,
-        rating: 4.9,
-        reviews: 112,
-        image: 'https://images.unsplash.com/photo-1565636291267-7e0d6064f5c9?w=600&auto=format&fit=crop',
-        badge: 'Tourist Favourite',
-        description: 'Intricately etched brass elephant, symbol of Sri Lankan culture, handcrafted by a third-generation artisan.',
-        materials: ['Pure Brass', 'Burnished Finish'],
-        stock: 20,
-    },
-];
+// Dynamic data will be fetched from API
+let PRODUCTS: Product[] = [];
 
 const CATEGORIES = ['All', 'Lacquerwork', 'Batik', 'Mask Carving', 'Pottery', 'Handloom', 'Brasswork'];
 const REGIONS = ['All', 'Kandy', 'Ambalangoda', 'Kelaniya', 'Dumbara Valley', 'Colombo'];
@@ -284,7 +143,7 @@ function ProductCard({
 
                 {/* Wishlist button */}
                 <button
-                    onClick={() => onToggleWish(product.id)}
+                    onClick={() => onToggleWish(product._id || product.id)}
                     className="absolute top-3 right-3 w-9 h-9 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center shadow-md hover:scale-110 transition-transform"
                 >
                     <HeartIcon
@@ -326,11 +185,11 @@ function ProductCard({
                 </h3>
 
                 <Link
-                    to={`/artist/${product.artisanId}`}
+                    to={`/artist/${product.artisanId || product.artisan?._id}`}
                     className="text-xs font-body mb-3 hover:underline transition-colors"
                     style={{ color: '#2F5D50' }}
                 >
-                    by {product.artisan}
+                    by {product.artisan?.fullName || product.artisan || 'Artisan'}
                 </Link>
 
                 {/* Rating */}
@@ -380,29 +239,50 @@ export function CraftShop() {
     const [activeCategory, setActiveCategory] = useState('All');
     const [activeRegion, setActiveRegion] = useState('All');
     const [sortBy, setSortBy] = useState('Featured');
-    const [wishlist, setWishlist] = useState<number[]>([]);
-    const [cart, setCart] = useState<number[]>([]);
+    const [wishlist, setWishlist] = useState<string[]>([]);
+    const [cart, setCart] = useState<string[]>([]);
     const [toastProduct, setToastProduct] = useState<string | null>(null);
+    const [products, setProducts] = useState<Product[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState('');
 
-    const toggleWish = (id: number) =>
+    useEffect(() => {
+        loadCrafts();
+    }, [activeCategory, search]);
+
+    const loadCrafts = async () => {
+        try {
+            setLoading(true);
+            const category = activeCategory !== 'All' ? activeCategory : undefined;
+            const searchTerm = search || undefined;
+            const response = await getCrafts(1, 50, category, searchTerm);
+            setProducts(response.data.crafts || []);
+        } catch (err: any) {
+            console.error('Failed to load crafts:', err);
+            setError('Failed to load crafts. Please try again.');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const toggleWish = (id: string) =>
         setWishlist((prev) => (prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]));
 
     const addToCart = (product: Product) => {
-        setCart((prev) => [...prev, product.id]);
+        setCart((prev) => [...prev, product._id || product.id]);
         setToastProduct(product.name);
         setTimeout(() => setToastProduct(null), 2500);
     };
 
     const filtered = useMemo(() => {
-        let list = [...PRODUCTS];
+        let list = [...products];
         if (search.trim()) {
             const q = search.toLowerCase();
             list = list.filter(
-                (p) => p.name.toLowerCase().includes(q) || p.artisan.toLowerCase().includes(q) || p.category.toLowerCase().includes(q)
+                (p) => p.name.toLowerCase().includes(q) || p.category.toLowerCase().includes(q)
             );
         }
         if (activeCategory !== 'All') list = list.filter((p) => p.category === activeCategory);
-        if (activeRegion !== 'All') list = list.filter((p) => p.region === activeRegion);
         switch (sortBy) {
             case 'Price: Low to High': list.sort((a, b) => a.price - b.price); break;
             case 'Price: High to Low': list.sort((a, b) => b.price - a.price); break;
@@ -410,7 +290,7 @@ export function CraftShop() {
             case 'Most Reviews': list.sort((a, b) => b.reviews - a.reviews); break;
         }
         return list;
-    }, [search, activeCategory, activeRegion, sortBy]);
+    }, [search, activeCategory, activeRegion, sortBy, products]);
 
     return (
         <div className="min-h-screen" style={{ fontFamily: 'Inter, sans-serif', backgroundColor: '#F6F3EE' }}>
@@ -639,7 +519,24 @@ export function CraftShop() {
 
                 {/* Product Grid */}
                 <AnimatePresence mode="wait">
-                    {filtered.length > 0 ? (
+                    {loading ? (
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
+                        >
+                            {[1, 2, 3, 4, 5, 6].map((i) => (
+                                <div key={i} className="bg-white rounded-3xl overflow-hidden border border-gray-100">
+                                    <div className="h-60 bg-gray-200 animate-pulse" />
+                                    <div className="p-5 space-y-3">
+                                        <div className="h-4 bg-gray-200 rounded animate-pulse" />
+                                        <div className="h-4 w-2/3 bg-gray-200 rounded animate-pulse" />
+                                        <div className="h-6 w-1/3 bg-gray-200 rounded animate-pulse" />
+                                    </div>
+                                </div>
+                            ))}
+                        </motion.div>
+                    ) : filtered.length > 0 ? (
                         <motion.div
                             key={`${activeCategory}-${activeRegion}-${sortBy}`}
                             initial={{ opacity: 0 }}
@@ -648,10 +545,10 @@ export function CraftShop() {
                         >
                             {filtered.map((product) => (
                                 <ProductCard
-                                    key={product.id}
+                                    key={product._id || product.id}
                                     product={product}
                                     onAddToCart={addToCart}
-                                    isWished={wishlist.includes(product.id)}
+                                    isWished={wishlist.includes(product._id || product.id)}
                                     onToggleWish={toggleWish}
                                 />
                             ))}

@@ -1,5 +1,9 @@
 import React, { useEffect, useState } from 'react';
+import { QRCodeSVG } from 'qrcode.react';
+import axios from 'axios';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
+import { bookingApi } from '../api';
 import {
   Calendar,
   Users,
@@ -9,117 +13,14 @@ import {
   User,
   Mail,
   Phone,
-  MapPin } from
-'lucide-react';
+  MapPin
+} from
+  'lucide-react';
 import { useSearchParams } from 'react-router-dom';
 import { Navbar } from '../components/Navbar';
 import { Footer } from '../components/Footer';
 import { Button } from '../components/ui/Button';
 import { ReviewSection } from '../components/ReviewSection';
-// Mock Data
-const CRAFTS = [
-{
-  id: 'batik',
-  name: 'Batik Textiles',
-  icon: '🎨'
-},
-{
-  id: 'lacquer',
-  name: 'Lacquerwork',
-  icon: '🏺'
-},
-{
-  id: 'masks',
-  name: 'Mask Carving',
-  icon: '🎭'
-},
-{
-  id: 'pottery',
-  name: 'Pottery',
-  icon: '⚱️'
-},
-{
-  id: 'brass',
-  name: 'Brasswork',
-  icon: '🔨'
-},
-{
-  id: 'weaving',
-  name: 'Handloom Weaving',
-  icon: '🧵'
-}];
-
-const ARTISANS = [
-{
-  id: 1,
-  name: 'Nimal Perera',
-  craftId: 'lacquer',
-  location: 'Kandy',
-  rating: 4.9,
-  image: '#C65D3B'
-},
-{
-  id: 2,
-  name: 'Kamala Wijesinghe',
-  craftId: 'batik',
-  location: 'Kandy',
-  rating: 4.8,
-  image: '#2F5D50'
-},
-{
-  id: 3,
-  name: 'Suresh Fernando',
-  craftId: 'masks',
-  location: 'Ambalangoda',
-  rating: 4.7,
-  image: '#C9A227'
-},
-{
-  id: 4,
-  name: 'Priya Rajapaksa',
-  craftId: 'weaving',
-  location: 'Jaffna',
-  rating: 4.9,
-  image: '#C65D3B'
-},
-{
-  id: 5,
-  name: 'Anura Dissanayake',
-  craftId: 'brass',
-  location: 'Colombo',
-  rating: 4.6,
-  image: '#2F5D50'
-},
-{
-  id: 6,
-  name: 'Rohan De Silva',
-  craftId: 'pottery',
-  location: 'Kelaniya',
-  rating: 4.8,
-  image: '#C65D3B'
-}];
-
-const AVAILABLE_TIMES = [
-{
-  id: 't1',
-  time: '09:00 AM',
-  label: 'Morning Session'
-},
-{
-  id: 't2',
-  time: '11:00 AM',
-  label: 'Late Morning'
-},
-{
-  id: 't3',
-  time: '02:00 PM',
-  label: 'Afternoon Session'
-},
-{
-  id: 't4',
-  time: '04:00 PM',
-  label: 'Evening Session'
-}];
 
 export function BookWorkshop() {
   const [searchParams] = useSearchParams();
@@ -136,7 +37,36 @@ export function BookWorkshop() {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
-  // Pre-fill from URL query params (e.g. /book?craft=lacquer&artisan=1)
+
+  const validateForm = () => {
+    if (!formData.name || formData.name.length < 3) {
+      alert("Name must be at least 3 characters");
+      return false;
+    }
+
+    if (!formData.email.includes("@")) {
+      alert("Invalid email");
+      return false;
+    }
+
+    if (!/^[0-9]{10}$/.test(formData.phone)) {
+      alert("Phone must be 10 digits");
+      return false;
+    }
+
+    if (!selectedDate || !selectedTime) {
+      alert("Please select date and time");
+      return false;
+    }
+
+    if (!selectedArtisan || !selectedCraft) {
+      alert("Missing booking details");
+      return false;
+    }
+
+    return true;
+  };
+
   useEffect(() => {
     const craftParam = searchParams.get('craft');
     const artisanParam = searchParams.get('artisan');
@@ -166,15 +96,33 @@ export function BookWorkshop() {
   const handleBack = () => {
     if (step > 1) setStep(step - 1);
   };
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!validateForm()) return;
+
     setIsSubmitting(true);
-    // Simulate API call
-    setTimeout(() => {
-      setIsSubmitting(false);
+
+    const bookingPayload = {
+      artisanId: selectedArtisan,
+      craftId: selectedCraft,
+      name: formData.name,
+      email: formData.email,
+      phone: formData.phone,
+      date: selectedDate,
+      time: selectedTime,
+      groupSize: formData.groupSize
+    };
+
+    try {
+      await bookingApi.createBooking(bookingPayload);
       setIsSuccess(true);
       window.scrollTo(0, 0);
-    }, 1500);
+    } catch (error) {
+      console.error("Error submitting booking:", error);
+      alert("Failed to save booking or server error. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
   if (isSuccess) {
     return (
@@ -220,6 +168,22 @@ export function BookWorkshop() {
                   {formData.groupSize} People
                 </span>
               </div>
+            </div>
+            <div className="flex flex-col items-center justify-center p-6 mb-8 bg-white border-2 border-dashed border-gray-200 rounded-2xl">
+              <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">
+                Your Entry Pass
+              </p>
+
+              <QRCodeSVG
+                value={`Booking:${formData.name}|Artisan:${selectedArtisan}|Date:${selectedDate}`}
+                size={160}
+                level={"H"}
+                includeMargin={true}
+              />
+
+              <p className="text-xs text-gray-500 mt-4 text-center">
+                Present this QR code to the artisan upon arrival
+              </p>
             </div>
             <Button
               onClick={() => window.location.href = '/'}
@@ -288,8 +252,8 @@ export function BookWorkshop() {
                     <h3 className="font-bold text-forest">Select Craft</h3>
                     <p className="text-xs text-gray-500 mt-1">
                       {selectedCraft ?
-                      CRAFTS.find((c) => c.id === selectedCraft)?.name :
-                      'Choose a workshop type'}
+                        CRAFTS.find((c) => c.id === selectedCraft)?.name :
+                        'Choose a workshop type'}
                     </p>
                   </div>
                 </div>
@@ -306,8 +270,8 @@ export function BookWorkshop() {
                     <h3 className="font-bold text-forest">Choose Artisan</h3>
                     <p className="text-xs text-gray-500 mt-1">
                       {selectedArtisan ?
-                      ARTISANS.find((a) => a.id === selectedArtisan)?.name :
-                      'Select your mentor'}
+                        ARTISANS.find((a) => a.id === selectedArtisan)?.name :
+                        'Select your mentor'}
                     </p>
                   </div>
                 </div>
@@ -324,8 +288,8 @@ export function BookWorkshop() {
                     <h3 className="font-bold text-forest">Date & Time</h3>
                     <p className="text-xs text-gray-500 mt-1">
                       {selectedDate && selectedTime ?
-                      `${selectedDate} at ${AVAILABLE_TIMES.find((t) => t.id === selectedTime)?.time}` :
-                      'Schedule your visit'}
+                        `${selectedDate} at ${AVAILABLE_TIMES.find((t) => t.id === selectedTime)?.time}` :
+                        'Schedule your visit'}
                     </p>
                   </div>
                 </div>
@@ -349,7 +313,7 @@ export function BookWorkshop() {
 
               {/* Summary Card (visible only when selections are made) */}
               {selectedCraft &&
-              <div className="mt-12 p-4 bg-white rounded-xl border border-gray-200 shadow-sm">
+                <div className="mt-12 p-4 bg-white rounded-xl border border-gray-200 shadow-sm">
                   <h4 className="font-bold text-sm text-gray-900 mb-3 uppercase tracking-wider">
                     Booking Summary
                   </h4>
@@ -361,13 +325,13 @@ export function BookWorkshop() {
                       </span>
                     </div>
                     {selectedArtisan &&
-                  <div className="flex justify-between">
+                      <div className="flex justify-between">
                         <span className="text-gray-500">Artisan</span>
                         <span className="font-medium text-right">
                           {ARTISANS.find((a) => a.id === selectedArtisan)?.name}
                         </span>
                       </div>
-                  }
+                    }
                   </div>
                 </div>
               }
@@ -378,35 +342,35 @@ export function BookWorkshop() {
               <AnimatePresence mode="wait">
                 {/* Step 1: Select Craft */}
                 {step === 1 &&
-                <motion.div
-                  key="step1"
-                  initial={{
-                    opacity: 0,
-                    x: 20
-                  }}
-                  animate={{
-                    opacity: 1,
-                    x: 0
-                  }}
-                  exit={{
-                    opacity: 0,
-                    x: -20
-                  }}
-                  className="h-full flex flex-col">
+                  <motion.div
+                    key="step1"
+                    initial={{
+                      opacity: 0,
+                      x: 20
+                    }}
+                    animate={{
+                      opacity: 1,
+                      x: 0
+                    }}
+                    exit={{
+                      opacity: 0,
+                      x: -20
+                    }}
+                    className="h-full flex flex-col">
 
                     <h2 className="text-2xl font-bold font-display text-forest mb-6">
                       What would you like to learn?
                     </h2>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {CRAFTS.map((craft) =>
-                    <button
-                      key={craft.id}
-                      onClick={() => {
-                        setSelectedCraft(craft.id);
-                        setSelectedArtisan(null); // Reset subsequent selections
-                        handleNext();
-                      }}
-                      className={`p-6 rounded-xl border-2 text-left transition-all duration-200 hover:shadow-md flex items-center gap-4 group ${selectedCraft === craft.id ? 'border-mustard bg-mustard/5' : 'border-gray-100 bg-white hover:border-mustard/50'}`}>
+                        <button
+                          key={craft.id}
+                          onClick={() => {
+                            setSelectedCraft(craft.id);
+                            setSelectedArtisan(null); // Reset subsequent selections
+                            handleNext();
+                          }}
+                          className={`p-6 rounded-xl border-2 text-left transition-all duration-200 hover:shadow-md flex items-center gap-4 group ${selectedCraft === craft.id ? 'border-mustard bg-mustard/5' : 'border-gray-100 bg-white hover:border-mustard/50'}`}>
 
                           <span className="text-3xl group-hover:scale-110 transition-transform duration-200">
                             {craft.icon}
@@ -420,36 +384,36 @@ export function BookWorkshop() {
                             </p>
                           </div>
                           <ChevronRight
-                        className={`ml-auto w-5 h-5 text-gray-300 group-hover:text-mustard transition-colors ${selectedCraft === craft.id ? 'text-mustard' : ''}`} />
+                            className={`ml-auto w-5 h-5 text-gray-300 group-hover:text-mustard transition-colors ${selectedCraft === craft.id ? 'text-mustard' : ''}`} />
 
                         </button>
-                    )}
+                      )}
                     </div>
                   </motion.div>
                 }
 
                 {/* Step 2: Select Artisan */}
                 {step === 2 &&
-                <motion.div
-                  key="step2"
-                  initial={{
-                    opacity: 0,
-                    x: 20
-                  }}
-                  animate={{
-                    opacity: 1,
-                    x: 0
-                  }}
-                  exit={{
-                    opacity: 0,
-                    x: -20
-                  }}
-                  className="h-full flex flex-col">
+                  <motion.div
+                    key="step2"
+                    initial={{
+                      opacity: 0,
+                      x: 20
+                    }}
+                    animate={{
+                      opacity: 1,
+                      x: 0
+                    }}
+                    exit={{
+                      opacity: 0,
+                      x: -20
+                    }}
+                    className="h-full flex flex-col">
 
                     <div className="flex items-center gap-2 mb-6">
                       <button
-                      onClick={handleBack}
-                      className="text-sm text-gray-400 hover:text-forest font-bold">
+                        onClick={handleBack}
+                        className="text-sm text-gray-400 hover:text-forest font-bold">
 
                         Back
                       </button>
@@ -460,21 +424,21 @@ export function BookWorkshop() {
                     </div>
 
                     {filteredArtisans.length > 0 ?
-                  <div className="grid grid-cols-1 gap-4">
+                      <div className="grid grid-cols-1 gap-4">
                         {filteredArtisans.map((artisan) =>
-                    <button
-                      key={artisan.id}
-                      onClick={() => {
-                        setSelectedArtisan(artisan.id);
-                        handleNext();
-                      }}
-                      className={`p-4 rounded-xl border-2 text-left transition-all duration-200 hover:shadow-md flex items-center gap-4 group ${selectedArtisan === artisan.id ? 'border-mustard bg-mustard/5' : 'border-gray-100 bg-white hover:border-mustard/50'}`}>
+                          <button
+                            key={artisan.id}
+                            onClick={() => {
+                              setSelectedArtisan(artisan.id);
+                              handleNext();
+                            }}
+                            className={`p-4 rounded-xl border-2 text-left transition-all duration-200 hover:shadow-md flex items-center gap-4 group ${selectedArtisan === artisan.id ? 'border-mustard bg-mustard/5' : 'border-gray-100 bg-white hover:border-mustard/50'}`}>
 
                             <div
-                        className="w-16 h-16 rounded-lg shrink-0"
-                        style={{
-                          backgroundColor: artisan.image
-                        }} />
+                              className="w-16 h-16 rounded-lg shrink-0"
+                              style={{
+                                backgroundColor: artisan.image
+                              }} />
 
                             <div className="flex-1">
                               <div className="flex justify-between items-start">
@@ -491,49 +455,49 @@ export function BookWorkshop() {
                               </div>
                             </div>
                             <ChevronRight
-                        className={`w-5 h-5 text-gray-300 group-hover:text-mustard transition-colors ${selectedArtisan === artisan.id ? 'text-mustard' : ''}`} />
+                              className={`w-5 h-5 text-gray-300 group-hover:text-mustard transition-colors ${selectedArtisan === artisan.id ? 'text-mustard' : ''}`} />
 
                           </button>
-                    )}
+                        )}
                       </div> :
 
-                  <div className="text-center py-12">
+                      <div className="text-center py-12">
                         <p className="text-gray-500">
                           No artisans available for this craft yet.
                         </p>
                         <button
-                      onClick={handleBack}
-                      className="text-mustard font-bold mt-2 hover:underline">
+                          onClick={handleBack}
+                          className="text-mustard font-bold mt-2 hover:underline">
 
                           Choose another craft
                         </button>
                       </div>
-                  }
+                    }
                   </motion.div>
                 }
 
                 {/* Step 3: Date & Time */}
                 {step === 3 &&
-                <motion.div
-                  key="step3"
-                  initial={{
-                    opacity: 0,
-                    x: 20
-                  }}
-                  animate={{
-                    opacity: 1,
-                    x: 0
-                  }}
-                  exit={{
-                    opacity: 0,
-                    x: -20
-                  }}
-                  className="h-full flex flex-col">
+                  <motion.div
+                    key="step3"
+                    initial={{
+                      opacity: 0,
+                      x: 20
+                    }}
+                    animate={{
+                      opacity: 1,
+                      x: 0
+                    }}
+                    exit={{
+                      opacity: 0,
+                      x: -20
+                    }}
+                    className="h-full flex flex-col">
 
                     <div className="flex items-center gap-2 mb-6">
                       <button
-                      onClick={handleBack}
-                      className="text-sm text-gray-400 hover:text-forest font-bold">
+                        onClick={handleBack}
+                        className="text-sm text-gray-400 hover:text-forest font-bold">
 
                         Back
                       </button>
@@ -549,11 +513,11 @@ export function BookWorkshop() {
                           Select Date
                         </label>
                         <input
-                        type="date"
-                        className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-mustard focus:border-transparent outline-none"
-                        min={new Date().toISOString().split('T')[0]}
-                        value={selectedDate}
-                        onChange={(e) => setSelectedDate(e.target.value)} />
+                          type="date"
+                          className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-mustard focus:border-transparent outline-none"
+                          min={new Date().toISOString().split('T')[0]}
+                          value={selectedDate}
+                          onChange={(e) => setSelectedDate(e.target.value)} />
 
                       </div>
 
@@ -563,27 +527,27 @@ export function BookWorkshop() {
                         </label>
                         <div className="grid grid-cols-2 gap-3">
                           {AVAILABLE_TIMES.map((slot) =>
-                        <button
-                          key={slot.id}
-                          onClick={() => setSelectedTime(slot.id)}
-                          className={`p-3 rounded-xl border-2 text-center transition-all ${selectedTime === slot.id ? 'border-mustard bg-mustard text-forest font-bold' : 'border-gray-100 bg-white text-gray-600 hover:border-mustard/50'}`}>
+                            <button
+                              key={slot.id}
+                              onClick={() => setSelectedTime(slot.id)}
+                              className={`p-3 rounded-xl border-2 text-center transition-all ${selectedTime === slot.id ? 'border-mustard bg-mustard text-forest font-bold' : 'border-gray-100 bg-white text-gray-600 hover:border-mustard/50'}`}>
 
                               <div className="text-lg">{slot.time}</div>
                               <div
-                            className={`text-xs ${selectedTime === slot.id ? 'text-forest/80' : 'text-gray-400'}`}>
+                                className={`text-xs ${selectedTime === slot.id ? 'text-forest/80' : 'text-gray-400'}`}>
 
                                 {slot.label}
                               </div>
                             </button>
-                        )}
+                          )}
                         </div>
                       </div>
 
                       <div className="pt-4">
                         <Button
-                        onClick={handleNext}
-                        disabled={!selectedDate || !selectedTime}
-                        className="w-full">
+                          onClick={handleNext}
+                          disabled={!selectedDate || !selectedTime}
+                          className="w-full">
 
                           Continue
                         </Button>
@@ -594,26 +558,26 @@ export function BookWorkshop() {
 
                 {/* Step 4: Details */}
                 {step === 4 &&
-                <motion.div
-                  key="step4"
-                  initial={{
-                    opacity: 0,
-                    x: 20
-                  }}
-                  animate={{
-                    opacity: 1,
-                    x: 0
-                  }}
-                  exit={{
-                    opacity: 0,
-                    x: -20
-                  }}
-                  className="h-full flex flex-col">
+                  <motion.div
+                    key="step4"
+                    initial={{
+                      opacity: 0,
+                      x: 20
+                    }}
+                    animate={{
+                      opacity: 1,
+                      x: 0
+                    }}
+                    exit={{
+                      opacity: 0,
+                      x: -20
+                    }}
+                    className="h-full flex flex-col">
 
                     <div className="flex items-center gap-2 mb-6">
                       <button
-                      onClick={handleBack}
-                      className="text-sm text-gray-400 hover:text-forest font-bold">
+                        onClick={handleBack}
+                        className="text-sm text-gray-400 hover:text-forest font-bold">
 
                         Back
                       </button>
@@ -631,17 +595,17 @@ export function BookWorkshop() {
                         <div className="relative">
                           <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                           <input
-                          type="text"
-                          required
-                          value={formData.name}
-                          onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            name: e.target.value
-                          })
-                          }
-                          className="w-full pl-12 pr-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-mustard focus:border-transparent outline-none"
-                          placeholder="John Doe" />
+                            type="text"
+                            required
+                            value={formData.name}
+                            onChange={(e) =>
+                              setFormData({
+                                ...formData,
+                                name: e.target.value
+                              })
+                            }
+                            className="w-full pl-12 pr-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-mustard focus:border-transparent outline-none"
+                            placeholder="John Doe" />
 
                         </div>
                       </div>
@@ -654,17 +618,17 @@ export function BookWorkshop() {
                           <div className="relative">
                             <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                             <input
-                            type="email"
-                            required
-                            value={formData.email}
-                            onChange={(e) =>
-                            setFormData({
-                              ...formData,
-                              email: e.target.value
-                            })
-                            }
-                            className="w-full pl-12 pr-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-mustard focus:border-transparent outline-none"
-                            placeholder="john@example.com" />
+                              type="email"
+                              required
+                              value={formData.email}
+                              onChange={(e) =>
+                                setFormData({
+                                  ...formData,
+                                  email: e.target.value
+                                })
+                              }
+                              className="w-full pl-12 pr-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-mustard focus:border-transparent outline-none"
+                              placeholder="john@example.com" />
 
                           </div>
                         </div>
@@ -675,17 +639,17 @@ export function BookWorkshop() {
                           <div className="relative">
                             <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                             <input
-                            type="tel"
-                            required
-                            value={formData.phone}
-                            onChange={(e) =>
-                            setFormData({
-                              ...formData,
-                              phone: e.target.value
-                            })
-                            }
-                            className="w-full pl-12 pr-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-mustard focus:border-transparent outline-none"
-                            placeholder="+94 77 123 4567" />
+                              type="tel"
+                              required
+                              value={formData.phone}
+                              onChange={(e) =>
+                                setFormData({
+                                  ...formData,
+                                  phone: e.target.value
+                                })
+                              }
+                              className="w-full pl-12 pr-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-mustard focus:border-transparent outline-none"
+                              placeholder="+94 77 123 4567" />
 
                           </div>
                         </div>
@@ -698,29 +662,29 @@ export function BookWorkshop() {
                         <div className="relative">
                           <Users className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                           <select
-                          value={formData.groupSize}
-                          onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            groupSize: parseInt(e.target.value)
-                          })
-                          }
-                          className="w-full pl-12 pr-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-mustard focus:border-transparent outline-none bg-white">
+                            value={formData.groupSize}
+                            onChange={(e) =>
+                              setFormData({
+                                ...formData,
+                                groupSize: parseInt(e.target.value)
+                              })
+                            }
+                            className="w-full pl-12 pr-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-mustard focus:border-transparent outline-none bg-white">
 
                             {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((num) =>
-                          <option key={num} value={num}>
+                              <option key={num} value={num}>
                                 {num} {num === 1 ? 'Person' : 'People'}
                               </option>
-                          )}
+                            )}
                           </select>
                         </div>
                       </div>
 
                       <div className="pt-6">
                         <Button
-                        type="submit"
-                        disabled={isSubmitting}
-                        className="w-full text-lg py-4 shadow-xl hover:shadow-2xl hover:-translate-y-1">
+                          type="submit"
+                          disabled={isSubmitting}
+                          className="w-full text-lg py-4 shadow-xl hover:shadow-2xl hover:-translate-y-1">
 
                           {isSubmitting ? 'Processing...' : 'Confirm Booking'}
                         </Button>
@@ -741,9 +705,9 @@ export function BookWorkshop() {
             <ReviewSection
               context="workshop"
               workshopName={
-              selectedCraft ?
-              CRAFTS.find((c) => c.id === selectedCraft)?.name :
-              'This Workshop'
+                selectedCraft ?
+                  CRAFTS.find((c) => c.id === selectedCraft)?.name :
+                  'This Workshop'
               } />
 
           </div>
@@ -753,3 +717,106 @@ export function BookWorkshop() {
     </div>);
 
 }
+
+const ARTISANS = [
+  {
+    id: 1,
+    name: 'Nimal Perera',
+    craftId: 'lacquer',
+    location: 'Kandy',
+    rating: 4.9,
+    image: '#C65D3B'
+  },
+  {
+    id: 2,
+    name: 'Kamala Wijesinghe',
+    craftId: 'batik',
+    location: 'Kandy',
+    rating: 4.8,
+    image: '#2F5D50'
+  },
+  {
+    id: 3,
+    name: 'Suresh Fernando',
+    craftId: 'masks',
+    location: 'Ambalangoda',
+    rating: 4.7,
+    image: '#C9A227'
+  },
+  {
+    id: 4,
+    name: 'Priya Rajapaksa',
+    craftId: 'weaving',
+    location: 'Jaffna',
+    rating: 4.9,
+    image: '#C65D3B'
+  },
+  {
+    id: 5,
+    name: 'Anura Dissanayake',
+    craftId: 'brass',
+    location: 'Colombo',
+    rating: 4.6,
+    image: '#2F5D50'
+  },
+  {
+    id: 6,
+    name: 'Rohan De Silva',
+    craftId: 'pottery',
+    location: 'Kelaniya',
+    rating: 4.8,
+    image: '#C65D3B'
+  }];
+
+const CRAFTS = [
+  {
+    id: 'batik',
+    name: 'Batik Textiles',
+    icon: ''
+  },
+  {
+    id: 'lacquer',
+    name: 'Lacquerwork',
+    icon: ''
+  },
+  {
+    id: 'masks',
+    name: 'Mask Carving',
+    icon: ''
+  },
+  {
+    id: 'pottery',
+    name: 'Pottery',
+    icon: ''
+  },
+  {
+    id: 'brass',
+    name: 'Brasswork',
+    icon: ''
+  },
+  {
+    id: 'weaving',
+    name: 'Handloom Weaving',
+    icon: ''
+  }];
+const AVAILABLE_TIMES = [
+  {
+    id: 't1',
+    time: '09:00 AM',
+    label: 'Morning Session'
+  },
+  {
+    id: 't2',
+    time: '11:00 AM',
+    label: 'Late Morning'
+  },
+  {
+    id: 't3',
+    time: '02:00 PM',
+    label: 'Afternoon Session'
+  },
+  {
+    id: 't4',
+    time: '04:00 PM',
+    label: 'Evening Session'
+  }];

@@ -3,6 +3,8 @@ import { motion } from 'framer-motion';
 import { MailIcon, LockIcon, EyeIcon, EyeOffIcon } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { auth } from '../../config/firebase';
+import { sendPasswordResetEmail } from 'firebase/auth';
 
 export function TouristLogin() {
   const [showPassword, setShowPassword] = useState(false);
@@ -10,9 +12,33 @@ export function TouristLogin() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [resetSent, setResetSent] = useState(false);
 
   const { login } = useAuth();
   const navigate = useNavigate();
+
+  const handleForgotPassword = async () => {
+    if (!email) {
+      setError('Please enter your email address to reset password.');
+      return;
+    }
+    try {
+      setLoading(true);
+      setError('');
+      setResetSent(false);
+      await sendPasswordResetEmail(auth, email);
+      setResetSent(true);
+    } catch (err: any) {
+      const msg = err.message || 'Failed to send password reset email.';
+      if (msg.includes('user-not-found') || msg.includes('invalid-credential')) {
+        setError('No account found with this email.');
+      } else {
+        setError(msg);
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -35,28 +61,24 @@ export function TouristLogin() {
 
   return (
     <div
-      className="min-h-screen flex font-body"
-      style={{ backgroundColor: '#FAF6F0' }}>
+      className="min-h-screen flex font-body relative"
+      style={{ backgroundColor: '#ddede7' }}>
+
+      {/* Batik SVG background pattern */}
+      <div className="absolute inset-0 pointer-events-none opacity-5" aria-hidden="true">
+        <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <pattern id="batik-bg-login" x="0" y="0" width="60" height="60" patternUnits="userSpaceOnUse">
+              <polygon points="30,4 56,30 30,56 4,30" fill="none" stroke="#2F5D50" strokeWidth="1.5" />
+              <circle cx="30" cy="30" r="3" fill="#2F5D50" />
+            </pattern>
+          </defs>
+          <rect width="100%" height="100%" fill="url(#batik-bg-login)" />
+        </svg>
+      </div>
 
       {/* LEFT PANEL */}
-      <div className="flex-1 flex items-center justify-center px-8 py-12 relative overflow-hidden">
-        {/* Batik SVG background pattern */}
-        <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
-          <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
-            <defs>
-              <pattern id="batik" x="0" y="0" width="60" height="60" patternUnits="userSpaceOnUse">
-                <polygon points="30,4 56,30 30,56 4,30" fill="none" stroke="#C1440E" strokeWidth="1" opacity="0.12" />
-                <polygon points="30,14 46,30 30,46 14,30" fill="none" stroke="#C1440E" strokeWidth="0.8" opacity="0.08" />
-                <circle cx="30" cy="30" r="2.5" fill="#C1440E" opacity="0.07" />
-                <circle cx="0" cy="0" r="5" fill="none" stroke="#1A6B6B" strokeWidth="0.8" opacity="0.06" />
-                <circle cx="60" cy="0" r="5" fill="none" stroke="#1A6B6B" strokeWidth="0.8" opacity="0.06" />
-                <circle cx="0" cy="60" r="5" fill="none" stroke="#1A6B6B" strokeWidth="0.8" opacity="0.06" />
-                <circle cx="60" cy="60" r="5" fill="none" stroke="#1A6B6B" strokeWidth="0.8" opacity="0.06" />
-              </pattern>
-            </defs>
-            <rect width="100%" height="100%" fill="url(#batik)" />
-          </svg>
-        </div>
+      <div className="flex-1 flex items-center justify-center px-8 py-12 relative overflow-hidden z-10">
 
         {/* Login Card */}
         <motion.div
@@ -133,10 +155,15 @@ export function TouristLogin() {
             </div>
 
             {/* Forgot Password */}
-            <div className="flex justify-center pt-1">
-              <a href="#" className="text-sm font-semibold font-body" style={{ color: '#C1440E' }}>
+            <div className="flex justify-center pt-1 flex-col items-center">
+              <button type="button" onClick={handleForgotPassword} disabled={loading} className="text-sm font-semibold font-body hover:underline" style={{ color: '#C1440E' }}>
                 Forgot Password?
-              </a>
+              </button>
+              {resetSent && (
+                <span className="text-xs text-green-600 mt-2 font-body text-center">
+                  Password reset email sent! Check your inbox.
+                </span>
+              )}
             </div>
 
             {/* Login Button */}

@@ -1,89 +1,87 @@
-import React, { useEffect } from 'react';
-import { BrowserRouter, Routes, Route, useLocation, Navigate } from 'react-router-dom';
-import { Home } from './pages/Home';
-import { CraftShop } from './pages/CraftShop';
-import { BrowseArtists } from './pages/BrowseArtists';
-import { ArtistProfile } from './pages/ArtistProfile';
-import { ArtistRegistration } from './pages/ArtistRegistration';
-import { FullMapPage } from './pages/FullMap';
+import { useEffect } from 'react';
+import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { ChatWidget } from './components/chatbot/ChatWidget';
-import { BookWorkshop } from './pages/BookWorkshop';
-import { UnifiedLogin } from './pages/UnifiedLogin';
-import { RegisterSelect } from './pages/RegisterSelect';
+import { AuthProvider } from './context/AuthContext';
+import { AdminDashboard } from './pages/AdminDashboard';
 import { ArtistDashboard } from './pages/ArtistDashboard';
 import { ArtistHome } from './pages/ArtistHome';
-import { AdminDashboard } from './pages/AdminDashboard';
-import { TouristLogin } from './pages/tourist/TouristLogin';
-import { TouristRegister } from './pages/tourist/TouristRegister';
+import { ArtistLogin } from './pages/ArtistLogin';
+import { ArtistProfile } from './pages/ArtistProfile';
+import { ArtistRegister } from './pages/ArtistRegister';
+import { ArtistRegistration } from './pages/ArtistRegistration';
+import { BookWorkshop } from './pages/BookWorkshop';
+import { BrowseArtists } from './pages/BrowseArtists';
+import { CraftShop } from './pages/CraftShop';
+import EditBooking from './pages/EditBooking';
+import { FullMap } from './pages/FullMap';
+import { Home } from './pages/Home';
+import { Inbox } from './pages/Inbox';
+import MyBookings from './pages/MyBookings';
+import { RegisterSelect } from './pages/RegisterSelect';
+import { UnifiedLogin } from './pages/UnifiedLogin';
+import { TouristBlogEdit } from './pages/tourist/TouristBlogEdit';
+import { TouristBlogs } from './pages/tourist/TouristBlogs';
 import { TouristDashboard } from './pages/tourist/TouristDashboard';
 import { TouristHome } from './pages/tourist/TouristHome';
-import { TouristBlogs } from './pages/tourist/TouristBlogs';
-import { Inbox } from './pages/Inbox';
-import { AdminRegister } from './pages/AdminRegister';
-import { ROLE_DEFAULT_ROUTES, getStoredUser } from './lib/auth';
-// Scroll to top on route change
+import { TouristLogin } from './pages/tourist/TouristLogin';
+import { TouristProfile } from './pages/tourist/TouristProfile';
+import { TouristProfileEdit } from './pages/tourist/TouristProfileEdit';
+import { TouristRegister } from './pages/tourist/TouristRegister';
+
 function ScrollToTop() {
   const { pathname } = useLocation();
+
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [pathname]);
+
   return null;
-}
-
-function InboxRedirect() {
-  const storedUser = getStoredUser();
-
-  if (storedUser?.role === 'artist') {
-    return <Navigate to="/artist/inbox" replace />;
-  }
-
-  if (storedUser?.role === 'tourist') {
-    return <Navigate to="/tourist/inbox" replace />;
-  }
-
-  return <Navigate to="/login" replace />;
 }
 
 export function App() {
   return (
-    <BrowserRouter>
-      <ScrollToTop />
-      <Routes>
-        {/* Public routes */}
-        <Route path="/" element={<Home />} />
-        <Route path="/crafts" element={<CraftShop />} />
-        <Route path="/artists" element={<BrowseArtists />} />
-        <Route path="/browse" element={<BrowseArtists />} />
-        <Route path="/artist/:id" element={<ArtistProfile />} />
-        <Route path="/book" element={<BookWorkshop />} />
-        <Route path="/map" element={<FullMapPage />} />
+    <AuthProvider>
+      <BrowserRouter>
+        <ScrollToTop />
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/crafts" element={<CraftShop />} />
+          <Route path="/artists" element={<BrowseArtists />} />
+          <Route path="/browse" element={<BrowseArtists />} />
+          <Route path="/artist/:id" element={<ArtistProfile />} />
+          <Route path="/book" element={<BookWorkshop />} />
+          <Route path="/map" element={<FullMap />} />
 
-        {/* Auth routes */}
-        <Route path="/login" element={<UnifiedLogin />} />
-        <Route path="/register" element={<RegisterSelect />} />
-        <Route path="/artist/register" element={<ArtistRegistration />} />
-        <Route path="/admin/register" element={<AdminRegister />} />
-        <Route path="/tourist/login" element={<TouristLogin />} />
-        <Route path="/tourist/register" element={<TouristRegister />} />
+          <Route path="/login" element={<UnifiedLogin />} />
+          <Route path="/register" element={<RegisterSelect />} />
+          <Route path="/artist/register" element={<ArtistRegister />} />
+          <Route path="/artist/register/legacy" element={<ArtistRegistration />} />
+          <Route path="/artist/login" element={<ArtistLogin />} />
+          <Route path="/tourist/login" element={<TouristLogin />} />
+          <Route path="/tourist/register" element={<TouristRegister />} />
 
-        {/* Tourist routes */}
-        <Route path="/tourist/home" element={<TouristHome />} />
-        <Route path="/tourist/dashboard" element={<TouristDashboard />} />
-        <Route path="/tourist/blogs" element={<TouristBlogs />} />
-        <Route path="/tourist/bookings" element={<BookWorkshop />} />
-        <Route path="/tourist/inbox" element={<Inbox />} />
+          <Route path="/tourist/home" element={<TouristHome />} />
+          <Route path="/tourist/dashboard" element={<TouristDashboard />} />
+          <Route path="/tourist/blogs" element={<TouristBlogs />} />
+          <Route path="/tourist/blogs/edit/:id" element={<TouristBlogEdit />} />
+          <Route path="/tourist/profile" element={<TouristProfile />} />
+          <Route path="/tourist/profile/edit" element={<TouristProfileEdit />} />
+          <Route path="/tourist/bookings" element={<BookWorkshop />} />
+          <Route path="/tourist/inbox" element={<Inbox />} />
 
-        {/* Artist routes */}
-        <Route path="/artist/home" element={<ArtistHome />} />
-        <Route path="/artist/inbox" element={<Inbox />} />
-        <Route path={ROLE_DEFAULT_ROUTES.artist} element={<ArtistDashboard />} />
-        <Route path="/dashboard" element={<Navigate to={ROLE_DEFAULT_ROUTES.artist} replace />} />
-        <Route path="/inbox" element={<InboxRedirect />} />
+          <Route path="/artist/home" element={<ArtistHome />} />
+          <Route path="/artist/dashboard" element={<ArtistDashboard />} />
+          <Route path="/artist/inbox" element={<Inbox />} />
 
-        {/* Admin routes */}
-        <Route path="/admin" element={<AdminDashboard />} />
-      </Routes>
-      <ChatWidget />
-    </BrowserRouter>);
+          <Route path="/dashboard" element={<Navigate to="/artist/dashboard" replace />} />
+          <Route path="/inbox" element={<Inbox />} />
+          <Route path="/edit-booking/:id" element={<EditBooking />} />
+          <Route path="/my-bookings" element={<MyBookings />} />
 
+          <Route path="/admin" element={<AdminDashboard />} />
+        </Routes>
+        <ChatWidget />
+      </BrowserRouter>
+    </AuthProvider>
+  );
 }

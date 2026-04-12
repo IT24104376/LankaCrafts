@@ -1,9 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { TouristNavbar } from './TouristNavbar';
+import { BatikBackground } from '../../components/BatikBackground';
+import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { updateProfile, uploadProfilePic } from '../../services/api';
-import { INTERESTS, REGIONS } from '../../constants/touristConstants';
+import { auth } from '../../config/firebase';
+import { sendPasswordResetEmail, verifyBeforeUpdateEmail } from 'firebase/auth';
+import { INTERESTS, REGIONS, COUNTRIES } from '../../constants/touristConstants';
 import {
   UserIcon, ContactIcon, GlobeIcon,
   CreditCardIcon, CalendarIcon,
@@ -11,11 +15,10 @@ import {
   Trash2Icon, UploadCloudIcon
 } from 'lucide-react';
 
-const COUNTRIES = ['Sri Lanka', 'India', 'United Kingdom', 'United States', 'Australia', 'Germany', 'France', 'Japan', 'Canada', 'Singapore', 'Other'];
 const LANGUAGES = ['English', 'Sinhala', 'Tamil', 'Other'];
 
 export function TouristProfileEdit() {
-  const { tourist, logout, refreshUser } = useAuth();
+  const { tourist, logout, refreshUser, firebaseUser } = useAuth();
   const navigate = useNavigate();
 
   const [submitting, setSubmitting] = useState(false);
@@ -25,6 +28,12 @@ export function TouristProfileEdit() {
   const [uploadError, setUploadError] = useState('');
   const [uploadingImage, setUploadingImage] = useState(false);
   const [deactivating, setDeactivating] = useState(false);
+
+  // Security states
+  const [securityMessage, setSecurityMessage] = useState({ type: '', text: '' });
+  const [newEmail, setNewEmail] = useState('');
+  const [showEmailInput, setShowEmailInput] = useState(false);
+  const [isChangingAuth, setIsChangingAuth] = useState(false);
 
   const [formData, setFormData] = useState({
     fullName: '',
@@ -73,6 +82,43 @@ export function TouristProfileEdit() {
     }
   };
 
+  const handleChangePassword = async () => {
+    if (!firebaseUser?.email) return;
+    try {
+      setIsChangingAuth(true);
+      setSecurityMessage({ type: '', text: '' });
+      await sendPasswordResetEmail(auth, firebaseUser.email);
+      setSecurityMessage({ type: 'success', text: 'Password reset email sent. Please check your inbox.' });
+    } catch (err: any) {
+      setSecurityMessage({ type: 'error', text: err.message || 'Failed to send password reset email.' });
+    } finally {
+      setIsChangingAuth(false);
+    }
+  };
+
+  const handleChangeEmail = async () => {
+    if (!showEmailInput) {
+      setShowEmailInput(true);
+      return;
+    }
+    if (!newEmail || !firebaseUser) return;
+    try {
+      setIsChangingAuth(true);
+      setSecurityMessage({ type: '', text: '' });
+      await verifyBeforeUpdateEmail(firebaseUser, newEmail);
+      setSecurityMessage({ type: 'success', text: 'Verification email sent to new address. Please verify it to update your email.' });
+      setShowEmailInput(false);
+      setNewEmail('');
+    } catch (err: any) {
+      let msg = err.message || 'Failed to update email.';
+      if (msg.includes('requires-recent-login')) {
+        msg = 'For security reasons, please log out and log back in before changing your email.';
+      }
+      setSecurityMessage({ type: 'error', text: msg });
+    } finally {
+      setIsChangingAuth(false);
+    }
+  };
 
   const handleLogout = async () => {
     try {
@@ -154,7 +200,8 @@ export function TouristProfileEdit() {
   const isSriLankan = formData.country === 'Sri Lanka';
 
   return (
-    <div className="min-h-screen font-body" style={{ backgroundColor: '#FAF6F0' }}>
+    <div className="min-h-screen font-body relative">
+      <BatikBackground />
       <TouristNavbar activeTab="profile" />
 
       <div className="pt-20 pb-12">
@@ -327,13 +374,55 @@ export function TouristProfileEdit() {
                 </div>
               </section>
 
+              {/* Security */}
+              <section className="space-y-4">
+                <h2 className="text-lg font-bold text-[#cf2121] border-b pb-2">Security</h2>
+
+                {securityMessage.text && (
+                  <div className={`p-4 rounded-xl text-sm flex items-start gap-2 ${securityMessage.type === 'error' ? 'bg-red-50 text-red-600 border border-red-200' : 'bg-green-50 text-green-700 border border-green-200'}`}>
+                    {securityMessage.type === 'error' ? <AlertCircleIcon className="w-4 h-4 shrink-0 mt-0.5" /> : <CheckIcon className="w-4 h-4 shrink-0 mt-0.5" />}
+                    <p>{securityMessage.text}</p>
+                  </div>
+                )}
+
+                <div className="flex flex-col sm:flex-row gap-4">
+                  <div className="flex-1">
+                    <p className="text-sm font-semibold text-[#b83939] mb-2">Password</p>
+                    <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} type="button" onClick={handleChangePassword} disabled={isChangingAuth} className="px-4 py-2 rounded-xl border border-gray-200 bg-[#f4e8e8] hover:bg-[#e9d1d1] text-sm font-semibold text-[#a83939] transition-all disabled:opacity-50 shadow-sm">
+                      Send Password Reset Email
+                    </motion.button>
+                  </div>
+
+                  <div className="flex-1">
+                    <p className="text-sm font-semibold text-[#b83939] mb-2">Email Address</p>
+                    {showEmailInput ? (
+                      <div className="flex flex-col gap-2">
+                        <input type="email" value={newEmail} onChange={e => setNewEmail(e.target.value)} placeholder="New Email Address" className="w-full px-4 py-2 rounded-xl border border-gray-200 focus:ring-2 focus:ring-[#1A6B6B] focus:border-transparent outline-none text-sm" />
+                        <div className="flex gap-2">
+                          <button type="button" onClick={handleChangeEmail} disabled={isChangingAuth || !newEmail} className="px-4 py-2 rounded-xl bg-[#1A6B6B] hover:bg-[#135454] text-white text-sm font-semibold transition-colors disabled:opacity-50">
+                            Update
+                          </button>
+                          <button type="button" onClick={() => { setShowEmailInput(false); setNewEmail(''); setSecurityMessage({ type: '', text: '' }); }} className="px-4 py-2 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 text-sm font-semibold text-gray-600 transition-colors">
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} type="button" onClick={handleChangeEmail} disabled={isChangingAuth} className="px-4 py-2 rounded-xl border border-gray-200 bg-[#f4e8e8] hover:bg-[#e9d1d1] text-sm font-semibold text-[#a83939] transition-colors disabled:opacity-50">
+                        Change Email Address
+                      </motion.button>
+                    )}
+                  </div>
+                </div>
+              </section>
+
               {/* Actions */}
-              <div className="pt-6 border-t flex flex-col sm:flex-row gap-4 justify-between items-center">
+              <div className="pt-6 border-t flex flex-col sm:flex-row gap-4 justify-between items-center relative z-10">
                 <div className="flex gap-3 w-full sm:w-auto">
-                  <button type="button" onClick={() => navigate('/tourist/profile')} className="px-6 py-3 rounded-xl border bg-white font-semibold text-gray-600 hover:bg-gray-50 flex-1 sm:flex-none">Cancel</button>
-                  <button type="submit" disabled={submitting} className="px-8 py-3 rounded-xl bg-[#1A6B6B] text-white font-semibold hover:bg-[#135454] disabled:opacity-50 flex-1 sm:flex-none">
+                  <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} type="button" onClick={() => navigate('/tourist/profile')} className="px-6 py-3 rounded-xl border bg-white font-semibold text-gray-600 hover:bg-gray-50 flex-1 sm:flex-none shadow-sm transition-all">Cancel</motion.button>
+                  <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} type="submit" disabled={submitting} className="px-8 py-3 rounded-xl bg-[#1A6B6B] text-white font-semibold hover:bg-[#135454] disabled:opacity-50 flex-1 sm:flex-none shadow-md shadow-[#1A6B6B]/20 transition-all">
                     {submitting ? 'Saving...' : 'Save Changes'}
-                  </button>
+                  </motion.button>
                 </div>
 
                 <button type="button" onClick={handleDeactivate} disabled={deactivating} className="flex items-center gap-2 text-red-500 font-semibold px-4 py-2 hover:bg-red-50 rounded-lg transition-colors w-full sm:w-auto justify-center">

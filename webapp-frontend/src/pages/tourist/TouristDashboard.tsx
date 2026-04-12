@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import 'leaflet/dist/leaflet.css';
-import { motion } from 'framer-motion';
+import { hover, motion } from 'framer-motion';
 import {
   GraduationCapIcon,
   PenLineIcon,
@@ -13,11 +13,13 @@ import {
   ChevronLeftIcon
 } from 'lucide-react';
 import { TouristNavbar } from './TouristNavbar';
+import { BatikBackground } from '../../components/BatikBackground';
 import { Link } from 'react-router-dom';
 import { HashLink } from 'react-router-hash-link';
 import { useAuth } from '../../context/AuthContext';
 import { getStats, getMockUpcomingWorkshops, MockWorkshop, getSavedWorkshops, addSavedWorkshop, removeSavedWorkshop } from '../../services/api';
-import { INTEREST_MAP } from '../../constants/touristConstants';
+import { INTEREST_MAP, COUNTRY_CODES } from '../../constants/touristConstants';
+import ReactCountryFlag from 'react-country-flag';
 
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -66,26 +68,11 @@ const pinpoints = [
 ];
 
 // ── Country flag helper ─────────────────────────────────────────────────────
-const COUNTRY_FLAGS: Record<string, string> = {
-  India: '🇮🇳',
-  'United Kingdom': '🇬🇧',
-  UK: '🇬🇧',
-  USA: '🇺🇸',
-  'United States': '🇺🇸',
-  France: '🇫🇷',
-  Germany: '🇩🇪',
-  Japan: '🇯🇵',
-  Australia: '🇦🇺',
-  Canada: '🇨🇦',
-  China: '🇨🇳',
-  Italy: '🇮🇹',
-  Spain: '🇪🇸',
-  Brazil: '🇧🇷',
-  'Sri Lanka': '🇱🇰',
-};
 
-function getFlag(country: string): string {
-  return COUNTRY_FLAGS[country] ?? '🌍';
+function getFlag(country: string) {
+  const code = COUNTRY_CODES[country];
+  if (!code) return <span className="mr-1">🌍</span>;
+  return <ReactCountryFlag countryCode={code} svg className="mr-1" style={{ width: '1.2em', height: '1.2em' }} title={country} />;
 }
 
 // ── Mini Calendar ──────────────────────────────────────────────
@@ -276,14 +263,15 @@ export function TouristDashboard() {
   });
 
   const statCards = [
-    { icon: GraduationCapIcon, label: 'Workshops Attended', value: stats?.workshopsAttended ?? 0, color: '#1A6B6B', border: '#1A6B6B' },
-    { icon: PenLineIcon, label: 'Blogs Posted', value: stats?.blogsPosted ?? 0, color: '#C1440E', border: '#C1440E' },
-    { icon: StarIcon, label: 'Reviews Given', value: stats?.reviewsGiven ?? 0, color: '#D97706', border: '#D97706' },
-    { icon: CalendarIcon, label: 'Upcoming Bookings', value: stats?.upcomingBookings ?? 0, color: '#1A6B6B', border: '#1A6B6B' },
+    { icon: GraduationCapIcon, label: 'Workshops Attended', value: stats?.workshopsAttended ?? 0, color: '#062e9aff', border: '#062e9aff', hover: '#4e74e6' },
+    { icon: PenLineIcon, label: 'Blogs Posted', value: stats?.blogsPosted ?? 0, color: '#c1320eff', border: '#c1320eff', hover: '#ef5e3b' },
+    { icon: StarIcon, label: 'Reviews Given', value: stats?.reviewsGiven ?? 0, color: '#D97706', border: '#D97706', hover: '#f59e0b' },
+    { icon: CalendarIcon, label: 'Upcoming Bookings', value: stats?.upcomingBookings ?? 0, color: '#e6d100', border: '#e6d100', hover: '#ffe600dc' },
   ];
 
   return (
-    <div className="min-h-screen font-body" style={{ backgroundColor: '#FAF6F0' }}>
+    <div className="min-h-screen font-body relative">
+      <BatikBackground />
       <TouristNavbar activeTab="dashboard" />
 
       <div className="pt-16">
@@ -396,24 +384,49 @@ export function TouristDashboard() {
 
             {/* Stats Row */}
             <motion.div variants={itemVariants} className="grid grid-cols-2 md:grid-cols-4 gap-5">
-              {statCards.map(({ icon: Icon, label, value, color, border }) => (
-                <div
+              {statCards.map(({ icon: Icon, label, value, color, border, hover }) => (
+                <motion.div
                   key={label}
-                  className="bg-white rounded-2xl shadow-sm p-6 border border-gray-100 border-l-4"
-                  style={{ borderLeftColor: border }}>
-                  <Icon className="w-5 h-5 mb-3" style={{ color }} />
-                  {isLoading ? (
-                    <>
-                      <SkeletonBlock className="h-8 w-12 mb-2" />
-                      <SkeletonBlock className="h-3 w-24" />
-                    </>
-                  ) : (
-                    <>
-                      <p className="text-3xl font-display font-bold text-[#1E1E1E]">{value}</p>
-                      <p className="text-xs text-gray-400 mt-1 font-body">{label}</p>
-                    </>
-                  )}
-                </div>
+                  whileHover={{ scale: 1.02 }}
+                  style={{
+                    '--card-color': color,
+                    '--card-hover': hover
+                  } as React.CSSProperties}
+                  className="relative bg-white rounded-2xl shadow-sm p-6 border border-gray-100 overflow-hidden group cursor-pointer"
+                >
+                  {/* Expanding border background */}
+                  <div
+                    className="absolute inset-0 left-0 w-1 transition-all duration-300 ease-out group-hover:w-full z-0 opacity-10"
+                    style={{ backgroundColor: border }}
+                  />
+
+                  <div
+                    className="absolute top-0 bottom-0 left-0 w-1 z-10"
+                    style={{ backgroundColor: border }}
+                  />
+
+                  <div className="relative z-20">
+                    <Icon
+                      className="w-5 h-5 mb-3 transition-colors duration-300 text-[var(--card-color)] group-hover:fill-[var(--card-hover)]"
+                    />
+
+                    {isLoading ? (
+                      <>
+                        <SkeletonBlock className="h-8 w-12 mb-2" />
+                        <SkeletonBlock className="h-3 w-24" />
+                      </>
+                    ) : (
+                      <>
+                        <p className="text-3xl font-display font-bold text-[#1E1E1E] transition-colors duration-300">
+                          {value}
+                        </p>
+                        <p className="text-xs text-gray-500 mt-1 font-body transition-colors duration-300 group-hover:text-gray-900">
+                          {label}
+                        </p>
+                      </>
+                    )}
+                  </div>
+                </motion.div>
               ))}
             </motion.div>
 
@@ -424,9 +437,11 @@ export function TouristDashboard() {
                   <h2 className="text-2xl font-display font-bold text-[#1E1E1E]">Your Upcoming Workshops</h2>
                   <p className="text-xs text-gray-400 font-body mt-0.5">Don't miss these scheduled sessions</p>
                 </div>
-                <Link to="/book" className="text-sm font-semibold font-body flex items-center gap-1 hover:gap-2 transition-all" style={{ color: '#1A6B6B' }}>
-                  View All <ChevronRightIcon className="w-4 h-4" />
-                </Link>
+                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                  <Link to="/book" className="text-sm font-semibold font-body flex items-center gap-1 px-3 py-1.5 rounded-lg bg-[#E8F4F4] text-[#1A6B6B] hover:bg-[#FAF6F0] hover:text-[#C1440E] transition-all border border-[#1A6B6B] hover:border-[#C1440E]">
+                    View All <ChevronRightIcon className="w-4 h-4" />
+                  </Link>
+                </motion.div>
               </div>
 
               <div className="flex gap-5 overflow-x-auto pb-3 scrollbar-hide">
@@ -462,7 +477,7 @@ export function TouristDashboard() {
 
             {/* Nearby Workshops Map */}
             <motion.div variants={itemVariants}>
-              <div className='mb-5' >
+              <div className='mb-5 z-' >
                 <h2 className="text-2xl font-display font-bold text-[#1E1E1E]">Discover Workshops Near You</h2>
                 <p className="text-xs text-gray-400 font-body mt-0.5">Plan your experience around Sri Lanka</p>
               </div>
@@ -497,9 +512,11 @@ export function TouristDashboard() {
                   <h2 className="text-lg font-display font-bold text-gray-600">Recommended For You</h2>
                   <p className="text-xs text-gray-400 font-body mt-0.5">Based on your interests</p>
                 </div>
-                <Link to="/browse" className="text-sm font-semibold font-body flex items-center gap-1" style={{ color: '#1A6B6B' }}>
-                  Explore All <ChevronRightIcon className="w-4 h-4" />
-                </Link>
+                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                  <Link to="/browse" className="text-sm font-semibold font-body flex items-center gap-1 px-3 py-1.5 rounded-lg bg-[#E8F4F4] text-[#1A6B6B] hover:bg-[#FAF6F0] hover:text-[#C1440E] transition-all border border-[#1A6B6B] hover:border-[#C1440E]">
+                    Explore All <ChevronRightIcon className="w-4 h-4" />
+                  </Link>
+                </motion.div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -563,15 +580,15 @@ export function TouristDashboard() {
                 <h3 className="text-xs font-bold text-[#1E1E1E] font-body mb-3 uppercase tracking-wider">
                   Quick Links
                 </h3>
-                <div className="space-y-1">
-                  <HashLink smooth to="/tourist/profile/edit" className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-[#1E1E1E] hover:bg-[#FAF6F0] transition-colors font-body">
-                    <UserIcon className="w-4 h-4 shrink-0" style={{ color: '#1A6B6B' }} /> Edit Profile </HashLink>
-                  <HashLink smooth to="/tourist/profile#myWishlist" className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-[#1E1E1E] hover:bg-[#FAF6F0] transition-colors font-body">
-                    <HeartIcon className="w-4 h-4 shrink-0" style={{ color: '#1A6B6B' }} /> My Wishlist </HashLink>
-                  <HashLink smooth to="/tourist/profile#myBookings" className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-[#1E1E1E] hover:bg-[#FAF6F0] transition-colors font-body">
-                    <CalendarIcon className="w-4 h-4 shrink-0" style={{ color: '#1A6B6B' }} /> My Bookings </HashLink>
-                  <HashLink smooth to="/tourist/profile#myBlogs" className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-[#1E1E1E] hover:bg-[#FAF6F0] transition-colors font-body">
-                    <BookOpenIcon className="w-4 h-4 shrink-0" style={{ color: '#1A6B6B' }} /> My Blogs </HashLink>
+                <div className="space-y-1 relative z-10">
+                  <HashLink smooth to="/tourist/profile/edit" className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-[#1E1E1E] hover:bg-[#E8F4F4] hover:text-[#1A6B6B] transition-all duration-200 font-body group">
+                    <UserIcon className="w-4 h-4 shrink-0 group-hover:scale-110 group-hover:fill-[#35d4d4] transition-transform" style={{ color: '#1A6B6B' }} /> Edit Profile </HashLink>
+                  <HashLink smooth to="/tourist/profile#myWishlist" className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-[#1E1E1E] hover:bg-[#E8F4F4] hover:text-[#1A6B6B] transition-all duration-200 font-body group">
+                    <HeartIcon className="w-4 h-4 shrink-0 group-hover:scale-110 group-hover:fill-[#35d4d4] transition-transform" style={{ color: '#1A6B6B' }} /> My Wishlist </HashLink>
+                  <HashLink smooth to="/tourist/profile#myBookings" className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-[#1E1E1E] hover:bg-[#E8F4F4] hover:text-[#1A6B6B] transition-all duration-200 font-body group">
+                    <CalendarIcon className="w-4 h-4 shrink-0 group-hover:scale-110 group-hover:fill-[#35d4d4] transition-transform" style={{ color: '#1A6B6B' }} /> My Bookings </HashLink>
+                  <HashLink smooth to="/tourist/profile#myBlogs" className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-[#1E1E1E] hover:bg-[#E8F4F4] hover:text-[#1A6B6B] transition-all duration-200 font-body group">
+                    <BookOpenIcon className="w-4 h-4 shrink-0 group-hover:scale-110 group-hover:fill-[#35d4d4] transition-transform" style={{ color: '#1A6B6B' }} /> My Blogs </HashLink>
                 </div>
               </div>
 

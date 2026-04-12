@@ -54,35 +54,35 @@ export function Footer() {
             </h4>
             <ul className="space-y-2">
               {[
-              {
-                name: 'Craft Traditions',
-                path: '/browse'
-              },
-              {
-                name: 'Meet Artisans',
-                path: '/browse'
-              },
-              {
-                name: 'Workshops',
-                path: '/map'
-              },
-              {
-                name: 'Mobile App',
-                path: '/mobile'
-              }].
-              map((item) =>
-              <li key={item.name}>
-                  <Link
-                  to={item.path}
-                  className="text-white/65 hover:text-white text-sm transition-colors"
-                  style={{
-                    fontFamily: 'Inter, sans-serif'
-                  }}>
+                {
+                  name: 'Craft Traditions',
+                  path: '/browse'
+                },
+                {
+                  name: 'Meet Artisans',
+                  path: '/browse'
+                },
+                {
+                  name: 'Workshops',
+                  path: '/map'
+                },
+                {
+                  name: 'Mobile App',
+                  path: '/mobile'
+                }].
+                map((item) =>
+                  <li key={item.name}>
+                    <Link
+                      to={item.path}
+                      className="text-white/65 hover:text-white text-sm transition-colors"
+                      style={{
+                        fontFamily: 'Inter, sans-serif'
+                      }}>
 
-                    {item.name}
-                  </Link>
-                </li>
-              )}
+                      {item.name}
+                    </Link>
+                  </li>
+                )}
             </ul>
           </div>
 
@@ -99,13 +99,13 @@ export function Footer() {
             <ul className="space-y-2">
               {['Kandy', 'Galle', 'Colombo', 'Jaffna', 'Ratnapura'].map(
                 (item) =>
-                <li key={item}>
+                  <li key={item}>
                     <Link
-                    to="/browse"
-                    className="text-white/65 hover:text-white text-sm transition-colors"
-                    style={{
-                      fontFamily: 'Inter, sans-serif'
-                    }}>
+                      to="/browse"
+                      className="text-white/65 hover:text-white text-sm transition-colors"
+                      style={{
+                        fontFamily: 'Inter, sans-serif'
+                      }}>
 
                       {item}
                     </Link>
@@ -127,14 +127,14 @@ export function Footer() {
             </h4>
             <div className="flex gap-3 mb-6">
               {['Instagram', 'Facebook', 'Twitter'].map((social) =>
-              <a
-                key={social}
-                href="#"
-                className="w-9 h-9 rounded-full flex items-center justify-center transition-all duration-200 hover:scale-110"
-                style={{
-                  backgroundColor: 'rgba(255,255,255,0.15)'
-                }}
-                title={social}>
+                <a
+                  key={social}
+                  href="#"
+                  className="w-9 h-9 rounded-full flex items-center justify-center transition-all duration-200 hover:scale-110"
+                  style={{
+                    backgroundColor: 'rgba(255,255,255,0.15)'
+                  }}
+                  title={social}>
 
                   <span className="text-white text-xs font-bold">
                     {social[0]}
@@ -173,13 +173,13 @@ export function Footer() {
           </p>
           <div className="flex gap-6">
             {['Privacy Policy', 'Terms of Use', 'Contact'].map((item) =>
-            <a
-              key={item}
-              href="#"
-              className="text-white/50 hover:text-white text-sm transition-colors"
-              style={{
-                fontFamily: 'Inter, sans-serif'
-              }}>
+              <a
+                key={item}
+                href="#"
+                className="text-white/50 hover:text-white text-sm transition-colors"
+                style={{
+                  fontFamily: 'Inter, sans-serif'
+                }}>
 
                 {item}
               </a>

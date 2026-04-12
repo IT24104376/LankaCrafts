@@ -58,8 +58,13 @@ export const updateReviews = (reviewIds: string[]) =>
 
 // ── Blogs ─────────────────────────────────────────────────────────────────────
 
-export const getBlogs = (page = 1, sort = 'recent') =>
-  api.get(`/api/tourist/blogs?page=${page}&sort=${sort}`);
+export const getBlogs = (page = 1, sort = 'recent', tag?: string) => {
+  const tagParam = tag ? `&tag=${encodeURIComponent(tag)}` : '';
+  return api.get(`/api/tourist/blogs?page=${page}&sort=${sort}${tagParam}`);
+};
+
+export const getBlog = (id: string) =>
+  api.get(`/api/tourist/blogs/${id}`); 
 
 export const getMyBlogs = () =>
   api.get('/api/tourist/blogs/me');
@@ -90,6 +95,73 @@ export const createBooking = (data: object) =>
 
 export const cancelBooking = (id: string) =>
   api.patch(`/api/tourist/bookings/${id}/cancel`);
+
+// ── Artist Auth ─────────────────────────────────────────────────────────────────
+
+export const registerArtist = (data: object) =>
+  api.post('/api/artist/auth/register', data);
+
+export const loginArtist = () =>
+  api.post('/api/artist/auth/login');
+
+// ── Artist Profile ─────────────────────────────────────────────────────────────
+
+export const getArtistProfile = () =>
+  api.get('/api/artist/profile');
+
+export const updateArtistProfile = (data: object) =>
+  api.patch('/api/artist/profile', data);
+
+export const deleteArtistProfile = () =>
+  api.delete('/api/artist/profile');
+
+// ── Artist Crafts ─────────────────────────────────────────────────────────────
+
+export const getMyCrafts = () =>
+  api.get('/api/artist/crafts');
+
+export const createCraft = (data: object) =>
+  api.post('/api/artist/crafts', data);
+
+export const updateCraft = (id: string, data: object) =>
+  api.patch(`/api/artist/crafts/${id}`, data);
+
+export const deleteCraft = (id: string) =>
+  api.delete(`/api/artist/crafts/${id}`);
+
+// ── Public Artists ────────────────────────────────────────────────────────────
+
+export const getArtists = (page = 1, limit = 20, craftType?: string, search?: string) => {
+  const params = new URLSearchParams();
+  params.append('page', page.toString());
+  params.append('limit', limit.toString());
+  if (craftType) params.append('craftType', craftType);
+  if (search) params.append('search', search);
+  return api.get(`/api/artists?${params.toString()}`);
+};
+
+export const getArtistById = (id: string) =>
+  api.get(`/api/artists/${id}`);
+
+export const getFeaturedArtist = () =>
+  api.get('/api/artists/featured');
+
+// ── Public Crafts ────────────────────────────────────────────────────────────
+
+export const getCrafts = (page = 1, limit = 20, category?: string, search?: string) => {
+  const params = new URLSearchParams();
+  params.append('page', page.toString());
+  params.append('limit', limit.toString());
+  if (category) params.append('category', category);
+  if (search) params.append('search', search);
+  return api.get(`/api/crafts/public/crafts?${params.toString()}`);
+};
+
+export const getCraftById = (id: string) =>
+  api.get(`/api/crafts/public/crafts/${id}`);
+
+export const createPaymentLink = (data: object) =>
+  api.post('/api/payments/create', data);
 
 // ── Mock: Upcoming Workshops ──────────────────────────────────────────────────
 // TODO: Replace with real API call once the workshops endpoint is available.

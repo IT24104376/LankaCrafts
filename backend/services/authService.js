@@ -47,6 +47,15 @@ export async function registerTourist(uid, firebaseEmail, body) {
     preferredRegions,
   } = body;
 
+  if (idNumber) {
+    const existingId = await Tourist.findOne({ idNumber });
+    if (existingId) {
+      const e = new Error('This Identity Number (NIC or Passport) is already registered.');
+      e.status = 409;
+      throw e;
+    }
+  }
+
   if (!fullName || !country) {
     const e = new Error('fullName and country are required.');
     e.status = 400;

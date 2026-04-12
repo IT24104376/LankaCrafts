@@ -8,13 +8,20 @@ import dotenv from 'dotenv';
 import { Server as SocketIOServer } from 'socket.io';
 import jwt from 'jsonwebtoken';
 import { connectDB } from './config/db.js';
-import artistRoutes from './routes/artists.js';
 import authRoutes from './routes/auth.js';
+import artistAuthRoutes from './routes/artistAuth.js';
+import artistProfileRoutes from './routes/artistProfile.js';
+import artistRoutes from './routes/artists.js';
+import blogRoutes from './routes/blogs.js';
+import workshopBookingRoutes from './routes/bookingRoutes.js';
 import cartRoutes from './routes/cart.js';
 import chatRoutes from './routes/chat.js';
-import orderRoutes from './routes/orders.js';
+import craftRoutes from './routes/crafts.js';
 import mapRoutes from './routes/map.js';
+import orderRoutes from './routes/orders.js';
+import paymentRoutes from './routes/payments.js';
 import productRoutes from './routes/products.js';
+import touristRoutes from './routes/tourist.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import User from './models/User.js';
 
@@ -92,6 +99,14 @@ app.use('/api/cart', cartRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/map', mapRoutes);
 app.use('/api/chat', chatRoutes);
+app.use('/api/tourist/auth', authRoutes);
+app.use('/api/tourist', touristRoutes);
+app.use('/api/tourist/blogs', blogRoutes);
+app.use('/api/bookings', workshopBookingRoutes);
+app.use('/api/artist/auth', artistAuthRoutes);
+app.use('/api/artist', artistProfileRoutes);
+app.use('/api/crafts', craftRoutes);
+app.use('/api/payments', paymentRoutes);
 
 app.get('/', (_req, res) => {
   res.status(200).json({
@@ -108,6 +123,12 @@ app.get('/', (_req, res) => {
       orders: '/api/orders',
       map: '/api/map',
       chat: '/api/chat',
+      tourist: '/api/tourist',
+      blogs: '/api/tourist/blogs',
+      bookings: '/api/bookings',
+      artistProfile: '/api/artist',
+      crafts: '/api/crafts',
+      payments: '/api/payments',
     },
   });
 });
@@ -151,7 +172,7 @@ io.use(async (socket, next) => {
     };
 
     return next();
-  } catch (error) {
+  } catch (_error) {
     return next(new Error('Invalid token'));
   }
 });
