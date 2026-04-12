@@ -1,8 +1,39 @@
 import express from 'express';
-import { handlePaymentNotification, verifyPaymentNotification } from '../services/paymentService.js';
+import { handlePaymentNotification, verifyPaymentNotification, createPaymentLink } from '../services/paymentService.js';
+import { paymentValidation } from '../middleware/validation.js';
 
 const router = express.Router();
 
+// Create payment link for PayHere checkout
+router.post('/create', paymentValidation, async (req, res) => {
+  try {
+    const { orderId, amount, currency, items, customerName, email, phone, address, city, country } = req.body;
+    
+    const paymentLink = createPaymentLink({
+      orderId,
+      amount,
+      currency: currency || 'LKR',
+      items: items || 'LankaCrafts Purchase',
+      customerName,
+      email,
+      phone: phone || '',
+      address: address || '',
+      city: city || '',
+      country: country || 'Sri Lanka'
+    });
+    
+    res.json({
+      success: true,
+      paymentUrl: paymentLink,
+      orderId
+    });
+  } catch (err) {
+    console.error('[PAYMENT] Create error:', err);
+    res.status(500).json({ error: 'Failed to create payment link' });
+  }
+});
+
+// PayHere payment notification callback
 router.post('/notify', express.urlencoded({ extended: true }), async (req, res) => {
   try {
     const { order_id, payment_status, payhere_amount, payhere_currency, merchant_id } = req.body;

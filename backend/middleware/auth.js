@@ -1,5 +1,6 @@
 import admin from '../config/firebase.js';
 import Tourist from '../models/Tourist.js';
+import Artist from '../models/Artist.js'
 
 /**
  * Middleware: verifyFirebaseToken
@@ -48,4 +49,49 @@ const verifyFirebaseToken = async (req, res, next) => {
   }
 };
 
-export { verifyFirebaseToken };
+/**
+ * Middleware: verifyArtistToken
+ * Verifies Firebase ID token and loads the Artist profile from MongoDB
+ */
+const verifyArtistToken = async (req, res, next) => {
+  try {
+    const authHeader = req.headers.authorization || '';
+
+    if (!authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({ error: 'No token provided. Authorization header must start with "Bearer ".' });
+    }
+
+    const idToken = authHeader.split('Bearer ')[1];
+
+    // Verify with Firebase Admin
+    const decodedToken = await admin.auth().verifyIdToken(idToken);
+    const { uid, email } = decodedToken;
+
+    // Find the artist profile in MongoDB by Firebase UID
+    const artist = await Artist.findOne({ firebaseUid: uid });
+
+    if (!artist) {
+      return res.status(404).json({
+        error: 'Artist profile not found.',
+        uid,
+      });
+    }
+
+    req.artist = artist;
+    req.firebaseUid = uid;
+    req.firebaseEmail = email;
+
+    next();
+  } catch (err) {
+    if (err.code === 'auth/id-token-expired') {
+      return res.status(401).json({ error: 'Token expired. Please log in again.' });
+    }
+    if (err.code === 'auth/argument-error' || err.code === 'auth/id-token-revoked') {
+      return res.status(401).json({ error: 'Invalid token.' });
+    }
+    console.error('Artist auth middleware error:', err.message);
+    return res.status(500).json({ error: 'Authentication error.' });
+  }
+};
+
+export { verifyFirebaseToken, verifyArtistToken };

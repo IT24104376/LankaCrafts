@@ -66,7 +66,7 @@ router.post('/login', async (req, res) => {
   });
 });
 
-router.get('/profile', async (req, res) => {
+router.get('/profile/:id', async (req, res) => {
   try {
     const { id } = req.params;
     const Artist = (await import('../models/Artist.js')).default;

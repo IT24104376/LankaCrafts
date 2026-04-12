@@ -1,7 +1,8 @@
 import axios from 'axios';
 import { auth } from '../config/firebase';
 
-const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+// Base URL should not include /api as it's added in each endpoint
+const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
 const api = axios.create({
   baseURL: BASE_URL,
@@ -17,117 +18,146 @@ api.interceptors.request.use(async (config) => {
   return config;
 });
 
+// Response interceptor for global error handling
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response) {
+      const { status, data } = error.response;
+      switch (status) {
+        case 401:
+          console.error('[API] Unauthorized');
+          break;
+        case 403:
+          console.error('[API] Forbidden');
+          break;
+        case 404:
+          console.error('[API] Not found');
+          break;
+        case 500:
+          console.error('[API] Server error');
+          break;
+        default:
+          console.error('[API] Error:', data?.error || error.message);
+      }
+    } else if (error.request) {
+      console.error('[API] Network error');
+    }
+    return Promise.reject(error);
+  }
+);
+
 // ── Auth ──────────────────────────────────────────────────────────────────────
 
 export const registerTourist = (data: object) =>
-  api.post('/api/tourist/auth/register', data);
+  api.post('/tourist/auth/register', data);
 
 export const loginTourist = () =>
-  api.post('/api/tourist/auth/login');
+  api.post('/tourist/auth/login');
 
 // ── Profile ───────────────────────────────────────────────────────────────────
 
 export const getProfile = () =>
-  api.get('/api/tourist/profile');
+  api.get('/tourist/profile');
 
 export const updateProfile = (data: object) =>
-  api.patch('/api/tourist/profile', data);
+  api.patch('/tourist/profile', data);
 
 export const uploadProfilePic = (formData: FormData) =>
-  api.post('/api/tourist/profile-picture', formData, {
+  api.post('/tourist/profile-picture', formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
   });
 
 export const getStats = () =>
-  api.get('/api/tourist/stats');
+  api.get('/tourist/stats');
 
 export const getSavedWorkshops = () =>
-  api.get('/api/tourist/saved-workshops');
+  api.get('/tourist/saved-workshops');
 
 export const addSavedWorkshop = (workshopId: number | string) =>
-  api.post('/api/tourist/saved-workshops', { workshopId });
+  api.post('/tourist/saved-workshops', { workshopId });
 
 export const removeSavedWorkshop = (workshopId: number | string) =>
-  api.delete(`/api/tourist/saved-workshops/${workshopId}`);
+  api.delete(`/tourist/saved-workshops/${workshopId}`);
 
 export const getReviews = () =>
-  api.get('/api/tourist/reviews');
+  api.get('/tourist/reviews');
 
 export const updateReviews = (reviewIds: string[]) =>
-  api.post('/api/tourist/reviews', { reviewIds });
+  api.post('/tourist/reviews', { reviewIds });
 
 // ── Blogs ─────────────────────────────────────────────────────────────────────
 
 export const getBlogs = (page = 1, sort = 'recent', tag?: string) => {
   const tagParam = tag ? `&tag=${encodeURIComponent(tag)}` : '';
-  return api.get(`/api/tourist/blogs?page=${page}&sort=${sort}${tagParam}`);
+  return api.get(`/tourist/blogs?page=${page}&sort=${sort}${tagParam}`);
 };
 
 export const getBlog = (id: string) =>
-  api.get(`/api/tourist/blogs/${id}`); 
+  api.get(`/tourist/blogs/${id}`); 
 
 export const getMyBlogs = () =>
-  api.get('/api/tourist/blogs/me');
+  api.get('/tourist/blogs/me');
 
 export const createBlog = (formData: FormData) =>
-  api.post('/api/tourist/blogs', formData, {
+  api.post('/tourist/blogs', formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
   });
 
 export const updateBlog = (id: string, formData: FormData) =>
-  api.patch(`/api/tourist/blogs/${id}`, formData, {
+  api.patch(`/tourist/blogs/${id}`, formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
   });
 
 export const likeBlog = (id: string) =>
-  api.patch(`/api/tourist/blogs/${id}/like`);
+  api.patch(`/tourist/blogs/${id}/like`);
 
 export const deleteBlog = (id: string) =>
-  api.delete(`/api/tourist/blogs/${id}`);
+  api.delete(`/tourist/blogs/${id}`);
 
 // ── Bookings ──────────────────────────────────────────────────────────────────
 
 export const getBookings = () =>
-  api.get('/api/tourist/bookings');
+  api.get('/tourist/bookings');
 
 export const createBooking = (data: object) =>
-  api.post('/api/tourist/bookings', data);
+  api.post('/tourist/bookings', data);
 
 export const cancelBooking = (id: string) =>
-  api.patch(`/api/tourist/bookings/${id}/cancel`);
+  api.patch(`/tourist/bookings/${id}/cancel`);
 
 // ── Artist Auth ─────────────────────────────────────────────────────────────────
 
 export const registerArtist = (data: object) =>
-  api.post('/api/artist/auth/register', data);
+  api.post('/artist/auth/register', data);
 
 export const loginArtist = () =>
-  api.post('/api/artist/auth/login');
+  api.post('/artist/auth/login');
 
 // ── Artist Profile ─────────────────────────────────────────────────────────────
 
 export const getArtistProfile = () =>
-  api.get('/api/artist/profile');
+  api.get('/artist/profile');
 
 export const updateArtistProfile = (data: object) =>
-  api.patch('/api/artist/profile', data);
+  api.patch('/artist/profile', data);
 
 export const deleteArtistProfile = () =>
-  api.delete('/api/artist/profile');
+  api.delete('/artist/profile');
 
 // ── Artist Crafts ─────────────────────────────────────────────────────────────
 
 export const getMyCrafts = () =>
-  api.get('/api/artist/crafts');
+  api.get('/artist/crafts');
 
 export const createCraft = (data: object) =>
-  api.post('/api/artist/crafts', data);
+  api.post('/artist/crafts', data);
 
 export const updateCraft = (id: string, data: object) =>
-  api.patch(`/api/artist/crafts/${id}`, data);
+  api.patch(`/artist/crafts/${id}`, data);
 
 export const deleteCraft = (id: string) =>
-  api.delete(`/api/artist/crafts/${id}`);
+  api.delete(`/artist/crafts/${id}`);
 
 // ── Public Artists ────────────────────────────────────────────────────────────
 
@@ -137,14 +167,14 @@ export const getArtists = (page = 1, limit = 20, craftType?: string, search?: st
   params.append('limit', limit.toString());
   if (craftType) params.append('craftType', craftType);
   if (search) params.append('search', search);
-  return api.get(`/api/artists?${params.toString()}`);
+  return api.get(`/artists?${params.toString()}`);
 };
 
 export const getArtistById = (id: string) =>
-  api.get(`/api/artists/${id}`);
+  api.get(`/artists/profile/${id}`);
 
 export const getFeaturedArtist = () =>
-  api.get('/api/artists/featured');
+  api.get('/artists/featured');
 
 // ── Public Crafts ────────────────────────────────────────────────────────────
 
@@ -154,14 +184,14 @@ export const getCrafts = (page = 1, limit = 20, category?: string, search?: stri
   params.append('limit', limit.toString());
   if (category) params.append('category', category);
   if (search) params.append('search', search);
-  return api.get(`/api/crafts/public/crafts?${params.toString()}`);
+  return api.get(`/crafts?${params.toString()}`);
 };
 
 export const getCraftById = (id: string) =>
-  api.get(`/api/crafts/public/crafts/${id}`);
+  api.get(`/crafts/${id}`);
 
 export const createPaymentLink = (data: object) =>
-  api.post('/api/payments/create', data);
+  api.post('/payments/create', data);
 
 // ── Mock: Upcoming Workshops ──────────────────────────────────────────────────
 // TODO: Replace with real API call once the workshops endpoint is available.

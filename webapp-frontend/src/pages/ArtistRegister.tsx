@@ -17,6 +17,7 @@ import {
   Trash2,
   Edit2,
   Save,
+  ArrowRight,
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -162,6 +163,7 @@ export function ArtistRegister() {
       await import('leaflet/dist/leaflet.css');
 
       if (mapRef.current) return;
+      if (!mapContainerRef.current) return;
 
       mapRef.current = L.map(mapContainerRef.current).setView([7.8731, 80.7718], 10);
 
@@ -422,7 +424,7 @@ export function ArtistRegister() {
                   </div>
 
                   <motion.button type="button" onClick={() => setStep(2)} disabled={!step1.fullName || !step1.email || !step1.password || !step1.confirmPassword || !step1.phone || !step1.craftType || step1.password !== step1.confirmPassword} whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.98 }} className="w-full py-3.5 rounded-xl text-white font-semibold text-sm font-body transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed" style={{ backgroundColor: '#2F5D50' }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#1A4D45'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#2F5D50'}>
-                    Continue <ArrowRightIcon className="w-4 h-4" />
+                    Continue <ArrowRight className="w-4 h-4" />
                   </motion.button>
                 </div>
               </motion.div>

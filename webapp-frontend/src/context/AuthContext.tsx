@@ -172,7 +172,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const refreshArtist = async () => {
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/artist/profile`, {
+      const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+      const res = await fetch(`${API_BASE}/api/artist/profile`, {
         headers: {
           'Authorization': `Bearer ${await auth.currentUser?.getIdToken()}`
         }

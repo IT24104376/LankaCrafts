@@ -1,10 +1,17 @@
 import crypto from 'crypto';
 
-const PAYHERE_MERCHANT_ID = process.env.PAYHERE_MERCHANT_ID || '1226424';
-const PAYHERE_SECRET = process.env.PAYHERE_SECRET || 'GiDStKxCdHWjQaBgwOwoBuRg5rOkMWGf';
+// Use environment variables with fallbacks to empty strings
+// IMPORTANT: These must be set in production!
+const PAYHERE_MERCHANT_ID = process.env.PAYHERE_MERCHANT_ID || '';
+const PAYHERE_SECRET = process.env.PAYHERE_SECRET || '';
 const PAYHERE_BASE_URL = process.env.PAYHERE_MODE === 'live'
   ? 'https://www.payhere.lk/pay/checkout'
   : 'https://sandbox.payhere.lk/pay/checkout';
+
+// Validate required environment variables
+if (!PAYHERE_MERCHANT_ID || !PAYHERE_SECRET) {
+  console.warn('[PAYMENT] WARNING: PAYHERE_MERCHANT_ID or PAYHERE_SECRET not configured!');
+}
 
 export function generatePaymentHash(orderId, amount, currency = 'LKR') {
   const hash = crypto.createHash('sha256');
@@ -39,20 +46,47 @@ export function createPaymentLink(payment) {
   return `${PAYHERE_BASE_URL}?${params.toString()}`;
 }
 
-export function verifyPaymentNotification(orderId, amount, statusCode) {
+export function verifyPaymentNotification(orderId, amount, statusCode, hash) {
+  // statusCode '2' = success, '0' = pending, '-1' = cancelled, '-2' = failed
   if (statusCode !== '2') {
     return false;
+  }
+
+  // If merchant secret is configured, verify the hash
+  if (PAYHERE_SECRET) {
+    // PayHere sends the hash in the notify request
+    // Hash format: SHA256(secret + order_id + amount + currency + merchant_id)
+    const expectedHash = crypto.createHash('sha256')
+      .update(PAYHERE_SECRET + orderId + amount.toFixed(2) + 'LKR' + PAYHERE_MERCHANT_ID)
+      .digest('hex').toUpperCase();
+    
+    if (hash && hash !== expectedHash) {
+      console.warn(`[PAYMENT] Hash verification failed for order ${orderId}`);
+      return false;
+    }
   }
 
   return true;
 }
 
-export async function handlePaymentNotification(req) {
-  const { order_id, payment_status, payhere_amount, payhere_currency } = req.body;
+export async function handlePaymentNotification(req, res) {
+  const { order_id, payment_status, payhere_amount, payhere_currency, hash } = req.body || req;
 
   if (payment_status !== '2') {
-    return { success: false, orderId: order_id };
+    console.log(`[PAYMENT] Order ${order_id} payment status: ${payment_status}`);
+    return { success: false, orderId: order_id, status: payment_status };
   }
 
-  return { success: true, orderId: order_id };
+  // Verify the payment
+  const isValid = verifyPaymentNotification(order_id, parseFloat(payhere_amount), payment_status, hash);
+  
+  if (!isValid) {
+    console.warn(`[PAYMENT] Invalid payment for order ${order_id}`);
+    return { success: false, orderId: order_id, error: 'Invalid payment verification' };
+  }
+
+  // TODO: Update order status in database
+  console.log(`[PAYMENT] Payment successful for order ${order_id}, amount: ${payhere_amount} ${payhere_currency}`);
+
+  return { success: true, orderId: order_id, amount: payhere_amount, currency: payhere_currency };
 }
