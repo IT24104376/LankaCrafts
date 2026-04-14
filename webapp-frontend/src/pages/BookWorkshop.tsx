@@ -3,7 +3,7 @@ import { QRCodeSVG } from 'qrcode.react';
 import axios from 'axios';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { bookingApi } from '../api';
+import { getBookings, createBooking, cancelBooking } from '../services/api';
 import {
   Calendar,
   Users,
@@ -114,7 +114,7 @@ export function BookWorkshop() {
     };
 
     try {
-      await bookingApi.createBooking(bookingPayload);
+      await createBooking(bookingPayload);
       setIsSuccess(true);
       window.scrollTo(0, 0);
     } catch (error) {

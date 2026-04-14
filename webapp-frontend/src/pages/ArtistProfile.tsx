@@ -1,267 +1,111 @@
-import React from 'react';
+import { useState, useEffect } from 'react';
 import { MapPin, Clock, Star, MessageCircle, Calendar } from 'lucide-react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Navbar } from '../components/Navbar';
 import { Footer } from '../components/Footer';
 import { Button } from '../components/ui/Button';
 import { ReviewSection } from '../components/ReviewSection';
-// Shared artist data keyed by route ID
-const ARTISTS_DATA: Record<
-  string,
-  {
-    name: string;
-    craft: string;
-    craftId: string;
-    artisanId: number;
-    location: string;
-    bio: string;
-    specialties: string[];
-    rating: number;
-    reviews: number;
-    initials: string;
-    schedule: {
-      day: string;
-      slots: string[];
-    }[];
-  }> =
-{
-  '1': {
-    name: 'Nimal Perera',
-    craft: 'Kandyan Lacquerwork',
-    craftId: 'lacquer',
-    artisanId: 1,
-    location: 'Kandy, Central Province',
-    bio: "For over four decades, I have dedicated my life to the ancient art of Kandyan lacquerwork (Laksha). Learning from my father at the age of 12, I've mastered the traditional technique of applying natural lacquer to turned wood using only the heat of friction. My workshop is not just a place of production, but a sanctuary where this dying art form is preserved and passed down to the next generation.",
-    specialties: ['Ceremonial Staffs', 'Jewelry Boxes', 'Traditional Vases'],
-    rating: 4.9,
-    reviews: 124,
-    initials: 'NP',
-    schedule: [
-    {
-      day: 'Mon',
-      slots: ['10:00 AM', '2:00 PM']
-    },
-    {
-      day: 'Tue',
-      slots: ['10:00 AM', '2:00 PM']
-    },
-    {
-      day: 'Wed',
-      slots: ['10:00 AM']
-    },
-    {
-      day: 'Thu',
-      slots: ['10:00 AM', '2:00 PM']
-    },
-    {
-      day: 'Fri',
-      slots: ['10:00 AM', '2:00 PM']
-    },
-    {
-      day: 'Sat',
-      slots: ['9:00 AM']
-    }]
+import { getArtistById, getCrafts } from '../services/api';
 
-  },
-  '2': {
-    name: 'Kamala Wijesinghe',
-    craft: 'Batik Textiles',
-    craftId: 'batik',
-    artisanId: 2,
-    location: 'Kandy, Central Province',
-    bio: 'Kamala has spent nearly three decades perfecting the ancient art of batik, creating intricate wax-resist patterns on silk and cotton. Her designs draw from traditional Kandyan motifs while incorporating contemporary aesthetics that appeal to modern collectors worldwide.',
-    specialties: ['Silk Batik', 'Wall Hangings', 'Fashion Textiles'],
-    rating: 4.8,
-    reviews: 98,
-    initials: 'KW',
-    schedule: [
-    {
-      day: 'Mon',
-      slots: ['9:00 AM', '11:00 AM', '3:00 PM']
-    },
-    {
-      day: 'Tue',
-      slots: ['9:00 AM', '3:00 PM']
-    },
-    {
-      day: 'Wed',
-      slots: ['9:00 AM', '11:00 AM']
-    },
-    {
-      day: 'Thu',
-      slots: ['9:00 AM', '3:00 PM']
-    },
-    {
-      day: 'Fri',
-      slots: ['9:00 AM', '11:00 AM', '3:00 PM']
-    },
-    {
-      day: 'Sat',
-      slots: ['10:00 AM']
-    }]
+// Types for artist data
+interface ArtistData {
+  id: string;
+  name: string;
+  initials: string;
+  craft: string;
+  location: string;
+  bio: string;
+  specialties: string[];
+  schedule: { day: string; slots: string[] }[];
+  craftId?: string;
+  artisanId?: string;
+}
 
-  },
-  '3': {
-    name: 'Suresh Fernando',
-    craft: 'Mask Carving',
-    craftId: 'masks',
-    artisanId: 3,
-    location: 'Ambalangoda, Southern Province',
-    bio: 'Suresh is a third-generation mask carver from Ambalangoda, the mask capital of Sri Lanka. His kolam and sanni masks are carved from kaduru wood and used in traditional healing rituals and dance performances. Each mask takes weeks to complete.',
-    specialties: ['Kolam Masks', 'Sanni Masks', 'Decorative Masks'],
-    rating: 4.7,
-    reviews: 87,
-    initials: 'SF',
-    schedule: [
-    {
-      day: 'Mon',
-      slots: ['10:00 AM', '1:00 PM']
-    },
-    {
-      day: 'Tue',
-      slots: ['10:00 AM', '1:00 PM']
-    },
-    {
-      day: 'Wed',
-      slots: ['10:00 AM']
-    },
-    {
-      day: 'Thu',
-      slots: ['10:00 AM', '1:00 PM']
-    },
-    {
-      day: 'Fri',
-      slots: ['10:00 AM', '1:00 PM']
-    },
-    {
-      day: 'Sat',
-      slots: ['10:00 AM']
-    }]
+// // Mock data fallback (until API is properly connected)
+// const ARTISTS_DATA: Record<string, ArtistData> = {
+//   '1': {
+//     id: '1',
+//     name: 'Kamala Wijesinghe',
+//     initials: 'KW',
+//     craft: 'Batik Master',
+//     location: 'Kandy, Sri Lanka',
+//     bio: 'Kamala has been practicing the ancient art of Batik for over 40 years, learning from her grandmother who was a royal batik artist. Her work combines traditional Sinhalese patterns with contemporary designs, earning international recognition.',
+//     specialties: ['Traditional Batik', 'Hand-drawn Patterns', 'Natural Dyes'],
+//     schedule: [
+//       { day: 'Monday', slots: ['9:00 AM', '2:00 PM'] },
+//       { day: 'Wednesday', slots: ['10:00 AM', '3:00 PM'] },
+//       { day: 'Friday', slots: ['9:00 AM', '11:00 AM'] },
+//     ],
+//     craftId: 'batik-1',
+//     artisanId: '1',
+//   },
+// };
 
-  },
-  '4': {
-    name: 'Priya Rajapaksa',
-    craft: 'Palmyra Weaving',
-    craftId: 'weaving',
-    artisanId: 4,
-    location: 'Jaffna, Northern Province',
-    bio: 'Priya carries forward the Jaffna tradition of palmyra weaving, transforming palm leaves into beautiful baskets, mats, and fans. Her work preserves a craft that has sustained northern Sri Lankan communities for centuries.',
-    specialties: ['Palmyra Baskets', 'Woven Mats', 'Decorative Fans'],
-    rating: 4.9,
-    reviews: 65,
-    initials: 'PR',
-    schedule: [
-    {
-      day: 'Mon',
-      slots: ['9:00 AM', '2:00 PM']
-    },
-    {
-      day: 'Tue',
-      slots: ['9:00 AM', '2:00 PM']
-    },
-    {
-      day: 'Wed',
-      slots: ['9:00 AM']
-    },
-    {
-      day: 'Thu',
-      slots: ['9:00 AM', '2:00 PM']
-    },
-    {
-      day: 'Fri',
-      slots: ['9:00 AM', '2:00 PM']
-    },
-    {
-      day: 'Sat',
-      slots: ['9:00 AM']
-    }]
-
-  },
-  '5': {
-    name: 'Anura Dissanayake',
-    craft: 'Brasswork',
-    craftId: 'brass',
-    artisanId: 5,
-    location: 'Colombo, Western Province',
-    bio: 'Anura is a master metalsmith specializing in traditional brass vessels, lamps, and temple artifacts. His workshop in Colombo continues ancient techniques of casting and hand-finishing ceremonial brassware.',
-    specialties: ['Oil Lamps', 'Ceremonial Vessels', 'Temple Artifacts'],
-    rating: 4.6,
-    reviews: 72,
-    initials: 'AD',
-    schedule: [
-    {
-      day: 'Mon',
-      slots: ['10:00 AM', '3:00 PM', '5:00 PM']
-    },
-    {
-      day: 'Tue',
-      slots: ['10:00 AM', '3:00 PM']
-    },
-    {
-      day: 'Wed',
-      slots: ['10:00 AM', '5:00 PM']
-    },
-    {
-      day: 'Thu',
-      slots: ['10:00 AM', '3:00 PM', '5:00 PM']
-    },
-    {
-      day: 'Fri',
-      slots: ['10:00 AM', '3:00 PM']
-    },
-    {
-      day: 'Sat',
-      slots: ['10:00 AM']
-    }]
-
-  },
-  '6': {
-    name: 'Rohan De Silva',
-    craft: 'Pottery',
-    craftId: 'pottery',
-    artisanId: 6,
-    location: 'Kelaniya, Western Province',
-    bio: 'Rohan shapes unglazed earthenware on ancient wheels in his Kelaniya workshop. His functional pottery — from cooking vessels to water jugs — carries forward a tradition that dates back thousands of years in Sri Lanka.',
-    specialties: ['Cooking Vessels', 'Water Jugs', 'Decorative Pottery'],
-    rating: 4.8,
-    reviews: 91,
-    initials: 'RD',
-    schedule: [
-    {
-      day: 'Mon',
-      slots: ['8:00 AM', '11:00 AM', '2:00 PM']
-    },
-    {
-      day: 'Tue',
-      slots: ['8:00 AM', '2:00 PM']
-    },
-    {
-      day: 'Wed',
-      slots: ['8:00 AM', '11:00 AM']
-    },
-    {
-      day: 'Thu',
-      slots: ['8:00 AM', '11:00 AM', '2:00 PM']
-    },
-    {
-      day: 'Fri',
-      slots: ['8:00 AM', '2:00 PM']
-    },
-    {
-      day: 'Sat',
-      slots: ['9:00 AM']
-    }]
-
-  }
-};
 export function ArtistProfile() {
   const { id } = useParams<{
     id: string;
   }>();
   const navigate = useNavigate();
-  const artist = ARTISTS_DATA[id || '1'] || ARTISTS_DATA['1'];
+  
+  const [artist, setArtist] = useState<ArtistData | null>(null);
+  const [crafts, setCrafts] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadArtist() {
+      if (!id) {
+        navigate('/artists')
+        return;
+      }
+      try {
+        const data = await getArtistById(id);
+        setArtist(data.data?.artist || null);
+      } catch (error) {
+        console.error('Failed to load artist:', error);
+        setArtist(null);
+      }
+      setLoading(false);
+    }
+    loadArtist();
+  }, [id]);
+
+  // Use fallback data if artist is not loaded yet
+  const displayArtist = artist;
+  
+  // Show loading state
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-offwhite font-body">
+        <Navbar />
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <div className="text-forest text-xl">Loading...</div>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
+
+  if (!displayArtist) {
+    return (
+      <div className="min-h-screen bg-offwhite font-body">
+        <Navbar />
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <div className="text-center">
+            <div className="text-forest text-xl font-bold mb-2">Artist not found</div>
+            <Button
+              onClick={() => navigate('/artists')}
+              className="text-terracotta hover:underline">
+              Back to Artists
+            </Button>
+          </div>
+        </div>
+        <Footer />
+      </div>
+    )
+  }
+
   const handleBookWorkshop = () => {
-    navigate(`/book?craft=${artist.craftId}&artisan=${artist.artisanId}`);
+    navigate(`/book?craft=${displayArtist.craftId}&artisan=${displayArtist.artisanId}`);
   };
   const handleMessage = () => {
     navigate('/inbox');
@@ -294,7 +138,7 @@ export function ArtistProfile() {
         <div className="max-w-7xl mx-auto px-6 h-full flex flex-col justify-end pb-12 relative z-10">
           <div className="flex flex-col md:flex-row md:items-end gap-6 md:gap-8">
             <div className="w-32 h-32 md:w-40 md:h-40 rounded-full border-4 border-white bg-terracotta shadow-xl flex items-center justify-center text-white text-4xl font-display font-bold">
-              {artist.initials}
+              {displayArtist.initials}
             </div>
             <div className="flex-1 text-white">
               <div className="flex items-center gap-2 mb-2 text-mustard font-bold uppercase tracking-wider text-sm">
@@ -302,13 +146,13 @@ export function ArtistProfile() {
                 Master Artisan
               </div>
               <h1 className="text-4xl md:text-6xl font-black font-display mb-2">
-                {artist.name}
+                {displayArtist.name}
               </h1>
               <div className="flex flex-wrap items-center gap-4 text-white/80 text-lg">
-                <span className="font-semibold">{artist.craft}</span>
+                <span className="font-semibold">{displayArtist.craft}</span>
                 <span className="w-1.5 h-1.5 rounded-full bg-white/40" />
                 <span className="flex items-center gap-1">
-                  <MapPin className="w-4 h-4" /> {artist.location}
+                  <MapPin className="w-4 h-4" /> {displayArtist.location}
                 </span>
               </div>
             </div>
@@ -343,10 +187,10 @@ export function ArtistProfile() {
               </h2>
               <div className="bg-white p-8 rounded-2xl border border-gray-100 shadow-sm">
                 <p className="text-gray-600 leading-relaxed text-lg">
-                  {artist.bio}
+                  {displayArtist.bio}
                 </p>
                 <div className="mt-6 flex flex-wrap gap-3">
-                  {artist.specialties.map((tag) =>
+                  {displayArtist.specialties.map((tag: string) =>
                   <span
                     key={tag}
                     className="px-4 py-2 bg-offwhite rounded-lg text-sm font-semibold text-forest-dark">
@@ -364,9 +208,9 @@ export function ArtistProfile() {
                 Available Crafts
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {[1, 2, 3].map((item) =>
+                {(crafts.length > 0 ? crafts : [{ id: 1 }, { id: 2 }, { id: 3 }]).map((item) =>
                 <div
-                  key={item}
+                  key={item.id}
                   className="bg-white rounded-xl overflow-hidden border border-gray-100 shadow-sm hover:shadow-md transition-shadow group">
 
                     <div className="h-48 bg-gray-100 relative">
@@ -398,7 +242,7 @@ export function ArtistProfile() {
             </section>
 
             {/* Reviews Section */}
-            <ReviewSection context="artisan" artisanName={artist.name} />
+            <ReviewSection context="artisan" artisanName={displayArtist.name} />
           </div>
 
           {/* Right Column: Schedule & Location */}
@@ -410,11 +254,11 @@ export function ArtistProfile() {
               </h3>
               <p className="text-sm text-gray-500 mb-6">
                 Book a hands-on session to learn the craft directly from{' '}
-                {artist.name.split(' ')[0]}.
+                {displayArtist.name.split(' ')[0]}.
               </p>
 
               <div className="space-y-3">
-                {artist.schedule.map((day) =>
+                {displayArtist.schedule.map((day: { day: string; slots: string[] }) =>
                 <div
                   key={day.day}
                   className="flex items-start border-b border-gray-50 pb-3 last:border-0">
@@ -423,7 +267,7 @@ export function ArtistProfile() {
                       {day.day}
                     </span>
                     <div className="flex flex-wrap gap-2">
-                      {day.slots.map((slot) =>
+                      {day.slots.map((slot: string) =>
                     <span
                       key={slot}
                       className="px-2 py-1 bg-green-50 text-forest-dark text-xs font-bold rounded">

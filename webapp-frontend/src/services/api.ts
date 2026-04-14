@@ -1,11 +1,15 @@
 import axios from 'axios';
 import { auth } from '../config/firebase';
 
-// Base URL should not include /api as it's added in each endpoint
-const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+// ✅ FIX: Properly handle undefined environment variable
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+const BASE_URL = `${API_URL}/api`;
+
+console.log('[API] Configured BASE_URL:', BASE_URL);
 
 const api = axios.create({
   baseURL: BASE_URL,
+  withCredentials: true, // ✅ Important for CORS with credentials
 });
 
 // Attach the Firebase ID token to every request automatically
@@ -41,7 +45,9 @@ api.interceptors.response.use(
           console.error('[API] Error:', data?.error || error.message);
       }
     } else if (error.request) {
-      console.error('[API] Network error');
+      console.error('[API] Network error', error.message);
+    } else {
+      console.error('[API] Error:', error.message);
     }
     return Promise.reject(error);
   }
@@ -94,7 +100,7 @@ export const getBlogs = (page = 1, sort = 'recent', tag?: string) => {
 };
 
 export const getBlog = (id: string) =>
-  api.get(`/tourist/blogs/${id}`); 
+  api.get(`/tourist/blogs/${id}`);
 
 export const getMyBlogs = () =>
   api.get('/tourist/blogs/me');
@@ -118,13 +124,13 @@ export const deleteBlog = (id: string) =>
 // ── Bookings ──────────────────────────────────────────────────────────────────
 
 export const getBookings = () =>
-  api.get('/tourist/bookings');
+  api.get('/bookings');
 
 export const createBooking = (data: object) =>
-  api.post('/tourist/bookings', data);
+  api.post('/bookings', data);
 
 export const cancelBooking = (id: string) =>
-  api.patch(`/tourist/bookings/${id}/cancel`);
+  api.patch(`/bookings/${id}/cancel`);
 
 // ── Artist Auth ─────────────────────────────────────────────────────────────────
 
@@ -184,11 +190,11 @@ export const getCrafts = (page = 1, limit = 20, category?: string, search?: stri
   params.append('limit', limit.toString());
   if (category) params.append('category', category);
   if (search) params.append('search', search);
-  return api.get(`/crafts?${params.toString()}`);
+  return api.get(`/crafts/public/crafts?${params.toString()}`);
 };
 
 export const getCraftById = (id: string) =>
-  api.get(`/crafts/${id}`);
+  api.get(`/crafts/public/crafts?${id}`);
 
 export const createPaymentLink = (data: object) =>
   api.post('/payments/create', data);

@@ -26,8 +26,9 @@ const verifyFirebaseToken = async (req, res, next) => {
     const tourist = await Tourist.findOne({ firebaseUid: uid, status: 'active' });
 
     if (!tourist) {
-      return res.status(404).json({
-        error: 'Tourist profile not found or deactivated.',
+      // Return 401 instead of 404 - this is expected for new registrations
+      return res.status(401).json({
+        error: 'Tourist profile not found. Please complete registration.',
         uid,
       });
     }

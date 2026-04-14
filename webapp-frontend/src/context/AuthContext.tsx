@@ -82,6 +82,7 @@ interface AuthContextType {
   ) => Promise<void>;
   logoutArtist: () => Promise<void>;
   refreshArtist: () => Promise<void>;
+  setArtist: (artist: ArtistProfile | null) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -98,10 +99,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (user) {
         try {
+          // Try to get the tourist profile from backend
           const res = await loginTourist();
           setTourist(res.data.tourist);
-        } catch {
-          setTourist(null);
+        } catch (err: unknown) {
+          // If 401 (not registered in backend), that's okay - user just needs to complete registration
+          // Don't set tourist to null - we should let them continue with Firebase auth
+          const axiosError = err as { response?: { status?: number } };
+          if (axiosError.response?.status === 401) {
+            console.log('Tourist not registered in backend yet, proceeding with Firebase auth only');
+          } else {
+            console.error('Failed to fetch tourist profile:', err);
+          }
         }
       } else {
         setTourist(null);
@@ -161,7 +170,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       email,
       password
     );
-    void userCredential;
+    const idToken = await userCredential.user.getIdToken();
+
+    const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+    const response = await fetch(`${API_BASE}/api/artist/auth/register`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${idToken}`
+      },
+      body: JSON.stringify(profileData)
+    });
+
+    if(!response.ok) {
+      await userCredential.user.delete();
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to register artist');
+    }
   };
 
   const logoutArtist = async () => {
@@ -172,7 +197,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const refreshArtist = async () => {
     try {
-      const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+      const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000';
       const res = await fetch(`${API_BASE}/api/artist/profile`, {
         headers: {
           'Authorization': `Bearer ${await auth.currentUser?.getIdToken()}`
@@ -199,7 +224,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         loginArtist,
         registerArtist,
         logoutArtist,
-        refreshArtist
+        refreshArtist,
+        setArtist
       }}
     >
       {children}

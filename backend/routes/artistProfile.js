@@ -69,7 +69,9 @@ router.delete('/profile', authenticate, async (req, res) => {
 
 router.get('/crafts', authenticate, async (req, res) => {
   try {
-    const crafts = await getCraftsByArtist(req.uid);
+    const artist = await Artist.findOne({ firebaseUid: req.uid});
+    if (!artist) return res.status(404).json({error: 'Artist not found' });
+    const crafts = await getCraftsByArtist(artist._id);
     res.json({ crafts });
   } catch (err) {
     res.status(err.status || 500).json({ error: err.message });

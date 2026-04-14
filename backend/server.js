@@ -19,32 +19,40 @@ import paymentRoutes from './routes/payments.js';
 // ── App setup ─────────────────────────────────────────────────────────────────
 const app = express();
 
-// CORS: allow the Vite dev server and any local ports
+// ✅ UNIFIED CORS Configuration
 const corsOptions = {
-  origin: [
-    'http://localhost:5173',
-    'http://localhost:3000',
-    'http://127.0.0.1:5173',
-    'http://127.0.0.1:3000',
-
-    // GitHub Codespaces (VERY IMPORTANT FIX)
-    /^https:\/\/.*\.app\.github\.dev$/
-  ],
-
+  origin: function (origin, callback) {
+    // Allow requests from localhost, GitHub Codespaces, and no origin (mobile/desktop apps)
+    if (
+      !origin ||
+      origin.includes('localhost') ||
+      origin.includes('127.0.0.1') ||
+      origin.includes('.app.github.dev') ||
+      origin.includes('github.dev')
+    ) {
+      callback(null, true);
+    } else {
+      console.log(`[CORS] Blocked origin: ${origin}`);
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-
-  allowedHeaders: [
-    'Content-Type',
-    'Authorization',
-    'Accept',
-    'X-Requested-With'
-  ],
-
-  credentials: true
+  allowedHeaders: ['Authorization', 'Content-Type', 'X-Requested-With'],
+  optionsSuccessStatus: 200 // For legacy browsers
 };
 
+// Apply CORS middleware BEFORE all routes
 app.use(cors(corsOptions));
 app.options('*', cors(corsOptions));
+
+// Add explicit preflight handler (optional, but good for debugging)
+app.use((req, res, next) => {
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+  next();
+});
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -59,16 +67,16 @@ app.get('/health', (_req, res) => {
 });
 
 // ── API routes ────────────────────────────────────────────────────────────────
-app.use('/api/tourist/auth', authRoutes);          // /register  /login
-app.use('/api/tourist', touristRoutes);            // /profile  /stats
-app.use('/api/tourist/blogs', blogRoutes);         // CRUD + like
-app.use('/api/bookings', workshopBookingRoutes);    // workshop bookings
+app.use('/api/tourist/auth', authRoutes);
+app.use('/api/tourist', touristRoutes);
+app.use('/api/tourist/blogs', blogRoutes);
+app.use('/api/bookings', workshopBookingRoutes);
 
-app.use('/api/artist/auth', artistAuthRoutes);    // /register  /login
-app.use('/api/artist', artistProfileRoutes);      // /profile  /crafts
-app.use('/api/artists', artistRoutes);            // public artist endpoints
-app.use('/api/crafts', craftRoutes);              // public craft endpoints
-app.use('/api/payments', paymentRoutes);          // PayHere payment notification
+app.use('/api/artist/auth', artistAuthRoutes);
+app.use('/api/artist', artistProfileRoutes);
+app.use('/api/artists', artistRoutes);
+app.use('/api/crafts', craftRoutes);
+app.use('/api/payments', paymentRoutes);
 
 // ── 404 handler ───────────────────────────────────────────────────────────────
 app.use((_req, res) => {
@@ -76,8 +84,6 @@ app.use((_req, res) => {
 });
 
 // ── Global error handler ──────────────────────────────────────────────────────
-// express-async-errors automatically passes async errors here
-// eslint-disable-next-line no-unused-vars
 app.use((err, _req, res, _next) => {
   console.error('[ERROR]', err.message);
 
@@ -106,13 +112,13 @@ const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/lankacraft
 mongoose
   .connect(MONGO_URI)
   .then(() => {
-    console.log(`✅ MongoDB connected...`);
-    app.listen(PORT, () => {
-      console.log(`🚀 LankaCrafts Tourist API running on http://localhost:${PORT}`);
-      console.log(`   Health: http://localhost:${PORT}/health`);
+    console.log(`MongoDB connected...`);
+    app.listen(PORT, '0.0.0.0', () => {
+      console.log(`LankaCrafts Tourist API running on http://localhost:${PORT}`);
+      console.log(`Health: http://localhost:${PORT}/health`);
     });
   })
   .catch((err) => {
-    console.error('❌ MongoDB connection failed:', err.message);
+    console.error('MongoDB connection failed:', err.message);
     process.exit(1);
   });
