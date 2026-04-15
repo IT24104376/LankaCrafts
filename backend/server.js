@@ -1,212 +1,44 @@
-import express from 'express';
-import http from 'http';
-import cors from 'cors';
-import helmet from 'helmet';
-import rateLimit from 'express-rate-limit';
-import mongoSanitize from 'express-mongo-sanitize';
-import dotenv from 'dotenv';
-import { Server as SocketIOServer } from 'socket.io';
-import jwt from 'jsonwebtoken';
-import { connectDB } from './config/db.js';
-import authRoutes from './routes/auth.js';
-import artistAuthRoutes from './routes/artistAuth.js';
-import artistProfileRoutes from './routes/artistProfile.js';
-import artistRoutes from './routes/artists.js';
-import blogRoutes from './routes/blogs.js';
-import workshopBookingRoutes from './routes/bookingRoutes.js';
-import cartRoutes from './routes/cart.js';
-import chatRoutes from './routes/chat.js';
-import craftRoutes from './routes/crafts.js';
-import mapRoutes from './routes/map.js';
-import orderRoutes from './routes/orders.js';
-import paymentRoutes from './routes/payments.js';
-import productRoutes from './routes/products.js';
-import touristRoutes from './routes/tourist.js';
-import { errorHandler } from './middleware/errorHandler.js';
-import User from './models/User.js';
-
-dotenv.config();
-connectDB();
-
-const JWT_SECRET = process.env.JWT_SECRET || 'lankacraft-local-jwt-secret-2026-demo';
+require('dotenv').config();
+const express = require('express');
+const cors = require('cors');
+const morgan = require('morgan');
+const mongoose = require('mongoose');
+const errorHandler = require('./middleware/errorHandler');
 
 const app = express();
-const server = http.createServer(app);
 
-app.use(helmet());
+// Middleware
+app.use(cors({ origin: process.env.CORS_ORIGIN || 'http://localhost:5173', credentials: true }));
+app.use(express.json());
+if (process.env.NODE_ENV !== 'test') app.use(morgan('dev'));
 
-const allowedOrigins = [
-  process.env.CLIENT_URL || 'http://localhost:5173',
-  'http://localhost:3000',
-  'http://localhost:3001',
-  'http://127.0.0.1:5173',
-  'http://127.0.0.1:3000',
-  'http://127.0.0.1:3001',
-];
+// Routes
+app.use('/api/auth', require('./routes/auth'));
+app.use('/api/artisans', require('./routes/artisans'));
+app.use('/api/tourists', require('./routes/tourists'));
+app.use('/api/workshops', require('./routes/workshops'));
+app.use('/api/reviews', require('./routes/reviews'));
+app.use('/api/analytics', require('./routes/analytics'));
+app.use('/api/activity', require('./routes/activity'));
 
-app.use(
-  cors({
-    origin: (origin, callback) => {
-      if (!origin) {
-        return callback(null, true);
-      }
+// Health check
+app.get('/api/health', (req, res) => res.json({ status: 'ok', timestamp: new Date() }));
 
-      if (allowedOrigins.includes(origin) || process.env.NODE_ENV !== 'production') {
-        callback(null, true);
-      } else {
-        callback(new Error('CORS not allowed'));
-      }
-    },
-    credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
-    maxAge: 86400,
-  })
-);
+// 404
+app.use((req, res) => res.status(404).json({ success: false, message: 'Route not found' }));
 
-app.use(mongoSanitize());
-
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: process.env.NODE_ENV === 'production' ? 100 : 600,
-  message: 'Too many requests from this IP, please try again later.',
-  standardHeaders: true,
-  legacyHeaders: false,
-  skip: (req) =>
-    process.env.NODE_ENV === 'test' ||
-    (process.env.NODE_ENV !== 'production' &&
-      req.method === 'GET' &&
-      req.originalUrl.startsWith('/api/chat')),
-});
-
-const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 5,
-  message: 'Too many login attempts, please try again later.',
-  skipSuccessfulRequests: true,
-});
-
-app.use('/api/', limiter);
-app.use('/api/auth/login', authLimiter);
-app.use('/api/orders/webhook', express.urlencoded({ extended: true }));
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ limit: '10mb', extended: true }));
-
-app.use('/api/auth', authRoutes);
-app.use('/api/artists', artistRoutes);
-app.use('/api/products', productRoutes);
-app.use('/api/cart', cartRoutes);
-app.use('/api/orders', orderRoutes);
-app.use('/api/map', mapRoutes);
-app.use('/api/chat', chatRoutes);
-app.use('/api/tourist/auth', authRoutes);
-app.use('/api/tourist', touristRoutes);
-app.use('/api/tourist/blogs', blogRoutes);
-app.use('/api/bookings', workshopBookingRoutes);
-app.use('/api/artist/auth', artistAuthRoutes);
-app.use('/api/artist', artistProfileRoutes);
-app.use('/api/crafts', craftRoutes);
-app.use('/api/payments', paymentRoutes);
-
-app.get('/', (_req, res) => {
-  res.status(200).json({
-    success: true,
-    message: 'LankaCrafts API Server',
-    version: '1.0.0',
-    environment: process.env.NODE_ENV || 'development',
-    endpoints: {
-      health: '/api/health',
-      auth: '/api/auth',
-      artists: '/api/artists',
-      products: '/api/products',
-      cart: '/api/cart',
-      orders: '/api/orders',
-      map: '/api/map',
-      chat: '/api/chat',
-      tourist: '/api/tourist',
-      blogs: '/api/tourist/blogs',
-      bookings: '/api/bookings',
-      artistProfile: '/api/artist',
-      crafts: '/api/crafts',
-      payments: '/api/payments',
-    },
-  });
-});
-
-app.get('/api/health', (_req, res) => {
-  res.status(200).json({
-    status: 'OK',
-    timestamp: new Date().toISOString(),
-    environment: process.env.NODE_ENV || 'development',
-  });
-});
-
-const io = new SocketIOServer(server, {
-  cors: {
-    origin: allowedOrigins,
-    credentials: true,
-  },
-});
-
-const onlineUsers = new Set();
-app.set('io', io);
-app.set('onlineUsers', onlineUsers);
-
-io.use(async (socket, next) => {
-  try {
-    const token = socket.handshake.auth?.token;
-    if (!token) {
-      return next(new Error('Authentication required'));
-    }
-
-    const decoded = jwt.verify(token, JWT_SECRET);
-    const user = await User.findById(decoded.uid);
-    if (!user) {
-      return next(new Error('User not found'));
-    }
-
-    socket.data.user = {
-      id: user._id.toString(),
-      role: user.role,
-      fullName: user.fullName,
-    };
-
-    return next();
-  } catch (_error) {
-    return next(new Error('Invalid token'));
-  }
-});
-
-io.on('connection', (socket) => {
-  const userId = socket.data.user.id;
-  onlineUsers.add(userId);
-  socket.join(`user:${userId}`);
-
-  socket.on('conversation:join', (conversationId) => {
-    socket.join(`conversation:${conversationId}`);
-  });
-
-  socket.on('conversation:leave', (conversationId) => {
-    socket.leave(`conversation:${conversationId}`);
-  });
-
-  socket.on('disconnect', () => {
-    onlineUsers.delete(userId);
-  });
-});
-
-app.use((req, res) => {
-  res.status(404).json({
-    success: false,
-    message: `Route ${req.method} ${req.originalUrl} not found`,
-  });
-});
-
+// Error handler
 app.use(errorHandler);
 
-const PORT = process.env.PORT || 5000;
-server.listen(PORT, () => {
-  console.log(`Server running on port ${PORT} in ${process.env.NODE_ENV || 'development'} mode`);
-});
-
-export default app;
+// Connect to MongoDB and start server
+const PORT = process.env.PORT || 5001;
+mongoose
+  .connect(process.env.MONGODB_URI)
+  .then(() => {
+    console.log('MongoDB connected');
+    app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+  })
+  .catch((err) => {
+    console.error('MongoDB connection error:', err.message);
+    process.exit(1);
+  });
