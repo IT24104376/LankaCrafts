@@ -9,6 +9,9 @@ import {
   getSavedWorkshops,
   addSavedWorkshop,
   removeSavedWorkshop,
+  getSavedCrafts,
+  addSavedCraft,
+  removeSavedCraft,
   getReviews,
   updateReviews,
 } from '../services/touristService.js';
@@ -87,6 +90,33 @@ router.post('/saved-workshops', verifyFirebaseToken, express.json(), async (req,
 router.delete('/saved-workshops/:id', verifyFirebaseToken, async (req, res) => {
   const savedWorkshops = await removeSavedWorkshop(req.tourist._id, req.params.id);
   res.json({ savedWorkshops });
+});
+
+/**
+ * GET /api/tourist/saved-crafts
+ */
+router.get('/saved-crafts', verifyFirebaseToken, async (req, res) => {
+  const savedCrafts = getSavedCrafts(req.tourist);
+  res.json({ savedCrafts });
+});
+
+/**
+ * POST /api/tourist/saved-crafts
+ */
+router.post('/saved-crafts', verifyFirebaseToken, express.json(), async (req, res) => {
+  const { craftId } = req.body;
+  if (!craftId) return res.status(400).json({ error: 'craftId is required' });
+
+  const savedCrafts = await addSavedCraft(req.tourist._id, craftId);
+  res.json({ savedCrafts });
+});
+
+/**
+ * DELETE /api/tourist/saved-crafts/:id
+ */
+router.delete('/saved-crafts/:id', verifyFirebaseToken, async (req, res) => {
+  const savedCrafts = await removeSavedCraft(req.tourist._id, req.params.id);
+  res.json({ savedCrafts });
 });
 
 /**

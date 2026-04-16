@@ -86,6 +86,17 @@ export const addSavedWorkshop = (workshopId: number | string) =>
 export const removeSavedWorkshop = (workshopId: number | string) =>
   api.delete(`/tourist/saved-workshops/${workshopId}`);
 
+// ── Saved Crafts ─────────────────────────────────────────────────────────────
+
+export const getSavedCrafts = () =>
+  api.get('/tourist/saved-crafts');
+
+export const addSavedCraft = (craftId: string) =>
+  api.post('/tourist/saved-crafts', { craftId });
+
+export const removeSavedCraft = (craftId: string) =>
+  api.delete(`/tourist/saved-crafts/${craftId}`);
+
 export const getReviews = () =>
   api.get('/tourist/reviews');
 
