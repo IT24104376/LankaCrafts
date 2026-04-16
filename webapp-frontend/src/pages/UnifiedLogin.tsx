@@ -13,14 +13,9 @@ import {
   'lucide-react';
 import { Navbar } from '../components/Navbar';
 import { Footer } from '../components/Footer';
+import { useAuth } from '../context/AuthContext';
 type Role = 'tourist' | 'artist' | 'admin';
 
-// Mock credentials for demo (no backend)
-const MOCK_CREDENTIALS: Record<Role, { email: string; password: string }> = {
-  tourist: { email: 'tourist@lankacrafts.lk', password: 'tourist123' },
-  artist: { email: 'artist@lankacrafts.lk', password: 'artist123' },
-  admin: { email: 'admin@lankacrafts.lk', password: 'admin123' },
-};
 
 const ROLE_CONFIG = {
   tourist: {
@@ -28,7 +23,7 @@ const ROLE_CONFIG = {
     icon: UserIcon,
     color: '#C65D3B',
     bg: '#FEF0EB',
-    redirect: '/tourist/login',
+    redirect: '/tourist/dashboard',
     description: 'Explore crafts & book workshops'
   },
   artist: {
@@ -50,6 +45,7 @@ const ROLE_CONFIG = {
 };
 export function UnifiedLogin() {
   const navigate = useNavigate();
+  const { login, isAuthenticated, loading: authLoading } = useAuth();
   const [selectedRole, setSelectedRole] = useState<Role>('tourist');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -57,23 +53,42 @@ export function UnifiedLogin() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const config = ROLE_CONFIG[selectedRole];
-  const handleSubmit = (e: React.FormEvent) => {
+
+  // If already authenticated as admin, redirect
+  if (!authLoading && isAuthenticated && selectedRole === 'admin') {
+    navigate('/admin', { replace: true });
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password) {
       setError('Please enter both email and password.');
       return;
     }
-    const creds = MOCK_CREDENTIALS[selectedRole];
-    if (email !== creds.email || password !== creds.password) {
-      setError('Invalid credentials. Check the demo hints below.');
-      return;
-    }
     setError('');
     setIsLoading(true);
-    setTimeout(() => {
-      setIsLoading(false);
-      navigate(config.redirect);
-    }, 1200);
+
+    if (selectedRole === 'admin') {
+      // Real backend authentication for admin
+      try {
+        await login(email.trim().toLowerCase(), password);
+        navigate('/admin', { replace: true });
+      } catch (err: any) {
+        const msg =
+          err.response?.data?.message ||
+          err.response?.data?.errors?.[0]?.msg ||
+          'Invalid email or password.';
+        setError(msg);
+      } finally {
+        setIsLoading(false);
+      }
+    } else {
+      // Tourist / Artist — navigate directly (no backend auth yet)
+      setTimeout(() => {
+        setIsLoading(false);
+        navigate(config.redirect);
+      }, 800);
+    }
   };
   return (
     <div
@@ -123,7 +138,7 @@ export function UnifiedLogin() {
                 color: '#2F5D50'
               }}>
 
-              Lanka Crafts
+              Lanka Craft
             </span>
             <p className="text-sm text-gray-400 mt-1">
               Sign in to continue your journey
@@ -217,211 +232,156 @@ export function UnifiedLogin() {
                   {config.description}
                 </p>
 
-                {selectedRole === 'tourist' ? (
-                  <div className="space-y-4">
-                    <p className="text-sm font-semibold text-gray-700 text-center mb-6">
-                      Hop into the Tourist Portal to explore!
-                    </p>
-                    <motion.button
-                      onClick={() => navigate('/tourist/login')}
-                      whileHover={{ scale: 1.01 }}
-                      whileTap={{ scale: 0.98 }}
-                      className="w-full py-3.5 rounded-xl text-white font-bold text-sm transition-all flex items-center justify-center gap-2"
-                      style={{ backgroundColor: config.color }}>
-                      Go to Tourist Portal
-                    </motion.button>
+                <form onSubmit={handleSubmit} className="space-y-4">
+                  {error &&
+                    <div className="bg-red-50 text-red-600 px-4 py-3 rounded-xl text-sm text-center border border-red-100">
+                      {error}
+                    </div>
+                  }
+
+                  {/* Email */}
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                      Email Address
+                    </label>
+                    <div className="relative">
+                      <MailIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                      <input
+                        type="email"
+                        required
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        placeholder="you@example.com"
+                        className="w-full pl-12 pr-4 py-3 rounded-xl border border-gray-200 outline-none text-sm transition-shadow"
+                        style={
+                          {
+                            '--tw-ring-color': config.color
+                          } as React.CSSProperties
+                        }
+                        onFocus={(e) => {
+                          e.currentTarget.style.borderColor = config.color;
+                          e.currentTarget.style.boxShadow = `0 0 0 3px ${config.color}22`;
+                        }}
+                        onBlur={(e) => {
+                          e.currentTarget.style.borderColor = '#E5E7EB';
+                          e.currentTarget.style.boxShadow = 'none';
+                        }} />
+
+                    </div>
                   </div>
-                ) : selectedRole === 'artist' ? (
-                  <div className="space-y-4">
-                    <p className="text-sm font-semibold text-gray-700 text-center mb-6">
-                      Enter the Artist Portal to manage your crafts!
-                    </p>
-                    <motion.button
-                      onClick={() => navigate('/artist/login')}
-                      whileHover={{ scale: 1.01 }}
-                      whileTap={{ scale: 0.98 }}
-                      className="w-full py-3.5 rounded-xl text-white font-bold text-sm transition-all flex items-center justify-center gap-2"
-                      style={{ backgroundColor: config.color }}>
-                      Go to Artist Login Portal
-                    </motion.button>
+
+                  {/* Password */}
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                      Password
+                    </label>
+                    <div className="relative">
+                      <LockIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                      <input
+                        type={showPassword ? 'text' : 'password'}
+                        required
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        placeholder="••••••••"
+                        className="w-full pl-12 pr-12 py-3 rounded-xl border border-gray-200 outline-none text-sm transition-shadow"
+                        onFocus={(e) => {
+                          e.currentTarget.style.borderColor = config.color;
+                          e.currentTarget.style.boxShadow = `0 0 0 3px ${config.color}22`;
+                        }}
+                        onBlur={(e) => {
+                          e.currentTarget.style.borderColor = '#E5E7EB';
+                          e.currentTarget.style.boxShadow = 'none';
+                        }} />
+
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors">
+
+                        {showPassword ?
+                          <EyeOffIcon className="w-5 h-5" /> :
+
+                          <EyeIcon className="w-5 h-5" />
+                        }
+                      </button>
+                    </div>
                   </div>
-                ) : (
-                  <form onSubmit={handleSubmit} className="space-y-4">
-                    {error &&
-                      <div className="bg-red-50 text-red-600 px-4 py-3 rounded-xl text-sm text-center border border-red-100">
-                        {error}
-                      </div>
-                    }
 
-                    {/* Email */}
-                    <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-                        Email Address
-                      </label>
-                      <div className="relative">
-                        <MailIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                        <input
-                          type="email"
-                          required
-                          value={email}
-                          onChange={(e) => setEmail(e.target.value)}
-                          placeholder="you@example.com"
-                          className="w-full pl-12 pr-4 py-3 rounded-xl border border-gray-200 outline-none text-sm transition-shadow"
-                          style={
-                            {
-                              '--tw-ring-color': config.color
-                            } as React.CSSProperties
-                          }
-                          onFocus={(e) => {
-                            e.currentTarget.style.borderColor = config.color;
-                            e.currentTarget.style.boxShadow = `0 0 0 3px ${config.color}22`;
-                          }}
-                          onBlur={(e) => {
-                            e.currentTarget.style.borderColor = '#E5E7EB';
-                            e.currentTarget.style.boxShadow = 'none';
-                          }} />
-
-                      </div>
-                    </div>
-
-                    {/* Password */}
-                    <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-                        Password
-                      </label>
-                      <div className="relative">
-                        <LockIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                        <input
-                          type={showPassword ? 'text' : 'password'}
-                          required
-                          value={password}
-                          onChange={(e) => setPassword(e.target.value)}
-                          placeholder="••••••••"
-                          className="w-full pl-12 pr-12 py-3 rounded-xl border border-gray-200 outline-none text-sm transition-shadow"
-                          onFocus={(e) => {
-                            e.currentTarget.style.borderColor = config.color;
-                            e.currentTarget.style.boxShadow = `0 0 0 3px ${config.color}22`;
-                          }}
-                          onBlur={(e) => {
-                            e.currentTarget.style.borderColor = '#E5E7EB';
-                            e.currentTarget.style.boxShadow = 'none';
-                          }} />
-
-                        <button
-                          type="button"
-                          onClick={() => setShowPassword(!showPassword)}
-                          className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors">
-
-                          {showPassword ?
-                            <EyeOffIcon className="w-5 h-5" /> :
-
-                            <EyeIcon className="w-5 h-5" />
-                          }
-                        </button>
-                      </div>
-                    </div>
-
-                    <div className="flex justify-end">
-                      <a
-                        href="#"
-                        className="text-xs font-semibold hover:underline"
-                        style={{
-                          color: config.color
-                        }}>
-
-                        Forgot Password?
-                      </a>
-                    </div>
-
-                    {/* Submit */}
-                    <motion.button
-                      type="submit"
-                      disabled={isLoading}
-                      whileHover={{
-                        scale: 1.01
-                      }}
-                      whileTap={{
-                        scale: 0.98
-                      }}
-                      className="w-full py-3.5 rounded-xl text-white font-bold text-sm transition-all disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  <div className="flex justify-end">
+                    <a
+                      href="#"
+                      className="text-xs font-semibold hover:underline"
                       style={{
-                        backgroundColor: config.color
+                        color: config.color
                       }}>
 
-                      {isLoading ?
-                        <>
-                          <svg
-                            className="animate-spin w-4 h-4"
-                            viewBox="0 0 24 24"
-                            fill="none">
+                      Forgot Password?
+                    </a>
+                  </div>
 
-                            <circle
-                              className="opacity-25"
-                              cx="12"
-                              cy="12"
-                              r="10"
-                              stroke="currentColor"
-                              strokeWidth="4" />
+                  {/* Submit */}
+                  <motion.button
+                    type="submit"
+                    disabled={isLoading}
+                    whileHover={{
+                      scale: 1.01
+                    }}
+                    whileTap={{
+                      scale: 0.98
+                    }}
+                    className="w-full py-3.5 rounded-xl text-white font-bold text-sm transition-all disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                    style={{
+                      backgroundColor: config.color
+                    }}>
 
-                            <path
-                              className="opacity-75"
-                              fill="currentColor"
-                              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                    {isLoading ?
+                      <>
+                        <svg
+                          className="animate-spin w-4 h-4"
+                          viewBox="0 0 24 24"
+                          fill="none">
 
-                          </svg>
-                          Signing in...
-                        </> :
+                          <circle
+                            className="opacity-25"
+                            cx="12"
+                            cy="12"
+                            r="10"
+                            stroke="currentColor"
+                            strokeWidth="4" />
 
-                        `Sign in as ${config.label}`
-                      }
-                    </motion.button>
-                  </form>
-                )}
+                          <path
+                            className="opacity-75"
+                            fill="currentColor"
+                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
 
-                {selectedRole !== 'tourist' && (
-                  <p className="text-center text-sm text-gray-400 mt-5">
-                    Don't have an account?{' '}
-                    <Link
-                      to="/register"
-                      className="font-bold hover:underline"
-                      style={{ color: config.color }}>
-                      Register here
-                    </Link>
-                  </p>
-                )}
+                        </svg>
+                        Signing in...
+                      </> :
+
+                      `Sign in as ${config.label}`
+                    }
+                  </motion.button>
+                </form>
+
+                <p className="text-center text-sm text-gray-400 mt-5">
+                  Don't have an account?{' '}
+                  <Link
+                    to="/register"
+                    className="font-bold hover:underline"
+                    style={{
+                      color: config.color
+                    }}>
+
+                    Register here
+                  </Link>
+                </p>
               </motion.div>
             </AnimatePresence>
           </motion.div>
         </div>
       </main>
 
-      {/* ── Demo Credentials Hint (remove before production) ── */}
-      <div className="fixed bottom-4 right-4 z-50 bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden w-72">
-        <div className="px-4 py-2.5 border-b border-gray-100" style={{ backgroundColor: '#2F5D50' }}>
-          <p className="text-xs font-bold text-white uppercase tracking-widest">🔐 Demo Credentials</p>
-        </div>
-        <div className="p-3 space-y-2">
-          {((Object.entries(MOCK_CREDENTIALS) as [Role, { email: string; password: string }][]).filter(([role]) => role !== 'tourist')).map(([role, creds]) => {
-            const cfg = ROLE_CONFIG[role];
-            return (
-              <div
-                key={role}
-                className="rounded-xl p-2.5 border cursor-pointer transition-all"
-                style={{
-                  backgroundColor: selectedRole === role ? cfg.bg : '#F9FAFB',
-                  borderColor: selectedRole === role ? cfg.color : '#E5E7EB',
-                }}
-                onClick={() => { setSelectedRole(role); setEmail(creds.email); setPassword(creds.password); setError(''); }}
-              >
-                <p className="text-xs font-bold" style={{ color: cfg.color }}>{cfg.label}</p>
-                <p className="text-[11px] text-gray-500 mt-0.5 font-mono">{creds.email}</p>
-                <p className="text-[11px] text-gray-400 font-mono">{creds.password}</p>
-              </div>
-            );
-          })}
-          <p className="text-[10px] text-gray-400 text-center pt-1">Click a card to auto-fill credentials</p>
-        </div>
-      </div>
+
 
       <Footer />
     </div>);

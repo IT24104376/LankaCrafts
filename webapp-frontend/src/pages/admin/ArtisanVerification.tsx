@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   SearchIcon,
@@ -16,9 +16,12 @@ import {
   PhoneIcon,
   MailIcon } from
 'lucide-react';
+import { getArtisans, updateArtisanStatus as apiUpdateArtisanStatus } from '../../api/adminApi';
+
 type ArtisanStatus = 'pending' | 'verified' | 'rejected';
+
 interface Artisan {
-  id: number;
+  _id: string;
   name: string;
   craft: string;
   region: string;
@@ -34,223 +37,80 @@ interface Artisan {
   certifications: string[];
   workshops: number;
 }
-const ARTISANS: Artisan[] = [
-{
-  id: 1,
-  name: 'Nimal Perera',
-  craft: 'Kandyan Lacquerwork',
-  region: 'Kandy',
-  email: 'nimal.perera@example.com',
-  phone: '+94 77 123 4567',
-  submittedDate: '2024-01-15',
-  status: 'pending',
-  rating: 4.9,
-  experience: '40 years',
-  bio: 'Master craftsman specializing in traditional Kandyan lacquerwork. UNESCO recognized Living Heritage Practitioner.',
-  initials: 'NP',
-  color: '#C65D3B',
-  certifications: ['UNESCO Heritage', 'National Crafts Council'],
-  workshops: 12
-},
-{
-  id: 2,
-  name: 'Kamala Wijesinghe',
-  craft: 'Batik Textiles',
-  region: 'Kandy',
-  email: 'kamala.w@example.com',
-  phone: '+94 71 234 5678',
-  submittedDate: '2024-01-18',
-  status: 'verified',
-  rating: 4.8,
-  experience: '28 years',
-  bio: 'Expert batik artist creating intricate wax-resist patterns on silk and cotton.',
-  initials: 'KW',
-  color: '#2F5D50',
-  certifications: ['National Crafts Council'],
-  workshops: 8
-},
-{
-  id: 3,
-  name: 'Suresh Fernando',
-  craft: 'Mask Carving',
-  region: 'Ambalangoda',
-  email: 'suresh.f@example.com',
-  phone: '+94 76 345 6789',
-  submittedDate: '2024-01-20',
-  status: 'pending',
-  rating: 4.7,
-  experience: '35 years',
-  bio: 'Third-generation mask carver from Ambalangoda, specializing in kolam and sanni masks.',
-  initials: 'SF',
-  color: '#C9A227',
-  certifications: ['Heritage Artisan Certificate'],
-  workshops: 15
-},
-{
-  id: 4,
-  name: 'Priya Rajapaksa',
-  craft: 'Palmyra Weaving',
-  region: 'Jaffna',
-  email: 'priya.r@example.com',
-  phone: '+94 75 456 7890',
-  submittedDate: '2024-01-22',
-  status: 'verified',
-  rating: 4.9,
-  experience: '22 years',
-  bio: 'Carries forward the Jaffna tradition of palmyra weaving, transforming palm leaves into beautiful crafts.',
-  initials: 'PR',
-  color: '#C65D3B',
-  certifications: ['Northern Province Arts Board'],
-  workshops: 6
-},
-{
-  id: 5,
-  name: 'Anura Dissanayake',
-  craft: 'Brasswork',
-  region: 'Colombo',
-  email: 'anura.d@example.com',
-  phone: '+94 77 567 8901',
-  submittedDate: '2024-01-25',
-  status: 'rejected',
-  rating: 4.6,
-  experience: '31 years',
-  bio: 'Master metalsmith specializing in traditional brass vessels, lamps, and temple artifacts.',
-  initials: 'AD',
-  color: '#2F5D50',
-  certifications: [],
-  workshops: 4
-},
-{
-  id: 6,
-  name: 'Nilmini Senanayake',
-  craft: 'Gem Polishing',
-  region: 'Ratnapura',
-  email: 'nilmini.s@example.com',
-  phone: '+94 71 678 9012',
-  submittedDate: '2024-01-28',
-  status: 'pending',
-  rating: 4.5,
-  experience: '18 years',
-  bio: 'Expert gem polisher from Ratnapura, the City of Gems, specializing in sapphires and rubies.',
-  initials: 'NS',
-  color: '#C9A227',
-  certifications: ['Gem & Jewellery Authority'],
-  workshops: 3
-},
-{
-  id: 7,
-  name: 'Rohan De Silva',
-  craft: 'Pottery',
-  region: 'Kelaniya',
-  email: 'rohan.ds@example.com',
-  phone: '+94 76 789 0123',
-  submittedDate: '2024-02-01',
-  status: 'verified',
-  rating: 4.8,
-  experience: '25 years',
-  bio: 'Shapes unglazed earthenware on ancient wheels in his Kelaniya workshop.',
-  initials: 'RD',
-  color: '#C65D3B',
-  certifications: ['National Crafts Council', 'Heritage Artisan Certificate'],
-  workshops: 10
-}];
 
-const STATUS_CONFIG: Record<
-  ArtisanStatus,
-  {
-    label: string;
-    bg: string;
-    text: string;
-    dot: string;
-  }> =
-{
-  pending: {
-    label: 'Pending',
-    bg: 'bg-amber-50',
-    text: 'text-amber-700',
-    dot: 'bg-amber-400'
-  },
-  verified: {
-    label: 'Verified',
-    bg: 'bg-emerald-50',
-    text: 'text-emerald-700',
-    dot: 'bg-emerald-500'
-  },
-  rejected: {
-    label: 'Rejected',
-    bg: 'bg-red-50',
-    text: 'text-red-700',
-    dot: 'bg-red-500'
-  }
+const STATUS_CONFIG: Record<ArtisanStatus, { label: string; bg: string; text: string; dot: string; }> = {
+  pending: { label: 'Pending', bg: 'bg-amber-50', text: 'text-amber-700', dot: 'bg-amber-400' },
+  verified: { label: 'Verified', bg: 'bg-emerald-50', text: 'text-emerald-700', dot: 'bg-emerald-500' },
+  rejected: { label: 'Rejected', bg: 'bg-red-50', text: 'text-red-700', dot: 'bg-red-500' }
 };
+
 interface ArtisanVerificationProps {
   onNavigate?: (section: string) => void;
 }
+
 export function ArtisanVerification({ onNavigate }: ArtisanVerificationProps) {
-  const [artisans, setArtisans] = useState<Artisan[]>(ARTISANS);
+  const [artisans, setArtisans] = useState<Artisan[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<ArtisanStatus | 'all'>('all');
   const [regionFilter, setRegionFilter] = useState('all');
   const [selectedArtisan, setSelectedArtisan] = useState<Artisan | null>(null);
   const [showFilterDropdown, setShowFilterDropdown] = useState(false);
-  const regions = ['all', ...Array.from(new Set(ARTISANS.map((a) => a.region)))];
+
+  const fetchArtisans = async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const res = await getArtisans();
+      setArtisans(res.data.data || []);
+    } catch (err: any) {
+      setError('Failed to load artisans. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchArtisans();
+  }, []);
+
+  const regions = ['all', ...Array.from(new Set(artisans.map((a) => a.region)))];
+
   const filtered = artisans.filter((a) => {
     const matchSearch =
-    a.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    a.craft.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    a.region.toLowerCase().includes(searchQuery.toLowerCase());
+      a.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      a.craft.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      a.region.toLowerCase().includes(searchQuery.toLowerCase());
     const matchStatus = statusFilter === 'all' || a.status === statusFilter;
     const matchRegion = regionFilter === 'all' || a.region === regionFilter;
     return matchSearch && matchStatus && matchRegion;
   });
-  const handleApprove = (id: number) => {
-    setArtisans((prev) =>
-    prev.map((a) =>
-    a.id === id ?
-    {
-      ...a,
-      status: 'verified' as ArtisanStatus
-    } :
-    a
-    )
-    );
-    if (selectedArtisan?.id === id)
-    setSelectedArtisan((prev) =>
-    prev ?
-    {
-      ...prev,
-      status: 'verified'
-    } :
-    null
-    );
+
+  const handleApprove = async (id: string) => {
+    try {
+      const res = await apiUpdateArtisanStatus(id, 'verified');
+      const updated = res.data.data;
+      setArtisans(prev => prev.map(a => a._id === id ? { ...a, status: 'verified' } : a));
+      if (selectedArtisan?._id === id) setSelectedArtisan(prev => prev ? { ...prev, status: 'verified' } : null);
+    } catch {}
   };
-  const handleReject = (id: number) => {
-    setArtisans((prev) =>
-    prev.map((a) =>
-    a.id === id ?
-    {
-      ...a,
-      status: 'rejected' as ArtisanStatus
-    } :
-    a
-    )
-    );
-    if (selectedArtisan?.id === id)
-    setSelectedArtisan((prev) =>
-    prev ?
-    {
-      ...prev,
-      status: 'rejected'
-    } :
-    null
-    );
+
+  const handleReject = async (id: string) => {
+    try {
+      await apiUpdateArtisanStatus(id, 'rejected');
+      setArtisans(prev => prev.map(a => a._id === id ? { ...a, status: 'rejected' } : a));
+      if (selectedArtisan?._id === id) setSelectedArtisan(prev => prev ? { ...prev, status: 'rejected' } : null);
+    } catch {}
   };
+
   const counts = {
     all: artisans.length,
     pending: artisans.filter((a) => a.status === 'pending').length,
     verified: artisans.filter((a) => a.status === 'verified').length,
     rejected: artisans.filter((a) => a.status === 'rejected').length
   };
+
   return (
     <div className="flex flex-col h-full">
       {/* Page Header */}
@@ -272,16 +132,10 @@ export function ArtisanVerification({ onNavigate }: ArtisanVerificationProps) {
           className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 capitalize flex items-center gap-2 ${statusFilter === status ? 'bg-forest text-white shadow-sm' : 'bg-white text-gray-600 border border-gray-200 hover:border-forest/30'}`}>
 
             {status !== 'all' &&
-          <span
-            className={`w-2 h-2 rounded-full ${STATUS_CONFIG[status as ArtisanStatus].dot}`} />
-
+          <span className={`w-2 h-2 rounded-full ${STATUS_CONFIG[status as ArtisanStatus].dot}`} />
           }
-            {status === 'all' ?
-          'All Artisans' :
-          STATUS_CONFIG[status as ArtisanStatus].label}
-            <span
-            className={`text-xs px-1.5 py-0.5 rounded-full font-bold ${statusFilter === status ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-500'}`}>
-
+            {status === 'all' ? 'All Artisans' : STATUS_CONFIG[status as ArtisanStatus].label}
+            <span className={`text-xs px-1.5 py-0.5 rounded-full font-bold ${statusFilter === status ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-500'}`}>
               {counts[status]}
             </span>
           </button>
@@ -298,13 +152,11 @@ export function ArtisanVerification({ onNavigate }: ArtisanVerificationProps) {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-forest/20 focus:border-forest/40 transition-all" />
-
         </div>
         <div className="relative">
           <button
             onClick={() => setShowFilterDropdown(!showFilterDropdown)}
             className="flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm font-medium text-gray-600 hover:border-forest/30 transition-all">
-
             <FilterIcon className="w-4 h-4" />
             Region: {regionFilter === 'all' ? 'All' : regionFilter}
             <ChevronDownIcon className="w-4 h-4" />
@@ -314,187 +166,138 @@ export function ArtisanVerification({ onNavigate }: ArtisanVerificationProps) {
               {regions.map((r) =>
             <button
               key={r}
-              onClick={() => {
-                setRegionFilter(r);
-                setShowFilterDropdown(false);
-              }}
+              onClick={() => { setRegionFilter(r); setShowFilterDropdown(false); }}
               className={`w-full text-left px-4 py-2 text-sm capitalize hover:bg-gray-50 transition-colors ${regionFilter === r ? 'text-forest font-semibold' : 'text-gray-600'}`}>
-
-                  {r === 'all' ? 'All Regions' : r}
-                </button>
+                {r === 'all' ? 'All Regions' : r}
+              </button>
             )}
             </div>
           }
         </div>
       </div>
 
-      {/* Table */}
-      <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden flex-1">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-gray-100 bg-gray-50/50">
-                <th className="text-left px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider">
-                  Artisan
-                </th>
-                <th className="text-left px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider">
-                  Craft
-                </th>
-                <th className="text-left px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider">
-                  Region
-                </th>
-                <th className="text-left px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider">
-                  Submitted
-                </th>
-                <th className="text-left px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider">
-                  Status
-                </th>
-                <th className="text-right px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-50">
-              {filtered.map((artisan, i) => {
-                const statusCfg = STATUS_CONFIG[artisan.status];
-                return (
-                  <motion.tr
-                    key={artisan.id}
-                    initial={{
-                      opacity: 0,
-                      y: 8
-                    }}
-                    animate={{
-                      opacity: 1,
-                      y: 0
-                    }}
-                    transition={{
-                      delay: i * 0.04
-                    }}
-                    className="hover:bg-gray-50/50 transition-colors">
-
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-3">
-                        <div
-                          className="w-9 h-9 rounded-full flex items-center justify-center text-white text-sm font-bold shrink-0"
-                          style={{
-                            backgroundColor: artisan.color
-                          }}>
-
-                          {artisan.initials}
-                        </div>
-                        <div>
-                          <p className="font-semibold text-gray-900 text-sm">
-                            {artisan.name}
-                          </p>
-                          <p className="text-xs text-gray-400">
-                            {artisan.email}
-                          </p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 text-sm text-gray-600">
-                      {artisan.craft}
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-1 text-sm text-gray-600">
-                        <MapPinIcon className="w-3.5 h-3.5 text-gray-400" />
-                        {artisan.region}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 text-sm text-gray-500">
-                      {artisan.submittedDate}
-                    </td>
-                    <td className="px-6 py-4">
-                      <span
-                        className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${statusCfg.bg} ${statusCfg.text}`}>
-
-                        <span
-                          className={`w-1.5 h-1.5 rounded-full ${statusCfg.dot}`} />
-
-                        {statusCfg.label}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center justify-end gap-2">
-                        <button
-                          onClick={() => setSelectedArtisan(artisan)}
-                          className="p-1.5 text-gray-400 hover:text-forest hover:bg-forest/5 rounded-lg transition-colors"
-                          title="View Details">
-
-                          <EyeIcon className="w-4 h-4" />
-                        </button>
-                        {artisan.status !== 'verified' &&
-                        <button
-                          onClick={() => handleApprove(artisan.id)}
-                          className="p-1.5 text-gray-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
-                          title="Approve">
-
-                            <CheckCircleIcon className="w-4 h-4" />
-                          </button>
-                        }
-                        {artisan.status !== 'rejected' &&
-                        <button
-                          onClick={() => handleReject(artisan.id)}
-                          className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                          title="Reject">
-
-                            <XCircleIcon className="w-4 h-4" />
-                          </button>
-                        }
-                      </div>
-                    </td>
-                  </motion.tr>);
-
-              })}
-            </tbody>
-          </table>
-          {filtered.length === 0 &&
-          <div className="text-center py-16 text-gray-400">
-              <UserIcon className="w-10 h-10 mx-auto mb-3 opacity-30" />
-              <p className="font-medium">No artisans match your filters</p>
-            </div>
-          }
+      {/* Loading / Error */}
+      {loading && (
+        <div className="text-center py-16 text-gray-400">
+          <div className="w-8 h-8 border-4 border-forest border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+          <p className="font-medium text-sm">Loading artisans...</p>
         </div>
-      </div>
+      )}
+      {error && !loading && (
+        <div className="text-center py-12 text-red-500 text-sm">{error}</div>
+      )}
+
+      {/* Table */}
+      {!loading && !error && (
+        <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden flex-1">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-gray-100 bg-gray-50/50">
+                  <th className="text-left px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Artisan</th>
+                  <th className="text-left px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Craft</th>
+                  <th className="text-left px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Region</th>
+                  <th className="text-left px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Submitted</th>
+                  <th className="text-left px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Status</th>
+                  <th className="text-right px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-50">
+                {filtered.map((artisan, i) => {
+                  const statusCfg = STATUS_CONFIG[artisan.status];
+                  return (
+                    <motion.tr
+                      key={artisan._id}
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: i * 0.04 }}
+                      className="hover:bg-gray-50/50 transition-colors">
+
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-3">
+                          <div
+                            className="w-9 h-9 rounded-full flex items-center justify-center text-white text-sm font-bold shrink-0"
+                            style={{ backgroundColor: artisan.color }}>
+                            {artisan.initials}
+                          </div>
+                          <div>
+                            <p className="font-semibold text-gray-900 text-sm">{artisan.name}</p>
+                            <p className="text-xs text-gray-400">{artisan.email}</p>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 text-sm text-gray-600">{artisan.craft}</td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-1 text-sm text-gray-600">
+                          <MapPinIcon className="w-3.5 h-3.5 text-gray-400" />
+                          {artisan.region}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 text-sm text-gray-500">
+                        {artisan.submittedDate ? new Date(artisan.submittedDate).toLocaleDateString() : '—'}
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${statusCfg.bg} ${statusCfg.text}`}>
+                          <span className={`w-1.5 h-1.5 rounded-full ${statusCfg.dot}`} />
+                          {statusCfg.label}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center justify-end gap-2">
+                          <button
+                            onClick={() => setSelectedArtisan(artisan)}
+                            className="p-1.5 text-gray-400 hover:text-forest hover:bg-forest/5 rounded-lg transition-colors"
+                            title="View Details">
+                            <EyeIcon className="w-4 h-4" />
+                          </button>
+                          {artisan.status !== 'verified' &&
+                          <button
+                            onClick={() => handleApprove(artisan._id)}
+                            className="p-1.5 text-gray-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
+                            title="Approve">
+                              <CheckCircleIcon className="w-4 h-4" />
+                            </button>
+                          }
+                          {artisan.status !== 'rejected' &&
+                          <button
+                            onClick={() => handleReject(artisan._id)}
+                            className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                            title="Reject">
+                              <XCircleIcon className="w-4 h-4" />
+                            </button>
+                          }
+                        </div>
+                      </td>
+                    </motion.tr>);
+                })}
+              </tbody>
+            </table>
+            {filtered.length === 0 &&
+            <div className="text-center py-16 text-gray-400">
+                <UserIcon className="w-10 h-10 mx-auto mb-3 opacity-30" />
+                <p className="font-medium">No artisans match your filters</p>
+              </div>
+            }
+          </div>
+        </div>
+      )}
 
       {/* Profile Modal */}
       <AnimatePresence>
         {selectedArtisan &&
         <>
             <motion.div
-            initial={{
-              opacity: 0
-            }}
-            animate={{
-              opacity: 1
-            }}
-            exit={{
-              opacity: 0
-            }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
             className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40"
             onClick={() => setSelectedArtisan(null)} />
 
             <motion.div
-            initial={{
-              opacity: 0,
-              scale: 0.95,
-              y: 20
-            }}
-            animate={{
-              opacity: 1,
-              scale: 1,
-              y: 0
-            }}
-            exit={{
-              opacity: 0,
-              scale: 0.95,
-              y: 20
-            }}
-            transition={{
-              duration: 0.2,
-              ease: [0.22, 1, 0.36, 1]
-            }}
+            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: 20 }}
+            transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
             className="fixed inset-0 flex items-center justify-center z-50 p-4"
             onClick={(e) => e.stopPropagation()}>
 
@@ -502,54 +305,22 @@ export function ArtisanVerification({ onNavigate }: ArtisanVerificationProps) {
                 {/* Modal Header */}
                 <div
                 className="relative h-28 overflow-hidden"
-                style={{
-                  backgroundColor: selectedArtisan.color
-                }}>
+                style={{ backgroundColor: selectedArtisan.color }}>
 
-                  {/* Batik pattern */}
                   <div className="absolute inset-0 opacity-15">
-                    <svg
-                    width="100%"
-                    height="100%"
-                    xmlns="http://www.w3.org/2000/svg">
-
+                    <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
                       <defs>
-                        <pattern
-                        id="modal-batik"
-                        x="0"
-                        y="0"
-                        width="30"
-                        height="30"
-                        patternUnits="userSpaceOnUse">
-
-                          <circle
-                          cx="15"
-                          cy="15"
-                          r="8"
-                          fill="none"
-                          stroke="white"
-                          strokeWidth="1" />
-
-                          <circle
-                          cx="15"
-                          cy="15"
-                          r="3"
-                          fill="white"
-                          opacity="0.5" />
-
+                        <pattern id="modal-batik" x="0" y="0" width="30" height="30" patternUnits="userSpaceOnUse">
+                          <circle cx="15" cy="15" r="8" fill="none" stroke="white" strokeWidth="1" />
+                          <circle cx="15" cy="15" r="3" fill="white" opacity="0.5" />
                         </pattern>
                       </defs>
-                      <rect
-                      width="100%"
-                      height="100%"
-                      fill="url(#modal-batik)" />
-
+                      <rect width="100%" height="100%" fill="url(#modal-batik)" />
                     </svg>
                   </div>
                   <button
                   onClick={() => setSelectedArtisan(null)}
                   className="absolute top-4 right-4 w-8 h-8 bg-black/20 hover:bg-black/30 rounded-full flex items-center justify-center text-white transition-colors">
-
                     <XIcon className="w-4 h-4" />
                   </button>
                 </div>
@@ -559,18 +330,11 @@ export function ArtisanVerification({ onNavigate }: ArtisanVerificationProps) {
                   <div className="flex items-end justify-between -mt-8 mb-4">
                     <div
                     className="w-16 h-16 rounded-2xl border-4 border-white shadow-lg flex items-center justify-center text-white text-xl font-bold"
-                    style={{
-                      backgroundColor: selectedArtisan.color
-                    }}>
-
+                    style={{ backgroundColor: selectedArtisan.color }}>
                       {selectedArtisan.initials}
                     </div>
-                    <span
-                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold ${STATUS_CONFIG[selectedArtisan.status].bg} ${STATUS_CONFIG[selectedArtisan.status].text}`}>
-
-                      <span
-                      className={`w-1.5 h-1.5 rounded-full ${STATUS_CONFIG[selectedArtisan.status].dot}`} />
-
+                    <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold ${STATUS_CONFIG[selectedArtisan.status].bg} ${STATUS_CONFIG[selectedArtisan.status].text}`}>
+                      <span className={`w-1.5 h-1.5 rounded-full ${STATUS_CONFIG[selectedArtisan.status].dot}`} />
                       {STATUS_CONFIG[selectedArtisan.status].label}
                     </span>
                   </div>
@@ -592,36 +356,28 @@ export function ArtisanVerification({ onNavigate }: ArtisanVerificationProps) {
                       <MapPinIcon className="w-4 h-4 text-forest shrink-0" />
                       <div>
                         <p className="text-xs text-gray-400">Region</p>
-                        <p className="text-sm font-semibold text-gray-800">
-                          {selectedArtisan.region}
-                        </p>
+                        <p className="text-sm font-semibold text-gray-800">{selectedArtisan.region}</p>
                       </div>
                     </div>
                     <div className="bg-gray-50 rounded-xl p-3 flex items-center gap-2">
                       <AwardIcon className="w-4 h-4 text-mustard shrink-0" />
                       <div>
                         <p className="text-xs text-gray-400">Experience</p>
-                        <p className="text-sm font-semibold text-gray-800">
-                          {selectedArtisan.experience}
-                        </p>
+                        <p className="text-sm font-semibold text-gray-800">{selectedArtisan.experience}</p>
                       </div>
                     </div>
                     <div className="bg-gray-50 rounded-xl p-3 flex items-center gap-2">
                       <MailIcon className="w-4 h-4 text-gray-400 shrink-0" />
                       <div>
                         <p className="text-xs text-gray-400">Email</p>
-                        <p className="text-sm font-semibold text-gray-800 truncate">
-                          {selectedArtisan.email}
-                        </p>
+                        <p className="text-sm font-semibold text-gray-800 truncate">{selectedArtisan.email}</p>
                       </div>
                     </div>
                     <div className="bg-gray-50 rounded-xl p-3 flex items-center gap-2">
                       <PhoneIcon className="w-4 h-4 text-gray-400 shrink-0" />
                       <div>
                         <p className="text-xs text-gray-400">Phone</p>
-                        <p className="text-sm font-semibold text-gray-800">
-                          {selectedArtisan.phone}
-                        </p>
+                        <p className="text-sm font-semibold text-gray-800">{selectedArtisan.phone}</p>
                       </div>
                     </div>
                   </div>
@@ -634,10 +390,7 @@ export function ArtisanVerification({ onNavigate }: ArtisanVerificationProps) {
                       </p>
                       <div className="flex flex-wrap gap-2">
                         {selectedArtisan.certifications.map((cert) =>
-                    <span
-                      key={cert}
-                      className="px-3 py-1 bg-mustard/10 text-mustard-dark text-xs font-semibold rounded-full">
-
+                    <span key={cert} className="px-3 py-1 bg-mustard/10 text-mustard-dark text-xs font-semibold rounded-full">
                             {cert}
                           </span>
                     )}
@@ -649,36 +402,32 @@ export function ArtisanVerification({ onNavigate }: ArtisanVerificationProps) {
                   <div className="flex gap-3 pt-2 border-t border-gray-100">
                     {selectedArtisan.status !== 'verified' &&
                   <button
-                    onClick={() => handleApprove(selectedArtisan.id)}
+                    onClick={() => handleApprove(selectedArtisan._id)}
                     className="flex-1 flex items-center justify-center gap-2 py-3 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-bold text-sm transition-colors">
-
                         <CheckCircleIcon className="w-4 h-4" />
                         Approve
                       </button>
                   }
                     {selectedArtisan.status !== 'rejected' &&
                   <button
-                    onClick={() => handleReject(selectedArtisan.id)}
+                    onClick={() => handleReject(selectedArtisan._id)}
                     className="flex-1 flex items-center justify-center gap-2 py-3 bg-red-500 hover:bg-red-600 text-white rounded-xl font-bold text-sm transition-colors">
-
                         <XCircleIcon className="w-4 h-4" />
                         Reject
                       </button>
                   }
                     {selectedArtisan.status === 'verified' &&
                   <button
-                    onClick={() => handleReject(selectedArtisan.id)}
+                    onClick={() => handleReject(selectedArtisan._id)}
                     className="flex-1 flex items-center justify-center gap-2 py-3 bg-red-50 hover:bg-red-100 text-red-600 rounded-xl font-bold text-sm transition-colors">
-
                         <XCircleIcon className="w-4 h-4" />
                         Revoke Verification
                       </button>
                   }
                     {selectedArtisan.status === 'rejected' &&
                   <button
-                    onClick={() => handleApprove(selectedArtisan.id)}
+                    onClick={() => handleApprove(selectedArtisan._id)}
                     className="flex-1 flex items-center justify-center gap-2 py-3 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-xl font-bold text-sm transition-colors">
-
                         <CheckCircleIcon className="w-4 h-4" />
                         Re-approve
                       </button>

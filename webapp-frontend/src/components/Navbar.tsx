@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Menu, X, ChevronDownIcon, UserIcon, LogOutIcon, BellIcon, HeartIcon, CalendarIcon, MessageCircleIcon } from 'lucide-react';
+import { Menu, X, ChevronDownIcon, UserIcon, LogOutIcon } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
 interface NavbarProps {
   artistMode?: boolean;
 }
@@ -15,24 +14,6 @@ export function Navbar({ artistMode = false }: NavbarProps) {
     window.addEventListener('scroll', onScroll);
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
-
-  const { tourist, logout } = useAuth();
-  const userName = tourist?.fullName ?? 'User';
-  const callingName = tourist?.callingName ?? 'User';
-  const userInitials = tourist?.initials ?? 'U';
-  const userProfilePic = tourist?.profilePicUrl ?? '';
-
-  const [dropdownOpen, setDropdownOpen] = useState(false);
-
-  const handleLogout = async () => {
-    try {
-      await logout();
-      setDropdownOpen(false);
-    } catch (error) {
-      console.error("Logout failed:", error);
-    }
-  };
-
   const leftLinks = artistMode ?
     [
       {
@@ -51,41 +32,24 @@ export function Navbar({ artistMode = false }: NavbarProps) {
         name: 'Book a Workshop',
         path: '/book'
       }] :
-    tourist ?
-      [
-        {
-          name: 'Home',
-          path: '/'
-        },
-        {
-          name: 'Dashboard',
-          path: '/tourist/dashboard'
-        },
-        {
-          name: 'Artists',
-          path: '/browse'
-        },
-        {
-          name: 'Book a Workshop',
-          path: '/book'
-        }] :
-      [
-        {
-          name: 'Home',
-          path: '/'
-        },
-        {
-          name: 'Crafts',
-          path: '/crafts'
-        },
-        {
-          name: 'Artists',
-          path: '/browse'
-        },
-        {
-          name: 'Book a Workshop',
-          path: '/book'
-        }];
+
+    [
+      {
+        name: 'Home',
+        path: '/'
+      },
+      {
+        name: 'Crafts',
+        path: '/crafts'
+      },
+      {
+        name: 'Artists',
+        path: '/browse'
+      },
+      {
+        name: 'Book a Workshop',
+        path: '/book'
+      }];
 
 
   const isActive = (path: string) => {
@@ -121,7 +85,7 @@ export function Navbar({ artistMode = false }: NavbarProps) {
               fontFamily: 'Fraunces, serif'
             }}>
 
-            Lanka Crafts
+            LankaCrafts
           </span>
         </Link>
 
@@ -147,109 +111,30 @@ export function Navbar({ artistMode = false }: NavbarProps) {
 
         {/* Desktop: Right Auth Buttons */}
         <div className="hidden md:flex items-center gap-3 shrink-0">
-          {tourist && !artistMode ? (
-            <>
-              {/* Notification Bell */}
-              <button
-                className="relative w-9 h-9 flex items-center justify-center rounded-full transition-colors"
-                style={{ backgroundColor: 'rgba(255,255,255,0.1)' }}
-                aria-label="Notifications">
-                <BellIcon className="w-5 h-5 text-white" />
-                <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-[#2F5D50]" />
-              </button>
+          <Link
+            to="/login"
+            className="px-5 py-2.5 rounded-full text-sm font-semibold transition-all duration-200 hover:scale-105 text-white/90 hover:text-white hover:bg-white/10 border border-white/20">
 
-              {/* User Dropdown */}
-              <div className="relative">
-                <button
-                  onClick={() => setDropdownOpen(!dropdownOpen)}
-                  className="flex items-center gap-2 pl-1 pr-3 py-1 rounded-full hover:bg-white/10 transition-colors border border-white/20">
-                  <div
-                    className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold font-body overflow-hidden"
-                    style={{ backgroundColor: '#C9A227' }}>
-                    {userProfilePic ? (
-                      <img src={userProfilePic} alt={callingName} className="w-full h-full object-cover" />
-                    ) : (
-                      <span>{userInitials}</span>
-                    )}
-                  </div>
-                  <span className="text-sm font-medium text-white font-body hidden sm:block">
-                    {callingName}
-                  </span>
-                  <ChevronDownIcon
-                    className={`w-4 h-4 text-white/70 transition-transform duration-200 ${dropdownOpen ? 'rotate-180' : ''}`}
-                  />
-                </button>
+            Login
+          </Link>
+          <Link
+            to="/register"
+            className="px-5 py-2.5 rounded-full text-sm font-semibold transition-all duration-200 hover:scale-105 border-2 text-white border-white/40 hover:bg-white hover:text-forest"
+            style={{
+              borderColor: '#C9A227',
+              color: '#C9A227'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = '#C9A227';
+              e.currentTarget.style.color = '#2F5D50';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = 'transparent';
+              e.currentTarget.style.color = '#C9A227';
+            }}>
 
-                <AnimatePresence>
-                  {dropdownOpen && (
-                    <motion.div
-                      initial={{ opacity: 0, y: 8, scale: 0.96 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: 8, scale: 0.96 }}
-                      transition={{ duration: 0.15 }}
-                      className="absolute right-0 top-full mt-2 w-52 bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden z-50">
-                      <div className="p-2">
-                        <div className="px-3 py-2 mb-1">
-                          <p className="text-xs text-gray-400 font-body">Signed in as</p>
-                          <p className="text-sm font-semibold text-[#1E1E1E] font-body truncate">{userName}</p>
-                        </div>
-                        <div className="border-t border-gray-100 my-1" />
-                        {[
-                          { icon: UserIcon, label: 'My Profile', href: '/tourist/profile' },
-                          { icon: HeartIcon, label: 'My Wishlist', href: '/tourist/profile#myWishlist' },
-                          { icon: CalendarIcon, label: 'My Bookings', href: '/tourist/profile#myBookings' },
-                          { icon: MessageCircleIcon, label: 'Inbox', href: '/inbox' }
-                        ].map(({ icon: Icon, label, href }) => (
-                          <Link
-                            key={label}
-                            to={href}
-                            onClick={() => setDropdownOpen(false)}
-                            className="flex items-center gap-3 px-3 py-2 rounded-xl text-sm text-[#1E1E1E] hover:bg-[#FAF6F0] transition-colors font-body">
-                            <Icon className="w-4 h-4 text-[#1A6B6B]" />
-                            {label}
-                          </Link>
-                        ))}
-                        <div className="border-t border-gray-100 my-1" />
-                        <button
-                          onClick={() => { handleLogout(); }}
-                          className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm text-red-500 hover:bg-red-50 transition-colors font-body">
-                          <LogOutIcon className="w-4 h-4" />
-                          Logout
-                        </button>
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-            </>
-          ) : (
-            <>
-              <Link
-                to="/login"
-                className="px-5 py-2.5 rounded-full text-sm font-semibold transition-all duration-200 hover:scale-105 text-white/90 hover:text-white hover:bg-white/10 border border-white/20">
-
-                Login
-              </Link>
-              <Link
-                to="/register"
-                className="px-5 py-2.5 rounded-full text-sm font-semibold transition-all duration-200 hover:scale-105 border-2 text-white border-white/40 hover:bg-white hover:text-forest"
-                style={{
-                  borderColor: '#C9A227',
-                  color: '#C9A227'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = '#C9A227';
-                  e.currentTarget.style.color = '#2F5D50';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = 'transparent';
-                  e.currentTarget.style.color = '#C9A227';
-                }}>
-
-                Register
-              </Link>
-            </>
-          )}
+            Register
+          </Link>
         </div>
 
         {/* Mobile Menu Button */}
@@ -296,35 +181,24 @@ export function Navbar({ artistMode = false }: NavbarProps) {
               )}
             </div>
             <div className="border-t border-white/10 pt-3 flex flex-col gap-2">
-              {tourist && !artistMode ? (
-                <button
-                  onClick={() => { handleLogout(); setMenuOpen(false); }}
-                  className="px-5 py-2.5 rounded-full text-sm font-semibold text-center text-red-200 border border-red-500/30 hover:bg-red-500/10 transition-colors flex justify-center items-center gap-2">
-                  <LogOutIcon className="w-4 h-4" />
-                  Logout
-                </button>
-              ) : (
-                <>
-                  <Link
-                    to="/login"
-                    className="px-5 py-2.5 rounded-full text-sm font-semibold text-center text-white border border-white/20 hover:bg-white/10 transition-colors"
-                    onClick={() => setMenuOpen(false)}>
+              <Link
+                to="/login"
+                className="px-5 py-2.5 rounded-full text-sm font-semibold text-center text-white border border-white/20 hover:bg-white/10 transition-colors"
+                onClick={() => setMenuOpen(false)}>
 
-                    Login
-                  </Link>
-                  <Link
-                    to="/register"
-                    className="px-5 py-2.5 rounded-full text-sm font-semibold text-center border-2 transition-colors"
-                    style={{
-                      borderColor: '#C9A227',
-                      color: '#C9A227'
-                    }}
-                    onClick={() => setMenuOpen(false)}>
+                Login
+              </Link>
+              <Link
+                to="/register"
+                className="px-5 py-2.5 rounded-full text-sm font-semibold text-center border-2 transition-colors"
+                style={{
+                  borderColor: '#C9A227',
+                  color: '#C9A227'
+                }}
+                onClick={() => setMenuOpen(false)}>
 
-                    Register
-                  </Link>
-                </>
-              )}
+                Register
+              </Link>
             </div>
           </motion.div>
         }

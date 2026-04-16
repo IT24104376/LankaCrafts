@@ -1,4 +1,4 @@
-import React, { useState, Component } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   SearchIcon,
@@ -14,15 +14,16 @@ import {
   BarChart3Icon,
   ChevronDownIcon,
   MessageCircleIcon,
-  TrendingUpIcon,
   UserIcon,
   BuildingIcon,
   ShieldAlertIcon } from
 'lucide-react';
-import { motion as m } from 'framer-motion';
+import { getReviews, updateReviewStatus } from '../../api/adminApi';
+
 type ReviewStatus = 'active' | 'hidden' | 'flagged' | 'removed';
+
 interface AdminReview {
-  id: string;
+  _id: string;
   touristName: string;
   touristInitials: string;
   touristColor: string;
@@ -35,114 +36,6 @@ interface AdminReview {
   flagReason?: string;
   reportCount: number;
 }
-const MOCK_REVIEWS: AdminReview[] = [
-{
-  id: 'REV-001',
-  touristName: 'Arjun Mehta',
-  touristInitials: 'AM',
-  touristColor: '#C1440E',
-  artisanName: 'Nimal Perera',
-  workshopName: 'Kandyan Lacquerwork Session',
-  rating: 5,
-  text: "An absolutely transformative experience. Nimal's patience and depth of knowledge made this workshop unforgettable.",
-  status: 'active',
-  datePosted: '2025-02-15',
-  reportCount: 0
-},
-{
-  id: 'REV-002',
-  touristName: 'Sofia Reyes',
-  touristInitials: 'SR',
-  touristColor: '#2F5D50',
-  artisanName: 'Kamala Wijesinghe',
-  workshopName: 'Batik Textile Workshop',
-  rating: 5,
-  text: "I've attended craft workshops in Japan and Morocco, and this was on par with the very best.",
-  status: 'active',
-  datePosted: '2025-01-28',
-  reportCount: 0
-},
-{
-  id: 'REV-003',
-  touristName: 'Kenji Tanaka',
-  touristInitials: 'KT',
-  touristColor: '#C9A227',
-  artisanName: 'Suresh Fernando',
-  workshopName: 'Mask Carving Workshop',
-  rating: 2,
-  text: 'This workshop was a complete waste of money. The artisan was rude and the materials were cheap. DO NOT BOOK!!!',
-  status: 'flagged',
-  datePosted: '2025-01-10',
-  flagReason: 'Potentially abusive language',
-  reportCount: 3
-},
-{
-  id: 'REV-004',
-  touristName: 'Priya Nair',
-  touristInitials: 'PN',
-  touristColor: '#1A6B6B',
-  artisanName: 'Priya Rajapaksa',
-  workshopName: 'Palmyra Weaving Class',
-  rating: 5,
-  text: 'Came here as part of a cultural tour and it was the highlight of my entire Sri Lanka trip.',
-  status: 'active',
-  datePosted: '2024-12-22',
-  reportCount: 0
-},
-{
-  id: 'REV-005',
-  touristName: 'Marcus Weber',
-  touristInitials: 'MW',
-  touristColor: '#6366f1',
-  artisanName: 'Rohan De Silva',
-  workshopName: 'Clay & Wheel Pottery',
-  rating: 1,
-  text: 'Spam content promoting external website. Visit my-craft-shop.com for better deals!!!',
-  status: 'removed',
-  datePosted: '2024-12-10',
-  flagReason: 'Spam / promotional content',
-  reportCount: 7
-},
-{
-  id: 'REV-006',
-  touristName: 'Yuki Tanaka',
-  touristInitials: 'YT',
-  touristColor: '#C65D3B',
-  artisanName: 'Anura Dissanayake',
-  workshopName: 'Brasswork Masterclass',
-  rating: 3,
-  text: 'Average experience. The workshop was okay but nothing special. Could be improved.',
-  status: 'hidden',
-  datePosted: '2024-11-30',
-  reportCount: 1
-},
-{
-  id: 'REV-007',
-  touristName: 'Emma Thompson',
-  touristInitials: 'ET',
-  touristColor: '#2F5D50',
-  artisanName: 'Nimal Perera',
-  workshopName: 'Kandyan Lacquerwork Session',
-  rating: 4,
-  text: 'Very good workshop overall. The technique is fascinating and Nimal explains each step clearly.',
-  status: 'active',
-  datePosted: '2024-11-15',
-  reportCount: 0
-},
-{
-  id: 'REV-008',
-  touristName: 'Carlos Mendez',
-  touristInitials: 'CM',
-  touristColor: '#C9A227',
-  artisanName: 'Kamala Wijesinghe',
-  workshopName: 'Batik Textile Workshop',
-  rating: 5,
-  text: 'Kamala is a true master. Her batik patterns are incredible and she shares the cultural history behind each design.',
-  status: 'flagged',
-  datePosted: '2024-10-20',
-  flagReason: 'Reported by artisan',
-  reportCount: 2
-}];
 
 const STATUS_CONFIG: Record<
   ReviewStatus,
@@ -178,6 +71,7 @@ const STATUS_CONFIG: Record<
     dot: 'bg-red-500'
   }
 };
+
 function StarDisplay({ rating }: {rating: number;}) {
   return (
     <div className="flex items-center gap-0.5">
@@ -189,11 +83,10 @@ function StarDisplay({ rating }: {rating: number;}) {
           color: s <= rating ? '#C9A227' : '#E5E7EB',
           fill: s <= rating ? '#C9A227' : '#E5E7EB'
         }} />
-
       )}
     </div>);
-
 }
+
 // ── Analytics Widgets ──────────────────────────────────────────
 function AnalyticsWidgets({ reviews }: {reviews: AdminReview[];}) {
   const totalActive = reviews.filter((r) => r.status === 'active').length;
@@ -231,7 +124,7 @@ function AnalyticsWidgets({ reviews }: {reviews: AdminReview[];}) {
   },
   {
     label: 'Most Reviewed Workshop',
-    value: mostReviewed.split(' ').slice(0, 2).join(' ') + '...',
+    value: mostReviewed.length > 15 ? mostReviewed.split(' ').slice(0, 2).join(' ') + '...' : mostReviewed,
     icon: <BuildingIcon className="w-5 h-5" />,
     color: '#C65D3B',
     bg: 'bg-terracotta/10'
@@ -250,7 +143,7 @@ function AnalyticsWidgets({ reviews }: {reviews: AdminReview[];}) {
     count: reviews.filter((r) => r.rating === s).length,
     pct:
     Math.round(
-      reviews.filter((r) => r.rating === s).length / reviews.length * 100
+      reviews.filter((r) => r.rating === s).length / (reviews.length || 1) * 100
     ) || 0
   }));
   return (
@@ -355,17 +248,13 @@ function AnalyticsWidgets({ reviews }: {reviews: AdminReview[];}) {
         </div>
       </motion.div>
     </div>);
-
 }
+
 // ── Full Review Modal ──────────────────────────────────────────
 function ReviewModal({
   review,
   onClose,
   onAction
-
-
-
-
 }: {review: AdminReview;onClose: () => void;onAction: (id: string, action: 'hide' | 'remove' | 'restore' | 'spam') => void;}) {
   return (
     <>
@@ -412,7 +301,7 @@ function ReviewModal({
               <h2 className="font-bold text-white font-display">
                 Review Details
               </h2>
-              <p className="text-white/60 text-xs mt-0.5">{review.id}</p>
+              <p className="text-white/60 text-xs mt-0.5 font-mono">{review._id.slice(-8).toUpperCase()}</p>
             </div>
             <button
               onClick={onClose}
@@ -466,7 +355,7 @@ function ReviewModal({
               <div className="bg-gray-50 rounded-xl p-3">
                 <p className="text-xs text-gray-400 mb-0.5">Date Posted</p>
                 <p className="text-sm font-semibold text-gray-800">
-                  {review.datePosted}
+                  {new Date(review.datePosted).toLocaleDateString()}
                 </p>
               </div>
               <div className="bg-gray-50 rounded-xl p-3">
@@ -504,7 +393,7 @@ function ReviewModal({
               {review.status !== 'hidden' && review.status !== 'removed' &&
               <button
                 onClick={() => {
-                  onAction(review.id, 'hide');
+                  onAction(review._id, 'hide');
                   onClose();
                 }}
                 className="flex items-center gap-1.5 px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl text-xs font-bold transition-colors">
@@ -515,7 +404,7 @@ function ReviewModal({
               {(review.status === 'hidden' || review.status === 'removed') &&
               <button
                 onClick={() => {
-                  onAction(review.id, 'restore');
+                  onAction(review._id, 'restore');
                   onClose();
                 }}
                 className="flex items-center gap-1.5 px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-xl text-xs font-bold transition-colors">
@@ -525,7 +414,7 @@ function ReviewModal({
               }
               <button
                 onClick={() => {
-                  onAction(review.id, 'spam');
+                  onAction(review._id, 'spam');
                   onClose();
                 }}
                 className="flex items-center gap-1.5 px-3 py-2 bg-amber-50 hover:bg-amber-100 text-amber-700 rounded-xl text-xs font-bold transition-colors">
@@ -535,7 +424,7 @@ function ReviewModal({
               {review.status !== 'removed' &&
               <button
                 onClick={() => {
-                  onAction(review.id, 'remove');
+                  onAction(review._id, 'remove');
                   onClose();
                 }}
                 className="flex items-center gap-1.5 px-3 py-2 bg-red-50 hover:bg-red-100 text-red-600 rounded-xl text-xs font-bold transition-colors ml-auto">
@@ -548,24 +437,42 @@ function ReviewModal({
         </div>
       </motion.div>
     </>);
-
 }
+
 // ── Main Component ─────────────────────────────────────────────
 export function ReviewMonitoring() {
-  const [reviews, setReviews] = useState<AdminReview[]>(MOCK_REVIEWS);
+  const [reviews, setReviews] = useState<AdminReview[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<ReviewStatus | 'all'>('all');
   const [ratingFilter, setRatingFilter] = useState<number | 'all'>('all');
   const [workshopFilter, setWorkshopFilter] = useState('all');
-  const [sortBy, setSortBy] = useState<'newest' | 'highest' | 'lowest'>(
-    'newest'
-  );
+  const [sortBy, setSortBy] = useState<'newest' | 'highest' | 'lowest'>('newest');
   const [selectedReview, setSelectedReview] = useState<AdminReview | null>(null);
   const [showWorkshopDropdown, setShowWorkshopDropdown] = useState(false);
   const [activeTab, setActiveTab] = useState<'all' | 'flagged'>('all');
+
+  useEffect(() => {
+    const fetchReviews = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const res = await getReviews();
+        setReviews(res.data.data || []);
+      } catch (err: any) {
+        setError(err.message || 'Failed to load reviews');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchReviews();
+  }, []);
+
   const workshops = [
-  'all',
-  ...Array.from(new Set(reviews.map((r) => r.workshopName)))];
+    'all',
+    ...Array.from(new Set(reviews.map((r) => r.workshopName)))
+  ];
 
   const filtered = reviews.
   filter((r) => {
@@ -573,7 +480,7 @@ export function ReviewMonitoring() {
     r.touristName.toLowerCase().includes(searchQuery.toLowerCase()) ||
     r.artisanName.toLowerCase().includes(searchQuery.toLowerCase()) ||
     r.workshopName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    r.id.toLowerCase().includes(searchQuery.toLowerCase());
+    r._id.toLowerCase().includes(searchQuery.toLowerCase());
     const matchStatus =
     statusFilter === 'all' ? true : r.status === statusFilter;
     const matchRating =
@@ -581,47 +488,29 @@ export function ReviewMonitoring() {
     const matchWorkshop =
     workshopFilter === 'all' ? true : r.workshopName === workshopFilter;
     const matchTab = activeTab === 'flagged' ? r.status === 'flagged' : true;
-    return (
-      matchSearch && matchStatus && matchRating && matchWorkshop && matchTab);
-
+    return matchSearch && matchStatus && matchRating && matchWorkshop && matchTab;
   }).
   sort((a, b) => {
     if (sortBy === 'highest') return b.rating - a.rating;
     if (sortBy === 'lowest') return a.rating - b.rating;
-    return b.id.localeCompare(a.id);
+    return new Date(b.datePosted).getTime() - new Date(a.datePosted).getTime();
   });
-  const handleAction = (
-  id: string,
-  action: 'hide' | 'remove' | 'restore' | 'spam') =>
-  {
-    setReviews((prev) =>
-    prev.map((r) => {
-      if (r.id !== id) return r;
-      if (action === 'hide')
-      return {
-        ...r,
-        status: 'hidden' as ReviewStatus
-      };
-      if (action === 'remove')
-      return {
-        ...r,
-        status: 'removed' as ReviewStatus
-      };
-      if (action === 'restore')
-      return {
-        ...r,
-        status: 'active' as ReviewStatus
-      };
-      if (action === 'spam')
-      return {
-        ...r,
-        status: 'flagged' as ReviewStatus,
-        flagReason: 'Marked as spam by admin'
-      };
-      return r;
-    })
-    );
+
+  const handleAction = async (
+    id: string,
+    action: 'hide' | 'remove' | 'restore' | 'spam'
+  ) => {
+    try {
+      const res = await updateReviewStatus(id, action);
+      const updated = res.data.data;
+      setReviews((prev) =>
+        prev.map((r) => (r._id === id ? { ...r, ...updated } : r))
+      );
+    } catch (err) {
+      console.error('Failed to update review status', err);
+    }
   };
+
   const counts = {
     all: reviews.length,
     active: reviews.filter((r) => r.status === 'active').length,
@@ -629,6 +518,30 @@ export function ReviewMonitoring() {
     flagged: reviews.filter((r) => r.status === 'flagged').length,
     removed: reviews.filter((r) => r.status === 'removed').length
   };
+
+  if (loading) {
+    return (
+      <div className="flex flex-col h-full items-center justify-center gap-3">
+        <div className="w-8 h-8 border-4 border-forest/20 border-t-forest rounded-full animate-spin" />
+        <p className="text-gray-400 text-sm">Loading reviews...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col h-full items-center justify-center gap-3">
+        <AlertTriangleIcon className="w-10 h-10 text-red-400" />
+        <p className="text-gray-600 font-medium">{error}</p>
+        <button
+          onClick={() => window.location.reload()}
+          className="px-4 py-2 bg-forest text-white rounded-xl text-sm font-semibold">
+          Retry
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col h-full">
       {/* Page Header */}
@@ -684,7 +597,6 @@ export function ReviewMonitoring() {
                 {status !== 'all' &&
             <span
               className={`w-1.5 h-1.5 rounded-full ${STATUS_CONFIG[status as ReviewStatus].dot}`} />
-
             }
                 {status === 'all' ?
             'All' :
@@ -697,8 +609,7 @@ export function ReviewMonitoring() {
               counts[status as keyof typeof counts]}
                 </span>
               </button>
-
-        )}
+          )}
         </div>
       }
 
@@ -708,11 +619,10 @@ export function ReviewMonitoring() {
           <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
           <input
             type="text"
-            placeholder="Search by tourist, artisan, workshop, or ID..."
+            placeholder="Search by tourist, artisan, workshop..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-forest/20 focus:border-forest/40 transition-all" />
-
         </div>
 
         {/* Rating Filter */}
@@ -782,9 +692,6 @@ export function ReviewMonitoring() {
             <thead>
               <tr className="border-b border-gray-100 bg-gray-50/50">
                 <th className="text-left px-5 py-3.5 text-xs font-bold text-gray-400 uppercase tracking-wider">
-                  Review ID
-                </th>
-                <th className="text-left px-5 py-3.5 text-xs font-bold text-gray-400 uppercase tracking-wider">
                   Tourist
                 </th>
                 <th className="text-left px-5 py-3.5 text-xs font-bold text-gray-400 uppercase tracking-wider">
@@ -815,7 +722,7 @@ export function ReviewMonitoring() {
                 const statusCfg = STATUS_CONFIG[review.status];
                 return (
                   <motion.tr
-                    key={review.id}
+                    key={review._id}
                     initial={{
                       opacity: 0,
                       y: 6
@@ -829,11 +736,6 @@ export function ReviewMonitoring() {
                     }}
                     className={`hover:bg-gray-50/50 transition-colors ${review.status === 'flagged' ? 'bg-amber-50/30' : ''}`}>
 
-                    <td className="px-5 py-3.5">
-                      <span className="text-xs font-mono font-bold text-gray-500 bg-gray-100 px-2 py-0.5 rounded">
-                        {review.id}
-                      </span>
-                    </td>
                     <td className="px-5 py-3.5">
                       <div className="flex items-center gap-2">
                         <div
@@ -886,7 +788,7 @@ export function ReviewMonitoring() {
                       }
                     </td>
                     <td className="px-5 py-3.5 hidden md:table-cell text-xs text-gray-400">
-                      {review.datePosted}
+                      {new Date(review.datePosted).toLocaleDateString()}
                     </td>
                     <td className="px-5 py-3.5">
                       <div className="flex items-center justify-end gap-1">
@@ -900,7 +802,7 @@ export function ReviewMonitoring() {
                         {review.status !== 'hidden' &&
                         review.status !== 'removed' &&
                         <button
-                          onClick={() => handleAction(review.id, 'hide')}
+                          onClick={() => handleAction(review._id, 'hide')}
                           className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
                           title="Hide review">
 
@@ -910,7 +812,7 @@ export function ReviewMonitoring() {
                         {(review.status === 'hidden' ||
                         review.status === 'removed') &&
                         <button
-                          onClick={() => handleAction(review.id, 'restore')}
+                          onClick={() => handleAction(review._id, 'restore')}
                           className="p-1.5 text-gray-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
                           title="Restore review">
 
@@ -918,7 +820,7 @@ export function ReviewMonitoring() {
                           </button>
                         }
                         <button
-                          onClick={() => handleAction(review.id, 'spam')}
+                          onClick={() => handleAction(review._id, 'spam')}
                           className="p-1.5 text-gray-400 hover:text-amber-500 hover:bg-amber-50 rounded-lg transition-colors"
                           title="Mark as spam">
 
@@ -926,7 +828,7 @@ export function ReviewMonitoring() {
                         </button>
                         {review.status !== 'removed' &&
                         <button
-                          onClick={() => handleAction(review.id, 'remove')}
+                          onClick={() => handleAction(review._id, 'remove')}
                           className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
                           title="Remove review">
 
@@ -936,7 +838,6 @@ export function ReviewMonitoring() {
                       </div>
                     </td>
                   </motion.tr>);
-
               })}
             </tbody>
           </table>
@@ -958,9 +859,7 @@ export function ReviewMonitoring() {
           review={selectedReview}
           onClose={() => setSelectedReview(null)}
           onAction={handleAction} />
-
         }
       </AnimatePresence>
     </div>);
-
 }

@@ -1,213 +1,72 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
-import {
-  createUserWithEmailAndPassword,
-  signInWithEmailAndPassword,
-  signOut,
-  onAuthStateChanged,
-  User,
-} from 'firebase/auth';
-import { auth } from '../config/firebase';
-import { registerTourist, loginTourist, getProfile } from '../services/api';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { loginAdmin, getMe } from '../api/adminApi';
 
-interface TouristProfile {
+interface AdminUser {
   id: string;
-  fullName: string;
-  callingName: string;
+  name: string;
   email: string;
-  country: string;
-  interests: string[];
-  preferredLanguages: string[];
-  preferredRegions: string[];
-  savedWorkshops: string[];
-  initials: string;
-  idNumber?: string;
-  dateOfBirth?: string;
-  address?: {
-    line1?: string;
-    line2?: string;
-    city?: string;
-    postalCode?: string;
-  };
-  profilePicUrl?: string;
-}
-
-interface ArtistProfile {
-  id: string;
-  fullName: string;
-  callingName: string;
-  email: string;
-  phone?: string;
-  craftType: string;
-  bio: string;
-  address?: {
-    number?: string;
-    street?: string;
-    village?: string;
-    city?: string;
-    district?: string;
-    province?: string;
-    postalCode?: string;
-  };
-  location?: {
-    type: string;
-    coordinates: number[];
-    formattedAddress: string;
-  };
-  specialties: string[];
-  availability: Record<string, { morning: boolean; afternoon: boolean; evening: boolean }>;
-  rating: number;
-  reviewCount: number;
-  initials: string;
-  profilePicUrl?: string;
+  role: string;
 }
 
 interface AuthContextType {
-  firebaseUser: User | null;
-  tourist: TouristProfile | null;
-  artist: ArtistProfile | null;
+  admin: AdminUser | null;
+  token: string | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
-  register: (
-    email: string,
-    password: string,
-    profileData: object
-  ) => Promise<void>;
-  logout: () => Promise<void>;
-  refreshUser: () => Promise<void>;
-  loginArtist: (email: string, password: string) => Promise<void>;
-  registerArtist: (
-    email: string,
-    password: string,
-    profileData: object
-  ) => Promise<void>;
-  logoutArtist: () => Promise<void>;
-  refreshArtist: () => Promise<void>;
+  logout: () => void;
+  isAuthenticated: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [firebaseUser, setFirebaseUser] = useState<User | null>(null);
-  const [tourist, setTourist] = useState<TouristProfile | null>(null);
-  const [artist, setArtist] = useState<ArtistProfile | null>(null);
+export function AuthProvider({ children }: { children: ReactNode }) {
+  const [admin, setAdmin] = useState<AdminUser | null>(null);
+  const [token, setToken] = useState<string | null>(localStorage.getItem('admin_token'));
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      setFirebaseUser(user);
-
-      if (user) {
+    const init = async () => {
+      const storedToken = localStorage.getItem('admin_token');
+      if (storedToken) {
         try {
-          const res = await loginTourist();
-          setTourist(res.data.tourist);
+          const res = await getMe();
+          setAdmin(res.data.admin);
         } catch {
-          setTourist(null);
+          localStorage.removeItem('admin_token');
+          localStorage.removeItem('admin_user');
+          setToken(null);
         }
-      } else {
-        setTourist(null);
       }
-
       setLoading(false);
-    });
-
-    return unsubscribe;
+    };
+    init();
   }, []);
 
   const login = async (email: string, password: string) => {
-    await signInWithEmailAndPassword(auth, email, password);
+    const res = await loginAdmin(email, password);
+    const { token: newToken, admin: adminData } = res.data;
+    localStorage.setItem('admin_token', newToken);
+    localStorage.setItem('admin_user', JSON.stringify(adminData));
+    setToken(newToken);
+    setAdmin(adminData);
   };
 
-  const register = async (
-    email: string,
-    password: string,
-    profileData: object
-  ) => {
-    const userCredential = await createUserWithEmailAndPassword(
-      auth,
-      email,
-      password
-    );
-    const res = await registerTourist({ email, ...profileData });
-    setTourist(res.data.tourist);
-    void userCredential;
-  };
-
-  const logout = async () => {
-    await signOut(auth);
-    setTourist(null);
-    setFirebaseUser(null);
-  };
-
-  const refreshUser = async () => {
-    try {
-      const res = await getProfile();
-      setTourist(res.data.tourist);
-    } catch (err) {
-      console.error('Failed to refresh user profile:', err);
-    }
-  };
-
-  const loginArtist = async (email: string, password: string) => {
-    await signInWithEmailAndPassword(auth, email, password);
-  };
-
-  const registerArtist = async (
-    email: string,
-    password: string,
-    profileData: object
-  ) => {
-    const userCredential = await createUserWithEmailAndPassword(
-      auth,
-      email,
-      password
-    );
-    void userCredential;
-  };
-
-  const logoutArtist = async () => {
-    await signOut(auth);
-    setArtist(null);
-    setFirebaseUser(null);
-  };
-
-  const refreshArtist = async () => {
-    try {
-      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/artist/profile`, {
-        headers: {
-          'Authorization': `Bearer ${await auth.currentUser?.getIdToken()}`
-        }
-      });
-      const data = await res.json();
-      setArtist(data.artist);
-    } catch (err) {
-      console.error('Failed to refresh artist profile:', err);
-    }
+  const logout = () => {
+    localStorage.removeItem('admin_token');
+    localStorage.removeItem('admin_user');
+    setToken(null);
+    setAdmin(null);
   };
 
   return (
-    <AuthContext.Provider
-      value={{
-        firebaseUser,
-        tourist,
-        artist,
-        loading,
-        login,
-        register,
-        logout,
-        refreshUser,
-        loginArtist,
-        registerArtist,
-        logoutArtist,
-        refreshArtist
-      }}
-    >
+    <AuthContext.Provider value={{ admin, token, loading, login, logout, isAuthenticated: !!token && !!admin }}>
       {children}
     </AuthContext.Provider>
   );
 }
 
-export function useAuth(): AuthContextType {
+export function useAuth() {
   const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error('useAuth must be used within <AuthProvider>');
+  if (!ctx) throw new Error('useAuth must be used within AuthProvider');
   return ctx;
 }
