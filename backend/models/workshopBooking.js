@@ -3,6 +3,9 @@ import mongoose from 'mongoose';
 const bookingSchema = new mongoose.Schema({
   artisanId: { type: String, required: true },
   craftId: { type: String, required: true },
+  craftName: { type: String, required: true },
+  artisanName: { type: String, required: true },
+  location: { type: String, required: true },
   customerName: { type: String, required: true },
   customerEmail: { type: String, required: true },
   customerPhone: { type: String, required: true },

@@ -1,4 +1,5 @@
 import axiosInstance from './axios';
+import api from './axiosInstance';
 
 export interface BookingData {
   email?: string;
@@ -23,7 +24,7 @@ export const bookingApi = {
   },
 
   getBookingsByEmail: async (email: string) => {
-    const response = await axiosInstance.get(`/bookings/user/${email}`);
+    const response = await api.get(`/bookings/user/${email}`);
     return response.data;
   },
 

@@ -1,4 +1,4 @@
-import React, { useEffect, useState, Component } from 'react';
+import React, { useState, Component } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ActivityIcon,
@@ -55,256 +55,23 @@ interface SessionEvent {
   time: string;
   country: string;
 }
-// ─── Mock Data ────────────────────────────────────────────────────────────────
-const LIVE_USERS: LiveUser[] = [
-{
-  id: 1,
-  name: 'Sarah Mitchell',
-  initials: 'SM',
-  color: '#2F5D50',
-  country: 'United Kingdom',
-  flag: '🇬🇧',
-  page: '/book?craft=lacquer',
-  duration: '4m 32s',
-  device: 'desktop',
-  action: 'Booking workshop',
-  actionTime: '12s ago'
-},
-{
-  id: 2,
-  name: 'David Chen',
-  initials: 'DC',
-  color: '#C65D3B',
-  country: 'Singapore',
-  flag: '🇸🇬',
-  page: '/browse',
-  duration: '1m 18s',
-  device: 'mobile',
-  action: 'Browsing artisans',
-  actionTime: '5s ago'
-},
-{
-  id: 3,
-  name: 'Marie Dubois',
-  initials: 'MD',
-  color: '#C9A227',
-  country: 'France',
-  flag: '🇫🇷',
-  page: '/artist/2',
-  duration: '7m 04s',
-  device: 'desktop',
-  action: 'Viewing profile',
-  actionTime: '2s ago'
-},
-{
-  id: 4,
-  name: 'Carlos Rivera',
-  initials: 'CR',
-  color: '#2F5D50',
-  country: 'Spain',
-  flag: '🇪🇸',
-  page: '/',
-  duration: '0m 45s',
-  device: 'mobile',
-  action: 'Homepage visit',
-  actionTime: '28s ago'
-},
-{
-  id: 5,
-  name: 'James Thornton',
-  initials: 'JT',
-  color: '#C65D3B',
-  country: 'United Kingdom',
-  flag: '🇬🇧',
-  page: '/map',
-  duration: '3m 12s',
-  device: 'tablet',
-  action: 'Exploring map',
-  actionTime: '8s ago'
-},
-{
-  id: 6,
-  name: 'Yuki Tanaka',
-  initials: 'YT',
-  color: '#C9A227',
-  country: 'Japan',
-  flag: '🇯🇵',
-  page: '/book?craft=batik',
-  duration: '2m 55s',
-  device: 'mobile',
-  action: 'Selecting artisan',
-  actionTime: '15s ago'
-},
-{
-  id: 7,
-  name: 'Anna Kowalski',
-  initials: 'AK',
-  color: '#2F5D50',
-  country: 'Poland',
-  flag: '🇵🇱',
-  page: '/artist/4',
-  duration: '5m 20s',
-  device: 'desktop',
-  action: 'Reading reviews',
-  actionTime: '3s ago'
-}];
-
-const SESSION_EVENTS: SessionEvent[] = [
-{
-  id: 1,
-  type: 'booking',
-  user: 'Sarah Mitchell',
-  initials: 'SM',
-  color: '#2F5D50',
-  description: 'Booked Kandyan Lacquerwork Masterclass',
-  page: '/book',
-  time: '2 min ago',
-  country: '🇬🇧'
-},
-{
-  id: 2,
-  type: 'login',
-  user: 'David Chen',
-  initials: 'DC',
-  color: '#C65D3B',
-  description: 'Logged in from Singapore',
-  page: '/login',
-  time: '4 min ago',
-  country: '🇸🇬'
-},
-{
-  id: 3,
-  type: 'search',
-  user: 'Marie Dubois',
-  initials: 'MD',
-  color: '#C9A227',
-  description: 'Searched for "batik workshops Kandy"',
-  page: '/browse',
-  time: '6 min ago',
-  country: '🇫🇷'
-},
-{
-  id: 4,
-  type: 'review',
-  user: 'Carlos Rivera',
-  initials: 'CR',
-  color: '#2F5D50',
-  description: 'Left 5★ review for Nimal Perera',
-  page: '/artist/1',
-  time: '9 min ago',
-  country: '🇪🇸'
-},
-{
-  id: 5,
-  type: 'register',
-  user: 'New Tourist',
-  initials: 'NT',
-  color: '#6366f1',
-  description: 'New account registered from Germany',
-  page: '/register',
-  time: '12 min ago',
-  country: '🇩🇪'
-},
-{
-  id: 6,
-  type: 'view',
-  user: 'James Thornton',
-  initials: 'JT',
-  color: '#C65D3B',
-  description: 'Viewed Ambalangoda Mask Carving workshop',
-  page: '/artist/3',
-  time: '15 min ago',
-  country: '🇬🇧'
-},
-{
-  id: 7,
-  type: 'logout',
-  user: 'Anna Kowalski',
-  initials: 'AK',
-  color: '#2F5D50',
-  description: 'Session ended after 42 minutes',
-  page: '/',
-  time: '18 min ago',
-  country: '🇵🇱'
-},
-{
-  id: 8,
-  type: 'booking',
-  user: 'Yuki Tanaka',
-  initials: 'YT',
-  color: '#C9A227',
-  description: 'Booked Batik Textiles Workshop',
-  page: '/book',
-  time: '22 min ago',
-  country: '🇯🇵'
-}];
-
-const TOP_PAGES = [
-{
-  page: '/browse',
-  label: 'Browse Artisans',
-  views: 1842,
-  change: '+12%',
-  up: true
-},
-{
-  page: '/',
-  label: 'Homepage',
-  views: 1634,
-  change: '+8%',
-  up: true
-},
-{
-  page: '/book',
-  label: 'Book Workshop',
-  views: 987,
-  change: '+21%',
-  up: true
-},
-{
-  page: '/artist/:id',
-  label: 'Artist Profiles',
-  views: 876,
-  change: '+5%',
-  up: true
-},
-{
-  page: '/map',
-  label: 'Explore Map',
-  views: 543,
-  change: '-3%',
-  up: false
-},
-{
-  page: '/register',
-  label: 'Registration',
-  views: 312,
-  change: '+34%',
-  up: true
-}];
-
-const DEVICE_STATS = [
-{
-  device: 'Mobile',
-  pct: 58,
-  count: 724,
-  color: '#2F5D50',
-  icon: <SmartphoneIcon className="w-4 h-4" />
-},
-{
-  device: 'Desktop',
-  pct: 32,
-  count: 399,
-  color: '#C65D3B',
-  icon: <MonitorIcon className="w-4 h-4" />
-},
-{
-  device: 'Tablet',
-  pct: 10,
-  count: 125,
-  color: '#C9A227',
-  icon: <TabletIcon className="w-4 h-4" />
-}];
+// ─── Data (connect telemetry / backend when available) ─────────────────────────
+const LIVE_USERS: LiveUser[] = [];
+const SESSION_EVENTS: SessionEvent[] = [];
+const TOP_PAGES: {
+  page: string;
+  label: string;
+  views: number;
+  change: string;
+  up: boolean;
+}[] = [];
+const DEVICE_STATS: {
+  device: string;
+  pct: number;
+  count: number;
+  color: string;
+  icon: React.ReactNode;
+}[] = [];
 
 const EVENT_ICONS: Record<string, React.ReactNode> = {
   login: <LogInIcon className="w-3.5 h-3.5" />,
@@ -355,62 +122,53 @@ function Sparkline({ values, color }: {values: number[];color: string;}) {
 }
 // ─── Main Component ───────────────────────────────────────────────────────────
 export function UserActivity() {
-  const [liveCount, setLiveCount] = useState(1248);
-  const [lastRefresh, setLastRefresh] = useState('Just now');
+  const [lastRefresh] = useState('—');
   const [activeTab, setActiveTab] = useState<'live' | 'sessions' | 'pages'>(
     'live'
   );
-  // Simulate live count fluctuation
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setLiveCount((prev) => prev + Math.floor(Math.random() * 7) - 3);
-      setLastRefresh('Just now');
-    }, 8000);
-    return () => clearInterval(interval);
-  }, []);
   const KPI_METRICS = [
   {
     label: 'Live Users',
-    value: liveCount.toLocaleString(),
-    change: '+18%',
+    value: '0',
+    change: '—',
     up: true,
     icon: <WifiIcon className="w-5 h-5" />,
     color: '#2F5D50',
     bg: 'bg-forest/10',
-    sparkline: [820, 940, 880, 1020, 1150, 1080, 1200, 1248],
-    pulse: true
+    sparkline: [0, 0, 0, 0, 0, 0, 0, 0],
+    pulse: false
   },
   {
     label: 'Avg. Session Duration',
-    value: '8m 42s',
-    change: '+6%',
+    value: '—',
+    change: '—',
     up: true,
     icon: <ClockIcon className="w-5 h-5" />,
     color: '#C9A227',
     bg: 'bg-mustard/10',
-    sparkline: [420, 480, 510, 490, 530, 520, 540, 522],
+    sparkline: [0, 0, 0, 0, 0, 0, 0, 0],
     pulse: false
   },
   {
     label: 'Page Views Today',
-    value: '24,831',
-    change: '+14%',
+    value: '0',
+    change: '—',
     up: true,
     icon: <EyeIcon className="w-5 h-5" />,
     color: '#C65D3B',
     bg: 'bg-terracotta/10',
-    sparkline: [1800, 2100, 1950, 2400, 2800, 2600, 3100, 3200],
+    sparkline: [0, 0, 0, 0, 0, 0, 0, 0],
     pulse: false
   },
   {
     label: 'Bounce Rate',
-    value: '24.3%',
-    change: '-3%',
+    value: '—',
+    change: '—',
     up: false,
     icon: <MousePointerIcon className="w-5 h-5" />,
     color: '#6366f1',
     bg: 'bg-indigo-50',
-    sparkline: [32, 30, 28, 27, 26, 25, 24, 24],
+    sparkline: [0, 0, 0, 0, 0, 0, 0, 0],
     pulse: false
   }];
 

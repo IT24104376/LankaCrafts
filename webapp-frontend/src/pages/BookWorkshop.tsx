@@ -22,6 +22,7 @@ import { Footer } from '../components/Footer';
 import { Button } from '../components/ui/Button';
 import { ReviewSection } from '../components/ReviewSection';
 
+
 export function BookWorkshop() {
   const [searchParams] = useSearchParams();
   const [step, setStep] = useState(1);
@@ -96,34 +97,43 @@ export function BookWorkshop() {
   const handleBack = () => {
     if (step > 1) setStep(step - 1);
   };
+  
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!validateForm()) return;
+  e.preventDefault();
+  if (!validateForm()) return;
 
-    setIsSubmitting(true);
+  setIsSubmitting(true);
 
-    const bookingPayload = {
-      artisanId: selectedArtisan,
-      craftId: selectedCraft,
-      name: formData.name,
-      email: formData.email,
-      phone: formData.phone,
-      date: selectedDate,
-      time: selectedTime,
-      groupSize: formData.groupSize
-    };
+  // 1. Find the selected artisan and craft objects
+  const artisanData = ARTISANS.find((a) => a.id === selectedArtisan);
+  const craftData = CRAFTS.find((c) => c.id === selectedCraft);
 
-    try {
-      await bookingApi.createBooking(bookingPayload);
-      setIsSuccess(true);
-      window.scrollTo(0, 0);
-    } catch (error) {
-      console.error("Error submitting booking:", error);
-      alert("Failed to save booking or server error. Please try again.");
-    } finally {
-      setIsSubmitting(false);
-    }
+  // 2. Build the payload including the extra info
+  const bookingPayload = {
+    artisanId: selectedArtisan,
+    artisanName: artisanData?.name || 'Unknown Artisan',
+    location: artisanData?.location || 'Unknown Location',
+    craftId: selectedCraft,
+    craftName: craftData?.name || 'Unknown Craft',
+    name: formData.name,
+    email: formData.email,
+    phone: formData.phone,
+    date: selectedDate,
+    time: selectedTime,
+    groupSize: formData.groupSize
   };
+
+  try {
+    await bookingApi.createBooking(bookingPayload);
+    setIsSuccess(true);
+    window.scrollTo(0, 0);
+  } catch (error) {
+    console.error("Error submitting booking:", error);
+    alert("Failed to save booking or server error. Please try again.");
+  } finally {
+    setIsSubmitting(false);
+  }
+};
   if (isSuccess) {
     return (
       <div className="min-h-screen bg-offwhite font-body flex flex-col">
@@ -136,6 +146,7 @@ export function BookWorkshop() {
             }}
             animate={{
               opacity: 1,
+
               scale: 1
             }}
             className="bg-white p-8 md:p-12 rounded-3xl shadow-xl max-w-lg w-full text-center border border-gray-100">

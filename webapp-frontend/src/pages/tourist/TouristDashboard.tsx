@@ -10,14 +10,17 @@ import {
   UserIcon,
   BookOpenIcon,
   HeartIcon,
-  ChevronLeftIcon
+  ChevronLeftIcon,
+  ClockIcon,
+  MapPinIcon
 } from 'lucide-react';
 import { TouristNavbar } from './TouristNavbar';
 import { BatikBackground } from '../../components/BatikBackground';
 import { Link } from 'react-router-dom';
 import { HashLink } from 'react-router-hash-link';
 import { useAuth } from '../../context/AuthContext';
-import { getStats, getMockUpcomingWorkshops, MockWorkshop, getSavedWorkshops, addSavedWorkshop, removeSavedWorkshop } from '../../services/api';
+import { getStats, getSavedWorkshops, addSavedWorkshop, removeSavedWorkshop, getArtists, getFeaturedArtist } from '../../services/api';
+import { bookingApi } from '../../api/index'
 import { INTEREST_MAP, COUNTRY_CODES } from '../../constants/touristConstants';
 import ReactCountryFlag from 'react-country-flag';
 
@@ -60,12 +63,7 @@ let DefaultIcon = L.icon({
 });
 L.Marker.prototype.options.icon = DefaultIcon;
 
-// Define your pinpoint data
-const pinpoints = [
-  { id: 1, position: [6.9271, 79.8612], label: "Location A" },
-  { id: 2, position: [6.9000, 79.9000], label: "Location B" },
-  { id: 3, position: [7.2906, 80.6337], label: "Location C" },
-];
+
 
 // ── Country flag helper ─────────────────────────────────────────────────────
 
@@ -76,7 +74,7 @@ function getFlag(country: string) {
 }
 
 // ── Mini Calendar ──────────────────────────────────────────────
-function MiniCalendar() {
+function MiniCalendar({ workshops = [] }: { workshops?: UpcomingWorkshop[] }) {
   const today = new Date();
   const [viewYear, setViewYear] = useState(today.getFullYear());
   const [viewMonth, setViewMonth] = useState(today.getMonth());
@@ -127,17 +125,39 @@ function MiniCalendar() {
           <div key={d} className="text-center text-[10px] font-bold text-gray-400 font-body py-1">{d}</div>
         ))}
       </div>
-      <div className="grid grid-cols-7 gap-y-0.5">
+      <div className="grid grid-cols-7 gap-y-1">
         {cells.map((day, idx) => {
           if (!day) return <div key={`e-${idx}`} />;
+
           const key = getDateKey(day);
           const isToday = key === todayKey;
+          const hasWorkshop = workshops?.some(w => w.bookingDate === key);
+
           return (
-            <div key={key} className="flex items-center justify-center">
+            <div key={key} className="relative flex items-center justify-center h-8">
+
+              {hasWorkshop && (
+                <motion.div
+                  initial={{ scale: 0, rotate: -45 }}
+                  animate={{ scale: 1, rotate: 0 }}
+                  className="absolute inset-0 flex items-center justify-center"
+                >
+                  <StarIcon
+                    className="w-7 h-7 fill-[#ffe600dc] text-[#ffe600dc]"
+                    strokeWidth={1}
+                  />
+                </motion.div>
+              )}
+
               <div
-                className={`w-7 h-7 flex items-center justify-center rounded-full text-xs font-body cursor-default transition-all ${isToday ? 'text-white font-bold' : 'text-gray-600 hover:bg-gray-100'
+                className={`relative z-10 w-7 h-7 flex items-center justify-center rounded-full text-xs font-body transition-all ${isToday
+                    ? 'text-white font-bold shadow-md'
+                    : hasWorkshop
+                      ? 'text-[#1E1E1E] font-bold' // Darker text if there's a star
+                      : 'text-gray-600 hover:bg-gray-100'
                   }`}
-                style={isToday ? { backgroundColor: '#C1440E' } : {}}>
+                style={isToday ? { backgroundColor: '#C1440E' } : {}}
+              >
                 {day}
               </div>
             </div>
@@ -154,49 +174,24 @@ function SkeletonBlock({ className }: { className?: string }) {
   return <div className={`animate-pulse bg-gray-200 rounded-xl ${className}`} />;
 }
 
-// ── Recommended workshops (mock) ────────────────────────────────
-const RECOMMENDED_WORKSHOPS = [
-  {
-    id: 10,
-    img: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&auto=format&fit=crop',
-    category: '🎨 Batik',
-    name: 'Batik Art Workshop',
-    artisan: 'Kamala Wijesinghe',
-    location: 'Kandy',
-    rating: 4.9,
-    reviews: 128,
-    price: '$45',
-  },
-  {
-    id: 11,
-    img: 'https://images.unsplash.com/photo-1590736704728-f4730bb30770?w=400&auto=format&fit=crop',
-    category: '⚱️ Pottery',
-    name: 'Clay & Wheel Pottery',
-    artisan: 'Rohan De Silva',
-    location: 'Kelaniya',
-    rating: 4.8,
-    reviews: 94,
-    price: '$38',
-  },
-  {
-    id: 12,
-    img: 'https://images.unsplash.com/photo-1566552881560-0be862a7c445?w=400&auto=format&fit=crop',
-    category: '🪵 Wood Carving',
-    name: 'Traditional Mask Carving',
-    artisan: 'Suresh Fernando',
-    location: 'Ambalangoda',
-    rating: 4.7,
-    reviews: 76,
-    price: '$52',
-  },
-];
+
 
 // ── Main Dashboard ─────────────────────────────────────────────
 interface Stats {
   workshopsAttended: number;
   blogsPosted: number;
   reviewsGiven: number;
-  upcomingBookings: number;
+}
+
+interface UpcomingWorkshop {
+  id: string | number;
+  img?: string;
+  artisanName: string;
+  craftName: string;
+  bookingDate: string;
+  bookingTime: string;
+  location: string;
+  status: 'Confirmed' | 'Pending' | string;
 }
 
 export function TouristDashboard() {
@@ -205,9 +200,28 @@ export function TouristDashboard() {
   const [stats, setStats] = useState<Stats | null>(null);
   const [statsLoading, setStatsLoading] = useState(true);
 
-  const [upcomingWorkshops, setUpcomingWorkshops] = useState<MockWorkshop[]>([]);
-
+  const [upcomingWorkshops, setUpcomingWorkshops] = useState<UpcomingWorkshop[]>([]);
   const [savedWorkshops, setSavedWorkshops] = useState<number[]>([]);
+
+  const [mapPinpoints, setMapPinpoints] = useState<{ id: string, position: [number, number], label: string }[]>([]);
+  const [recommendedWorkshops, setRecommendedWorkshops] = useState<any[]>([]);
+
+  useEffect(() => {
+    const fetchUpcoming = async () => {
+      if (authLoading) return;
+
+      if (tourist?.email) {
+        try {
+          const data = await bookingApi.getBookingsByEmail(tourist.email);
+          setUpcomingWorkshops(data || []);
+        } catch (err) {
+          console.error("API Error:", err);
+        }
+      }
+    };
+
+    fetchUpcoming();
+  }, [tourist?.email, authLoading]);
 
   // Fetch saved workshops real data from backend
   useEffect(() => {
@@ -245,10 +259,113 @@ export function TouristDashboard() {
       .finally(() => setStatsLoading(false));
   }, [tourist]);
 
-  // Load mock upcoming workshops
+  // Fetch map pinpoints and recommended workshops
   useEffect(() => {
-    getMockUpcomingWorkshops().then(setUpcomingWorkshops);
-  }, []);
+    const fetchArtistsData = async () => {
+      try {
+        const [artistsRes, featuredRes] = await Promise.all([
+          getArtists(1, 100),
+          getFeaturedArtist().catch(() => null)
+        ]);
+
+        const allArtists = artistsRes.data?.artists || [];
+        const featured = featuredRes?.data?.artist || null;
+
+        // 1. Calculate map pinpoints globally or filtered by regions
+        const regions = tourist?.preferredRegions ?? [];
+        let mapArtists = allArtists;
+
+        if (regions.length > 0) {
+          const filtered = allArtists.filter((a: any) =>
+            regions.some((r: string) =>
+              r.toLowerCase() === a.address?.city?.toLowerCase() ||
+              r.toLowerCase() === a.address?.district?.toLowerCase() ||
+              r.toLowerCase() === a.address?.province?.toLowerCase()
+            )
+          );
+          if (filtered.length > 0) {
+            mapArtists = filtered;
+          }
+        }
+
+        const pins = mapArtists
+          .filter((a: any) => a.location?.coordinates && a.location.coordinates.length === 2 && a.location.coordinates[0] !== 0)
+          .map((a: any) => ({
+            id: a._id || a.id,
+            position: [a.location.coordinates[1], a.location.coordinates[0]], // [lat, lng]
+            label: a.fullName
+          }));
+
+        if (pins.length === 0) {
+          // fallback to overall artists if no pins found after filter
+          const fallbackPins = allArtists
+            .filter((a: any) => a.location?.coordinates && a.location.coordinates.length === 2 && a.location.coordinates[0] !== 0)
+            .slice(0, 10)
+            .map((a: any) => ({
+              id: a._id || a.id,
+              position: [a.location.coordinates[1], a.location.coordinates[0]],
+              label: a.fullName
+            }));
+          setMapPinpoints(fallbackPins);
+        } else {
+          setMapPinpoints(pins);
+        }
+
+        // 2. Calculate recommended workshops
+        const maxRecs = 3;
+        const recList = [];
+
+        if (featured) {
+          recList.push(featured);
+        }
+
+        const interests = tourist?.interests ?? [];
+        for (const a of allArtists) {
+          if (recList.length >= maxRecs) break;
+          // Ignore if already added
+          if (!recList.find((r) => r.id === a.id || r._id === a._id)) {
+            if (interests.includes(a.craftType)) {
+              recList.push(a);
+            }
+          }
+        }
+
+        // Fills the leftover slots if there is not enough matching artists
+        for (const a of allArtists) {
+          if (recList.length >= maxRecs) break;
+          if (!recList.find((r) => r.id === a.id || r._id === a._id)) {
+            recList.push(a);
+          }
+        }
+
+        const formattedRecs = recList.map(w => ({
+          id: w._id || w.id,
+          img: w.profilePicUrl || 'https://images.unsplash.com/photo-1513364776144-60967b0f800f?w=400&auto=format&fit=crop',
+          category: INTEREST_MAP[w.craftType]?.label ? `${INTEREST_MAP[w.craftType].emoji} ${INTEREST_MAP[w.craftType].label}` : (w.craftType || 'Art'),
+          name: `${(w.craftType || 'Art').charAt(0).toUpperCase() + (w.craftType || 'Art').slice(1)} Workshop`,
+          artisan: w.fullName,
+          location: w.address?.city || w.address?.district || 'Sri Lanka',
+          rating: w.rating || 4.5,
+          reviews: w.reviewCount || 0,
+          price: 'Book via Profile',
+        }));
+
+        setRecommendedWorkshops(formattedRecs);
+
+      } catch (err) {
+        console.error("Failed to fetch artists data", err);
+      }
+    };
+
+    if (!authLoading && tourist) {
+      fetchArtistsData();
+    }
+  }, [tourist, authLoading]);
+
+  // // Load mock upcoming workshops
+  // useEffect(() => {
+  //   getMockUpcomingWorkshops().then(setUpcomingWorkshops);
+  // }, []);
 
   const isLoading = authLoading || statsLoading;
 
@@ -266,7 +383,7 @@ export function TouristDashboard() {
     { icon: GraduationCapIcon, label: 'Workshops Attended', value: stats?.workshopsAttended ?? 0, color: '#062e9aff', border: '#062e9aff', hover: '#4e74e6' },
     { icon: PenLineIcon, label: 'Blogs Posted', value: stats?.blogsPosted ?? 0, color: '#c1320eff', border: '#c1320eff', hover: '#ef5e3b' },
     { icon: StarIcon, label: 'Reviews Given', value: stats?.reviewsGiven ?? 0, color: '#D97706', border: '#D97706', hover: '#f59e0b' },
-    { icon: CalendarIcon, label: 'Upcoming Bookings', value: stats?.upcomingBookings ?? 0, color: '#e6d100', border: '#e6d100', hover: '#ffe600dc' },
+    { icon: CalendarIcon, label: 'Upcoming Bookings', value: upcomingWorkshops.length ?? 0, color: '#e6d100', border: '#e6d100', hover: '#ffe600dc' },
   ];
 
   return (
@@ -437,37 +554,64 @@ export function TouristDashboard() {
                   <h2 className="text-2xl font-display font-bold text-[#1E1E1E]">Your Upcoming Workshops</h2>
                   <p className="text-xs text-gray-400 font-body mt-0.5">Don't miss these scheduled sessions</p>
                 </div>
-                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                {/* <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
                   <Link to="/book" className="text-sm font-semibold font-body flex items-center gap-1 px-3 py-1.5 rounded-lg bg-[#E8F4F4] text-[#1A6B6B] hover:bg-[#FAF6F0] hover:text-[#C1440E] transition-all border border-[#1A6B6B] hover:border-[#C1440E]">
                     View All <ChevronRightIcon className="w-4 h-4" />
                   </Link>
-                </motion.div>
+                </motion.div> */}
               </div>
 
               <div className="flex gap-5 overflow-x-auto pb-3 scrollbar-hide">
                 {upcomingWorkshops.map((w) => (
                   <div
                     key={w.id}
-                    className={`bg-white rounded-2xl overflow-hidden shrink-0 w-80 border transition-shadow duration-200 ${w.isNext ? 'border-[#C1440E] shadow-lg shadow-[#C1440E]/10' : 'border-gray-100 shadow-sm hover:shadow-md'
-                      }`}>
+                    className="bg-white rounded-2xl overflow-hidden shrink-0 w-80 border border-gray-100 shadow-sm hover:shadow-md transition-shadow duration-200"
+                  >
                     <div className="relative">
-                      <img src={w.img} alt={w.name} className="w-full h-44 object-cover" />
-                      {w.isNext && (
-                        <span className="absolute top-3 left-3 bg-[#C1440E] text-white text-xs font-bold px-2.5 py-1 rounded-full font-body uppercase tracking-wide">
-                          Next Up
-                        </span>
-                      )}
+                      <img
+                        src={w.img || 'https://res.cloudinary.com/dv5axw4kb/image/upload/v1775051320/No-media_lq9t0c.png'}
+                        className="w-full h-44 object-cover"
+                        alt={w.artisanName}
+                      />
                       <span className={`absolute top-3 right-3 text-xs font-semibold px-2.5 py-1 rounded-full font-body ${w.status === 'Confirmed' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'
                         }`}>
                         {w.status}
                       </span>
                     </div>
+
                     <div className="p-5">
-                      <h3 className="font-display font-bold text-[#1E1E1E] text-base mb-1">{w.name}</h3>
-                      <p className="text-sm font-body mb-3" style={{ color: '#1A6B6B' }}>{w.artisan}</p>
-                      <div className="flex items-center gap-1.5 text-sm text-gray-400 font-body">
-                        <CalendarIcon className="w-4 h-4" />
-                        {w.date}
+                      <h3 className="font-display font-bold text-[#1E1E1E] text-base mb-1">
+                        {w.artisanName}
+                      </h3>
+                      <p className="text-sm font-body mb-4" style={{ color: '#1A6B6B' }}>
+                        {w.craftName}
+                      </p>
+
+                      {/* Info Grid: Date, Time, and Location */}
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2 text-sm text-gray-500 font-body">
+                          <CalendarIcon className="w-4 h-4 text-gray-400" />
+                          {w.bookingDate}
+                        </div>
+
+                        <div className="flex items-center gap-2 text-sm text-gray-500 font-body">
+                          <ClockIcon className="w-4 h-4 text-gray-400" />
+                          {(() => {
+                            const timeMap: Record<string, string> = {
+                              t1: "9:00 AM",
+                              t2: "11:00 AM",
+                              t3: "2:00 PM",
+                              t4: "4:00 PM"
+                            };
+                            // Return the mapped time, or the original string if no match is found
+                            return timeMap[w.bookingTime as keyof typeof timeMap] || w.bookingTime;
+                          })()}
+                        </div>
+
+                        <div className="flex items-center gap-2 text-sm text-gray-500 font-body">
+                          <MapPinIcon className="w-4 h-4 text-gray-400" />
+                          {w.location}
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -494,7 +638,7 @@ export function TouristDashboard() {
                     url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                   />
 
-                  {pinpoints.map((pin) => (
+                  {mapPinpoints.map((pin) => (
                     <Marker key={pin.id} position={pin.position as [number, number]}>
                       <Popup>
                         {pin.label}
@@ -520,7 +664,7 @@ export function TouristDashboard() {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {RECOMMENDED_WORKSHOPS.map((w) => (
+                {recommendedWorkshops.map((w) => (
                   <div
                     key={w.id}
                     className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-100 hover:shadow-md transition-shadow duration-200">
@@ -593,7 +737,9 @@ export function TouristDashboard() {
               </div>
 
               {/* Mini Calendar */}
-              <MiniCalendar />
+              {!isLoading && (
+                <MiniCalendar workshops={upcomingWorkshops} />
+              )}
             </div>
           </aside>
         </div>

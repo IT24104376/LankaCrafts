@@ -10,10 +10,12 @@ import {
   ChevronRightIcon,
   ChevronLeftIcon,
   AlertCircleIcon,
+  SearchIcon,
+  ChevronDownIcon
 } from 'lucide-react';
 import { TouristNavbar } from './TouristNavbar';
 import { BatikBackground } from '../../components/BatikBackground';
-import { getBlogs, likeBlog, createBlog, getBlog } from '../../services/api';
+import { getBlogs, likeBlog, createBlog, getBlog, getArtists } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import { TRENDING_TAGS, COUNTRY_CODES } from '../../constants/touristConstants';
 import ReactCountryFlag from 'react-country-flag';
@@ -128,6 +130,11 @@ export function TouristBlogs() {
   // ── Hashtag sidebar filter ───────────────────────────────────
   const [activeHashtagFilter, setActiveHashtagFilter] = useState<string | null>(null);
 
+  // ── Workshop Dropdown State ───────────────────────────────────
+  const [workshopsList, setWorkshopsList] = useState<{ id: string, name: string }[]>([]);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [workshopSearch, setWorkshopSearch] = useState('');
+
   // ── Read-post modal state ───────────────────────────────────
   const [readModal, setReadModal] = useState(false);
   const [readBlog, setReadBlog] = useState<ApiBlog | null>(null);
@@ -179,6 +186,20 @@ export function TouristBlogs() {
   useEffect(() => {
     fetchBlogs(currentPage, activeTab, activeHashtagFilter);
   }, [currentPage, activeTab, activeHashtagFilter, fetchBlogs]);
+
+  // Fetch Workshops for Dropdown
+  useEffect(() => {
+    getArtists(1, 100).then(res => {
+      const allArtists = res.data?.artists || [];
+      const opts = allArtists.map((a: any) => ({
+        id: a._id || a.id,
+        name: `${a.craftType ? a.craftType.charAt(0).toUpperCase() + a.craftType.slice(1) + ' Workshop' : 'Workshop'} — ${a.address?.city || 'Sri Lanka'} (by ${a.fullName})`
+      }));
+      setWorkshopsList(opts);
+    }).catch(err => {
+      console.error("Failed to fetch artists/workshops", err);
+    });
+  }, []);
 
   // ── Tab change ────────────────────────────────────────────────
   const handleTabChange = (tab: Tab) => {
@@ -596,21 +617,49 @@ export function TouristBlogs() {
                 </div>
 
                 {/* Workshop */}
-                <div>
+                <div className="relative">
                   <label className="block text-sm font-semibold text-[#1E1E1E] mb-1.5 font-body">Workshop Tag</label>
-                  <select
-                    value={newPost.workshop}
-                    onChange={(e) => setNewPost({ ...newPost, workshop: e.target.value })}
-                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-[#C1440E] focus:border-transparent outline-none text-sm font-body bg-white">
-                    <option value="">Select a workshop (optional)</option>
-                    <option>Batik Workshop — Kandy</option>
-                    <option>Pottery Class — Kelaniya</option>
-                    <option>Wood Carving — Ambalangoda</option>
-                    <option>Weaving — Jaffna</option>
-                    <option>Lacquer Work — Kandy</option>
-                    <option>Drumming — Kandy</option>
-                    <option>Cooking — Colombo</option>
-                  </select>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      placeholder="Search and select a workshop (optional)"
+                      value={isDropdownOpen ? workshopSearch : (newPost.workshop || '')}
+                      onFocus={() => { setIsDropdownOpen(true); setWorkshopSearch(''); }}
+                      onBlur={() => setIsDropdownOpen(false)}
+                      onChange={(e) => { setWorkshopSearch(e.target.value); setIsDropdownOpen(true); }}
+                      className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-[#C1440E] focus:border-transparent outline-none text-sm font-body bg-white pr-10"
+                    />
+                    <ChevronDownIcon className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                  </div>
+                  
+                  {isDropdownOpen && (
+                    <div 
+                      className="absolute z-20 w-full mt-1 bg-white border border-gray-200 shadow-xl rounded-xl max-h-56 overflow-y-auto"
+                      onMouseDown={(e) => e.preventDefault()}
+                    >
+                      {workshopsList.filter(w => w.name.toLowerCase().includes(workshopSearch.toLowerCase())).length > 0 ? (
+                        workshopsList
+                          .filter(w => w.name.toLowerCase().includes(workshopSearch.toLowerCase()))
+                          .map(w => (
+                            <div
+                              key={w.id}
+                              onClick={() => {
+                                setNewPost({ ...newPost, workshop: w.name });
+                                setIsDropdownOpen(false);
+                                setWorkshopSearch('');
+                              }}
+                              className="px-4 py-2.5 text-sm font-body cursor-pointer hover:bg-[#E8F4F4] text-[#1E1E1E] border-b border-gray-100 last:border-0 transition-colors"
+                            >
+                              {w.name}
+                            </div>
+                          ))
+                      ) : (
+                        <div className="px-4 py-3 text-sm text-gray-400 font-body text-center">
+                          No workshops found
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 {/* Content */}
@@ -984,7 +1033,7 @@ function BlogCard({ post, liked, likeDelta, onLike, onReadMore, delay }: BlogCar
       <div className="relative">
         {primaryType === 'video' && primaryUrl ? (
           <video
-            src={primaryUrl || 'https://res.cloudinary.com/dv5axw4kb/video/upload/v1775051320/No-media_lq9t0c.png'}
+            src={primaryUrl || 'https://res.cloudinary.com/dv5axw4kb/image/upload/v1775051320/No-media_lq9t0c.png'}
             className="w-full h-52 object-cover"
             muted
             playsInline

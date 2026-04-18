@@ -50,6 +50,10 @@ export function Navbar({ artistMode = false }: NavbarProps) {
       {
         name: 'Book a Workshop',
         path: '/book'
+      },
+      {
+        name: 'Blogs',
+        path: '/tourist/blogs'
       }] :
     tourist ?
       [
@@ -68,6 +72,10 @@ export function Navbar({ artistMode = false }: NavbarProps) {
         {
           name: 'Book a Workshop',
           path: '/book'
+        },
+        {
+          name: 'Blogs',
+          path: '/tourist/blogs'
         }] :
       [
         {
@@ -85,6 +93,10 @@ export function Navbar({ artistMode = false }: NavbarProps) {
         {
           name: 'Book a Workshop',
           path: '/book'
+        },
+        {
+          name: 'Blogs',
+          path: '/tourist/blogs'
         }];
 
 
@@ -102,23 +114,52 @@ export function Navbar({ artistMode = false }: NavbarProps) {
 
       <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
         {/* Logo */}
-        <Link to="/" className="flex items-center gap-3 shrink-0">
-          <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-            <circle cx="16" cy="16" r="14" fill="#C9A227" opacity="0.2" />
-            <path
-              d="M16 4 C10 4 6 10 6 16 C6 22 10 28 16 28 C22 28 26 22 26 16 C26 10 22 4 16 4Z"
+        <Link to="/" className="flex items-center gap-2.5 shrink-0">
+          <svg
+            width="32"
+            height="32"
+            viewBox="0 0 32 32"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg">
+
+            <ellipse
+              cx="16"
+              cy="8"
+              rx="4"
+              ry="7"
+              fill="#C9A227"
+              opacity="0.9" />
+
+            <ellipse
+              cx="24"
+              cy="16"
+              rx="7"
+              ry="4"
+              fill="#C9A227"
+              opacity="0.75" />
+
+            <ellipse
+              cx="16"
+              cy="24"
+              rx="4"
+              ry="7"
               fill="#C9A227"
               opacity="0.6" />
 
-            <path
-              d="M16 8 L18 14 L24 14 L19 18 L21 24 L16 20 L11 24 L13 18 L8 14 L14 14 Z"
-              fill="#C9A227" />
+            <ellipse
+              cx="8"
+              cy="16"
+              rx="7"
+              ry="4"
+              fill="#C9A227"
+              opacity="0.75" />
 
+            <circle cx="16" cy="16" r="3.5" fill="#C9A227" />
           </svg>
           <span
-            className="text-white text-xl font-bold tracking-wide"
+            className="text-xl font-display font-bold tracking-tight"
             style={{
-              fontFamily: 'Fraunces, serif'
+              color: '#C9A227'
             }}>
 
             Lanka Crafts

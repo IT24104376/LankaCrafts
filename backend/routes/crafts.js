@@ -48,19 +48,6 @@ router.post('/crafts', authenticate, async (req, res) => {
   }
 });
 
-router.get('/crafts/my', authenticate, async (req, res) => {
-  try {
-    const artist = await Artist.findOne({ firebaseUid: req.uid });
-    if (!artist) {
-      return res.status(404).json({ error: 'Artist profile not found.' });
-    }
-
-    const crafts = await getCraftsByArtist(artist._id);
-    res.json({ crafts });
-  } catch (err) {
-    res.status(err.status || 500).json({ error: err.message });
-  }
-});
 
 router.patch('/crafts/:id', authenticate, async (req, res) => {
   try {

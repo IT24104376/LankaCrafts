@@ -16,7 +16,10 @@ import artistRoutes from './routes/artists.js';
 import craftRoutes from './routes/crafts.js';
 import paymentRoutes from './routes/payments.js';
 
-// ── App setup ─────────────────────────────────────────────────────────────────
+import reviewRoutes from './routes/reviews.js';
+import analyticsRoutes from './routes/analytics.js';
+//import activityRoutes from './routes/activity.js';
+
 const app = express();
 
 // CORS: allow the Vite dev server and any local ports
@@ -36,6 +39,20 @@ app.use(
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// ── API routes ────────────────────────────────────────────────────────────────
+app.use('/api/tourist/auth', authRoutes);       
+app.use('/api/tourist', touristRoutes);          
+app.use('/api/tourist/blogs', blogRoutes);        
+app.use('/api/bookings', workshopBookingRoutes);   
+app.use('/api/artist/auth', artistAuthRoutes);    
+app.use('/api/artist', artistProfileRoutes);      
+app.use('/api/artists', artistRoutes);            
+app.use('/api/crafts', craftRoutes);              
+app.use('/api/payments', paymentRoutes);          
+app.use('/api/reviews', reviewRoutes);
+app.use('/api/analytics', analyticsRoutes);
+//app.use('/api/activity', activityRoutes);
+
 // ── Health check ──────────────────────────────────────────────────────────────
 app.get('/health', (_req, res) => {
   res.json({
@@ -45,19 +62,7 @@ app.get('/health', (_req, res) => {
   });
 });
 
-// ── API routes ────────────────────────────────────────────────────────────────
-app.use('/api/tourist/auth', authRoutes);          // /register  /login
-app.use('/api/tourist', touristRoutes);            // /profile  /stats
-app.use('/api/tourist/blogs', blogRoutes);         // CRUD + like
-app.use('/api/bookings', workshopBookingRoutes);    // workshop bookings
-
-app.use('/api/artist/auth', artistAuthRoutes);    // /register  /login
-app.use('/api/artist', artistProfileRoutes);      // /profile  /crafts
-app.use('/api/artists', artistRoutes);            // public artist endpoints
-app.use('/api/crafts', craftRoutes);              // public craft endpoints
-app.use('/api/payments', paymentRoutes);          // PayHere payment notification
-
-// ── 404 handler ───────────────────────────────────────────────────────────────
+// 404
 app.use((_req, res) => {
   res.status(404).json({ error: 'Route not found.' });
 });
@@ -93,13 +98,13 @@ const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/lankacraft
 mongoose
   .connect(MONGO_URI)
   .then(() => {
-    console.log(`✅ MongoDB connected...`);
+    console.log(` MongoDB connected...`);
     app.listen(PORT, () => {
-      console.log(`🚀 LankaCrafts Tourist API running on http://localhost:${PORT}`);
-      console.log(`   Health: http://localhost:${PORT}/health`);
+      console.log(` LankaCrafts Tourist API running on http://localhost:${PORT}`);
+      console.log(`  Health: http://localhost:${PORT}/health`);
     });
   })
   .catch((err) => {
-    console.error('❌ MongoDB connection failed:', err.message);
+    console.error(' MongoDB connection failed:', err.message);
     process.exit(1);
   });

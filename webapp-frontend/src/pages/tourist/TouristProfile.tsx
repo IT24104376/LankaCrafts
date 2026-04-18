@@ -5,6 +5,7 @@ import { BatikBackground } from '../../components/BatikBackground';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { getMyBlogs, getBookings, getMockUpcomingWorkshops, MockWorkshop } from '../../services/api';
+import { bookingApi } from '../../api/index';
 import { INTEREST_MAP, REGIONS_MAP, COUNTRY_CODES } from '../../constants/touristConstants';
 import ReactCountryFlag from 'react-country-flag';
 import {
@@ -12,7 +13,10 @@ import {
   HeartIcon,
   BookOpenIcon,
   StarIcon,
-  EditIcon
+  EditIcon,
+  ChevronRightIcon,
+  MapPinIcon,
+  ClockIcon
 } from 'lucide-react';
 
 const containerVariants = {
@@ -35,10 +39,21 @@ function SkeletonBlock({ className }: { className?: string }) {
   return <div className={`animate-pulse bg-gray-200 rounded-xl ${className}`} />;
 }
 
+interface UpcomingWorkshop {
+  id: string | number;
+  img?: string;
+  artisanName: string;
+  craftName: string;
+  bookingDate: string;
+  bookingTime: string;
+  location: string;
+  status: 'Confirmed' | 'Pending' | string;
+}
+
 export function TouristProfile() {
   const { tourist, loading: authLoading } = useAuth();
   const [blogs, setBlogs] = useState<any[]>([]);
-  const [bookings, setBookings] = useState<any[]>([]);
+  const [bookings, setBookings] = useState<UpcomingWorkshop[]>([]);
   const [wishlist, setWishlist] = useState<MockWorkshop[]>([]);
   const [dataLoading, setDataLoading] = useState(true);
 
@@ -72,6 +87,15 @@ export function TouristProfile() {
     fetchData();
   }, [tourist]);
 
+  // Fetch saved workshops real data from backend
+  useEffect(() => {
+    if (!tourist) return;
+    getBookings().then(res => {
+      const saved = (res.data.savedWorkshops || []).map(Number);
+      setBookings(saved);
+    }).catch(console.error);
+  }, [tourist]);
+
   const isLoading = authLoading || dataLoading;
 
   const callingName = tourist?.callingName ?? 'Traveller';
@@ -88,6 +112,23 @@ export function TouristProfile() {
   });
   const userProfilePic = tourist?.profilePicUrl ?? '';
   const userInitials = tourist?.initials ?? 'LC';
+
+  useEffect(() => {
+    const fetchUpcoming = async () => {
+      if (authLoading) return;
+
+      if (tourist?.email) {
+        try {
+          const data = await bookingApi.getBookingsByEmail(tourist.email);
+          setBookings(data || []);
+        } catch (err) {
+          console.error("API Error:", err);
+        }
+      }
+    };
+
+    fetchUpcoming();
+  }, [tourist?.email, authLoading]);
 
   return (
     <div className="min-h-screen font-body relative">
@@ -220,31 +261,77 @@ export function TouristProfile() {
               </div>
             </motion.div>
 
-            {/* My Bookings Section */}
+            {/* My Bookings */}
             <motion.section variants={itemVariants} id="myBookings">
               <div className="flex items-center gap-2 mb-4">
                 <CalendarIcon className="w-5 h-5" style={{ color: '#1A6B6B' }} />
                 <h2 className="text-xl font-display font-bold text-[#1E1E1E]">My Bookings</h2>
               </div>
-              <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm min-h-[120px] flex items-center justify-center">
+
+              <div className="bg-white rounded-2xl p-2 md:p-4 border border-gray-100 shadow-sm min-h-[120px]">
                 {isLoading ? (
-                  <SkeletonBlock className="h-10 w-full" />
+                  <div className="p-4 space-y-3">
+                    <SkeletonBlock className="h-16 w-full rounded-xl" />
+                    <SkeletonBlock className="h-16 w-full rounded-xl" />
+                  </div>
                 ) : bookings.length > 0 ? (
-                  <div className="w-full space-y-4">
+                  <div className="w-full space-y-2">
                     {bookings.map((b: any) => (
-                      <div key={b._id} className="flex justify-between items-center p-4 border rounded-xl hover:shadow-sm transition-shadow">
-                        <div>
-                          <p className="font-bold text-[#1E1E1E]">{b.workshop?.title || 'Workshop'}</p>
-                          <p className="text-sm text-gray-500">Scheduled on: {new Date(b.date).toLocaleDateString()}</p>
+                      <div
+                        key={b._id || b.id}
+                        className="flex flex-col md:flex-row md:items-center justify-between p-4 rounded-xl hover:bg-gray-50 border border-transparent hover:border-gray-100 transition-all group"
+                      >
+                        {/* Left: Workshop & Artisan Info */}
+                        <div className="flex items-center gap-4">
+                          <div className="w-10 h-10 rounded-full bg-[#fdf8f6] flex items-center justify-center text-[#C1440E]">
+                            <ClockIcon className="w-5 h-5" />
+                          </div>
+                          <div>
+                            <p className="font-bold text-[#1E1E1E] leading-tight">
+                              {b.craftName || 'Traditional Workshop'}
+                            </p>
+                            <p className="text-sm text-[#1A6B6B] font-medium">
+                              with {b.artisanName || 'Master Artisan'}
+                            </p>
+                          </div>
                         </div>
-                        <span className="px-3 py-1 text-xs font-bold rounded-full bg-blue-100 text-blue-700">
-                          {b.status}
-                        </span>
+
+                        {/* Middle: Date & Time Details */}
+                        <div className="flex items-center gap-6 mt-3 md:mt-0 text-sm text-gray-500">
+                          <div className="flex items-center gap-1.5">
+                            <CalendarIcon className="w-4 h-4 text-gray-400" />
+                            <span>{b.bookingDate}</span>
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            <MapPinIcon className="w-4 h-4 text-gray-400" />
+                            <span>{b.location}</span>
+                          </div>
+                        </div>
+
+                        {/* Right: Status & Action */}
+                        <div className="flex items-center justify-between md:justify-end gap-4 mt-3 md:mt-0">
+                          <span className={`px-3 py-1 text-xs font-bold rounded-full ${b.status === 'Confirmed'
+                            ? 'bg-green-100 text-green-700'
+                            : 'bg-amber-100 text-amber-700'
+                            }`}>
+                            {b.status}
+                          </span>
+                          <Link to="/my-bookings">
+                            <button className="p-2 hover:bg-gray-200 rounded-lg transition-colors text-gray-400 hover:text-gray-600">
+                              <ChevronRightIcon className="w-5 h-5" />
+                            </button>
+                          </Link>
+                        </div>
                       </div>
                     ))}
                   </div>
                 ) : (
-                  <p className="text-gray-400 text-sm">No bookings yet. <Link to="/book" className="text-[#C1440E] font-bold">Find a workshop</Link></p>
+                  <div className="flex flex-col items-center justify-center py-10">
+                    <p className="text-gray-400 text-sm mb-2">No bookings yet.</p>
+                    <Link to="/book" className="text-[#C1440E] font-bold hover:underline flex items-center gap-1">
+                      Find a workshop <ChevronRightIcon className="w-4 h-4" />
+                    </Link>
+                  </div>
                 )}
               </div>
             </motion.section>

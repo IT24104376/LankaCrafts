@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
@@ -8,6 +8,16 @@ import {
 } from 'firebase/auth';
 import { auth } from '../config/firebase';
 import { registerTourist, loginTourist, getProfile } from '../services/api';
+import { loginAdmin, getMe } from '../api/adminApi';
+
+// --- Interfaces ---
+
+interface AdminUser {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+}
 
 interface TouristProfile {
   id: string;
@@ -62,40 +72,49 @@ interface ArtistProfile {
 }
 
 interface AuthContextType {
+  // Common
+  loading: boolean;
+  
+  // Tourist/Artist (Firebase)
   firebaseUser: User | null;
   tourist: TouristProfile | null;
   artist: ArtistProfile | null;
-  loading: boolean;
   login: (email: string, password: string) => Promise<void>;
-  register: (
-    email: string,
-    password: string,
-    profileData: object
-  ) => Promise<void>;
+  register: (email: string, password: string, profileData: object) => Promise<void>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
   loginArtist: (email: string, password: string) => Promise<void>;
-  registerArtist: (
-    email: string,
-    password: string,
-    profileData: object
-  ) => Promise<void>;
+  registerArtist: (email: string, password: string, profileData: object) => Promise<void>;
   logoutArtist: () => Promise<void>;
   refreshArtist: () => Promise<void>;
+
+  // Admin (Custom JWT)
+  admin: AdminUser | null;
+  adminToken: string | null;
+  adminLogin: (email: string, password: string) => Promise<void>;
+  adminLogout: () => void;
+  isAdminAuthenticated: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export function AuthProvider({ children }: { children: React.ReactNode }) {
+export function AuthProvider({ children }: { children: ReactNode }) {
+  // State for Firebase Users
   const [firebaseUser, setFirebaseUser] = useState<User | null>(null);
   const [tourist, setTourist] = useState<TouristProfile | null>(null);
   const [artist, setArtist] = useState<ArtistProfile | null>(null);
+  
+  // State for Admin
+  const [admin, setAdmin] = useState<AdminUser | null>(null);
+  const [adminToken, setAdminToken] = useState<string | null>(localStorage.getItem('admin_token'));
+  
   const [loading, setLoading] = useState(true);
 
+  // --- Initialization Logic ---
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+    // 1. Initialize Firebase Auth
+    const unsubscribeFirebase = onAuthStateChanged(auth, async (user) => {
       setFirebaseUser(user);
-
       if (user) {
         try {
           const res = await loginTourist();
@@ -106,30 +125,39 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       } else {
         setTourist(null);
       }
-
       setLoading(false);
     });
 
-    return unsubscribe;
+    // 2. Initialize Admin Auth
+    const initAdmin = async () => {
+      const storedToken = localStorage.getItem('admin_token');
+      if (storedToken) {
+        try {
+          const res = await getMe();
+          setAdmin(res.data.admin);
+        } catch {
+          localStorage.removeItem('admin_token');
+          localStorage.removeItem('admin_user');
+          setAdminToken(null);
+          setAdmin(null);
+        }
+      }
+    };
+
+    initAdmin();
+
+    return () => unsubscribeFirebase();
   }, []);
 
+  // --- Tourist Actions ---
   const login = async (email: string, password: string) => {
     await signInWithEmailAndPassword(auth, email, password);
   };
 
-  const register = async (
-    email: string,
-    password: string,
-    profileData: object
-  ) => {
-    const userCredential = await createUserWithEmailAndPassword(
-      auth,
-      email,
-      password
-    );
+  const register = async (email: string, password: string, profileData: object) => {
+    await createUserWithEmailAndPassword(auth, email, password);
     const res = await registerTourist({ email, ...profileData });
     setTourist(res.data.tourist);
-    void userCredential;
   };
 
   const logout = async () => {
@@ -147,21 +175,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  // --- Artist Actions ---
   const loginArtist = async (email: string, password: string) => {
     await signInWithEmailAndPassword(auth, email, password);
   };
 
-  const registerArtist = async (
-    email: string,
-    password: string,
-    profileData: object
-  ) => {
-    const userCredential = await createUserWithEmailAndPassword(
-      auth,
-      email,
-      password
-    );
-    void userCredential;
+  const registerArtist = async (email: string, password: string, profileData: object) => {
+    await createUserWithEmailAndPassword(auth, email, password);
   };
 
   const logoutArtist = async () => {
@@ -172,10 +192,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const refreshArtist = async () => {
     try {
+      const token = await auth.currentUser?.getIdToken();
       const res = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/artist/profile`, {
-        headers: {
-          'Authorization': `Bearer ${await auth.currentUser?.getIdToken()}`
-        }
+        headers: { 'Authorization': `Bearer ${token}` }
       });
       const data = await res.json();
       setArtist(data.artist);
@@ -184,13 +203,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  // --- Admin Actions ---
+  const adminLogin = async (email: string, password: string) => {
+    const res = await loginAdmin(email, password);
+    const { token: newToken, admin: adminData } = res.data;
+    localStorage.setItem('admin_token', newToken);
+    localStorage.setItem('admin_user', JSON.stringify(adminData));
+    setAdminToken(newToken);
+    setAdmin(adminData);
+  };
+
+  const adminLogout = () => {
+    localStorage.removeItem('admin_token');
+    localStorage.removeItem('admin_user');
+    setAdminToken(null);
+    setAdmin(null);
+  };
+
   return (
     <AuthContext.Provider
       value={{
+        loading,
+        // Tourist/Artist
         firebaseUser,
         tourist,
         artist,
-        loading,
         login,
         register,
         logout,
@@ -198,7 +235,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         loginArtist,
         registerArtist,
         logoutArtist,
-        refreshArtist
+        refreshArtist,
+        // Admin
+        admin,
+        adminToken,
+        adminLogin,
+        adminLogout,
+        isAdminAuthenticated: !!adminToken && !!admin
       }}
     >
       {children}
@@ -206,8 +249,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   );
 }
 
-export function useAuth(): AuthContextType {
+export function useAuth() {
   const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error('useAuth must be used within <AuthProvider>');
+  if (!ctx) throw new Error('useAuth must be used within AuthProvider');
   return ctx;
 }

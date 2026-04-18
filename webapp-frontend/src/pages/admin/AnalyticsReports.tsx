@@ -1,4 +1,4 @@
-import React, { useState, useRef, Children, memo, Component } from 'react';
+import React, { useState, useMemo, useRef, Children, memo, Component } from 'react';
 import { motion } from 'framer-motion';
 import {
   DownloadIcon,
@@ -17,388 +17,36 @@ import {
   FileTextIcon,
   TableIcon } from
 'lucide-react';
-// ─── Mock Data ────────────────────────────────────────────────────────────────
-const DAILY_ACTIVITY = [
-{
-  label: 'Mon',
-  users: 320,
-  bookings: 48
-},
-{
-  label: 'Tue',
-  users: 410,
-  bookings: 62
-},
-{
-  label: 'Wed',
-  users: 380,
-  bookings: 55
-},
-{
-  label: 'Thu',
-  users: 520,
-  bookings: 78
-},
-{
-  label: 'Fri',
-  users: 490,
-  bookings: 71
-},
-{
-  label: 'Sat',
-  users: 610,
-  bookings: 94
-},
-{
-  label: 'Sun',
-  users: 445,
-  bookings: 67
-}];
-
-const WEEKLY_ACTIVITY = [
-{
-  label: 'W1',
-  users: 2100,
-  bookings: 310
-},
-{
-  label: 'W2',
-  users: 2450,
-  bookings: 368
-},
-{
-  label: 'W3',
-  users: 2280,
-  bookings: 342
-},
-{
-  label: 'W4',
-  users: 2890,
-  bookings: 435
-},
-{
-  label: 'W5',
-  users: 3120,
-  bookings: 468
-},
-{
-  label: 'W6',
-  users: 2760,
-  bookings: 414
-}];
-
-const MONTHLY_ACTIVITY = [
-{
-  label: 'Jul',
-  users: 8200,
-  bookings: 1230
-},
-{
-  label: 'Aug',
-  users: 9400,
-  bookings: 1410
-},
-{
-  label: 'Sep',
-  users: 8800,
-  bookings: 1320
-},
-{
-  label: 'Oct',
-  users: 10200,
-  bookings: 1530
-},
-{
-  label: 'Nov',
-  users: 11500,
-  bookings: 1725
-},
-{
-  label: 'Dec',
-  users: 13200,
-  bookings: 1980
-}];
-
-const USER_STATUS_DATA = [
-{
-  label: 'Active',
-  value: 17891,
-  color: '#2F5D50'
-},
-{
-  label: 'Inactive',
-  value: 3420,
-  color: '#C9A227'
-},
-{
-  label: 'Suspended',
-  value: 529,
-  color: '#C65D3B'
-}];
-
-const TOP_ARTISANS = [
-{
-  rank: 1,
-  name: 'Nimal Perera',
-  craft: 'Kandyan Lacquerwork',
-  region: 'Kandy',
-  rating: 4.9,
-  reviews: 124,
-  bookings: 312,
-  initials: 'NP',
-  color: '#C65D3B'
-},
-{
-  rank: 2,
-  name: 'Priya Rajapaksa',
-  craft: 'Palmyra Weaving',
-  region: 'Jaffna',
-  rating: 4.9,
-  reviews: 98,
-  bookings: 287,
-  initials: 'PR',
-  color: '#2F5D50'
-},
-{
-  rank: 3,
-  name: 'Kamala Wijesinghe',
-  craft: 'Batik Textiles',
-  region: 'Kandy',
-  rating: 4.8,
-  reviews: 156,
-  bookings: 264,
-  initials: 'KW',
-  color: '#C9A227'
-},
-{
-  rank: 4,
-  name: 'Rohan De Silva',
-  craft: 'Pottery',
-  region: 'Kelaniya',
-  rating: 4.8,
-  reviews: 89,
-  bookings: 198,
-  initials: 'RD',
-  color: '#C65D3B'
-},
-{
-  rank: 5,
-  name: 'Suresh Fernando',
-  craft: 'Mask Carving',
-  region: 'Ambalangoda',
-  rating: 4.7,
-  reviews: 112,
-  bookings: 176,
-  initials: 'SF',
-  color: '#2F5D50'
-},
-{
-  rank: 6,
-  name: 'Nilmini Senanayake',
-  craft: 'Gem Polishing',
-  region: 'Ratnapura',
-  rating: 4.5,
-  reviews: 67,
-  bookings: 143,
-  initials: 'NS',
-  color: '#C9A227'
-}];
-
-const WORKSHOP_POPULARITY = [
-{
-  name: 'Batik Textiles',
-  bookings: 842,
-  color: '#2F5D50'
-},
-{
-  name: 'Kandyan Lacquerwork',
-  bookings: 718,
-  color: '#C65D3B'
-},
-{
-  name: 'Mask Carving',
-  bookings: 634,
-  color: '#C9A227'
-},
-{
-  name: 'Pottery',
-  bookings: 521,
-  color: '#2F5D50'
-},
-{
-  name: 'Palmyra Weaving',
-  bookings: 489,
-  color: '#C65D3B'
-},
-{
-  name: 'Gem Polishing',
-  bookings: 312,
-  color: '#C9A227'
-},
-{
-  name: 'Brasswork',
-  bookings: 287,
-  color: '#2F5D50'
-}];
-
-const TOURIST_COUNTRIES = [
-{
-  country: 'United Kingdom',
-  code: 'GB',
-  tourists: 4820,
-  bookings: 724,
-  pct: 26,
-  color: '#2F5D50'
-},
-{
-  country: 'Germany',
-  code: 'DE',
-  tourists: 3210,
-  bookings: 481,
-  pct: 17,
-  color: '#C65D3B'
-},
-{
-  country: 'Australia',
-  code: 'AU',
-  tourists: 2890,
-  bookings: 433,
-  pct: 16,
-  color: '#C9A227'
-},
-{
-  country: 'France',
-  code: 'FR',
-  tourists: 2340,
-  bookings: 351,
-  pct: 13,
-  color: '#6366f1'
-},
-{
-  country: 'Japan',
-  code: 'JP',
-  tourists: 1980,
-  bookings: 297,
-  pct: 11,
-  color: '#ec4899'
-},
-{
-  country: 'Others',
-  code: '--',
-  tourists: 3180,
-  bookings: 477,
-  pct: 17,
-  color: '#94a3b8'
-}];
-
-const SYSTEM_METRICS = [
-{
-  label: 'Uptime',
-  value: '99.97%',
-  status: 'good',
-  icon: <CheckCircleIcon className="w-4 h-4" />,
-  color: '#2F5D50',
-  bg: 'bg-emerald-50',
-  text: 'text-emerald-700'
-},
-{
-  label: 'Avg Response',
-  value: '142ms',
-  status: 'good',
-  icon: <ActivityIcon className="w-4 h-4" />,
-  color: '#C9A227',
-  bg: 'bg-mustard/10',
-  text: 'text-mustard-dark'
-},
-{
-  label: 'Error Rate',
-  value: '0.08%',
-  status: 'good',
-  icon: <AlertTriangleIcon className="w-4 h-4" />,
-  color: '#C65D3B',
-  bg: 'bg-red-50',
-  text: 'text-red-600'
-},
-{
-  label: 'Active Sessions',
-  value: '1,284',
-  status: 'good',
-  icon: <UsersIcon className="w-4 h-4" />,
-  color: '#6366f1',
-  bg: 'bg-indigo-50',
-  text: 'text-indigo-600'
-}];
-
-const RESPONSE_TIME_DATA = [
-{
-  label: '00:00',
-  value: 128
-},
-{
-  label: '03:00',
-  value: 95
-},
-{
-  label: '06:00',
-  value: 108
-},
-{
-  label: '09:00',
-  value: 187
-},
-{
-  label: '12:00',
-  value: 210
-},
-{
-  label: '15:00',
-  value: 195
-},
-{
-  label: '18:00',
-  value: 168
-},
-{
-  label: '21:00',
-  value: 142
-}];
-
-const ERROR_LOGS = [
-{
-  id: 1,
-  type: 'Warning',
-  message: 'High memory usage detected on API server',
-  time: '14:32',
-  resolved: false
-},
-{
-  id: 2,
-  type: 'Error',
-  message: 'Payment gateway timeout (3 occurrences)',
-  time: '12:18',
-  resolved: true
-},
-{
-  id: 3,
-  type: 'Info',
-  message: 'Scheduled backup completed successfully',
-  time: '10:00',
-  resolved: true
-},
-{
-  id: 4,
-  type: 'Warning',
-  message: 'Image CDN response time elevated',
-  time: '09:45',
-  resolved: true
-},
-{
-  id: 5,
-  type: 'Error',
-  message: 'Failed login attempts from IP 192.168.x.x',
-  time: '08:12',
-  resolved: false
-}];
+// ─── Analytics data (connect to backend when available) ───────────────────────
+const DAILY_ACTIVITY: { label: string; users: number; bookings: number }[] = [];
+const WEEKLY_ACTIVITY: { label: string; users: number; bookings: number }[] = [];
+const MONTHLY_ACTIVITY: { label: string; users: number; bookings: number }[] = [];
+const USER_STATUS_DATA: { label: string; value: number; color: string }[] = [];
+const TOP_ARTISANS: {
+  rank: number;
+  name: string;
+  craft: string;
+  region: string;
+  rating: number;
+  reviews: number;
+  bookings: number;
+  initials: string;
+  color: string;
+}[] = [];
+const WORKSHOP_POPULARITY: { name: string; bookings: number; color: string }[] = [];
+const TOURIST_COUNTRIES: { country: string; code: string; tourists: number; bookings: number; pct: number; color: string }[] = [];
+type SystemMetric = {
+  label: string;
+  value: string;
+  status: string;
+  icon: React.ReactNode;
+  color: string;
+  bg: string;
+  text: string;
+};
+const SYSTEM_METRICS: SystemMetric[] = [];
+const RESPONSE_TIME_DATA: { label: string; value: number }[] = [];
+const ERROR_LOGS: { id: number; type: string; message: string; time: string; resolved: boolean }[] = [];
 
 // ─── SVG Chart Components ─────────────────────────────────────────────────────
 function LineChart({
@@ -414,6 +62,13 @@ function LineChart({
 
 
 }: {data: {label: string;users: number;bookings: number;}[];color?: string;secondColor?: string;}) {
+  if (!data.length) {
+    return (
+      <div className="flex h-full min-h-[120px] items-center justify-center rounded-lg bg-slate-50 text-sm text-gray-400">
+        No activity data
+      </div>
+    );
+  }
   const W = 560;
   const H = 180;
   const PAD = {
@@ -426,8 +81,8 @@ function LineChart({
   const chartH = H - PAD.top - PAD.bottom;
   const maxUsers = Math.max(...data.map((d) => d.users));
   const maxBookings = Math.max(...data.map((d) => d.bookings));
-  const maxVal = Math.max(maxUsers, maxBookings) * 1.15;
-  const xStep = chartW / (data.length - 1);
+  const maxVal = Math.max(maxUsers, maxBookings, 1) * 1.15;
+  const xStep = data.length > 1 ? chartW / (data.length - 1) : chartW / 2;
   const yScale = (v: number) => chartH - v / maxVal * chartH;
   const usersPath = data.
   map(
@@ -544,6 +199,13 @@ function BarChart({
 
 
 }: {data: {label: string;value: number;color: string;}[];}) {
+  if (!data.length) {
+    return (
+      <div className="flex h-full min-h-[120px] items-center justify-center rounded-lg bg-slate-50 text-sm text-gray-400">
+        No data
+      </div>
+    );
+  }
   const W = 400;
   const H = 160;
   const PAD = {
@@ -554,7 +216,7 @@ function BarChart({
   };
   const chartW = W - PAD.left - PAD.right;
   const chartH = H - PAD.top - PAD.bottom;
-  const maxVal = Math.max(...data.map((d) => d.value)) * 1.1;
+  const maxVal = Math.max(...data.map((d) => d.value), 1) * 1.1;
   const barW = chartW / data.length * 0.55;
   const gap = chartW / data.length;
   return (
@@ -637,7 +299,14 @@ function HorizontalBar({
 
 
 }: {data: {name: string;bookings: number;color: string;}[];}) {
-  const maxVal = Math.max(...data.map((d) => d.bookings));
+  if (!data.length) {
+    return (
+      <div className="rounded-lg bg-slate-50 py-10 text-center text-sm text-gray-400">
+        No workshop popularity data
+      </div>
+    );
+  }
+  const maxVal = Math.max(...data.map((d) => d.bookings), 1);
   return (
     <div className="space-y-3">
       {data.map((item, i) =>
@@ -680,7 +349,14 @@ function DonutChart({
 
 
 
-}: {data: {country: string;pct: number;color: string;}[];}) {
+}: {data: {country: string;pct: number;color: string;tourists?: number;}[];}) {
+  if (!data.length) {
+    return (
+      <div className="flex h-full min-h-[160px] items-center justify-center rounded-lg bg-slate-50 text-sm text-gray-400">
+        No geographic data
+      </div>
+    );
+  }
   const R = 70;
   const CX = 90;
   const CY = 90;
@@ -756,7 +432,11 @@ function DonutChart({
         fontWeight="800"
         fill="#1e293b">
 
-        18k
+        {(() => {
+          const t = data.reduce((s, d) => s + (d.tourists ?? 0), 0);
+          if (!t) return '—';
+          return t >= 1000 ? `${(t / 1000).toFixed(1)}k` : String(t);
+        })()}
       </text>
       <text x={CX} y={CY + 12} textAnchor="middle" fontSize="9" fill="#94a3b8">
         Tourists
@@ -772,6 +452,13 @@ function ResponseTimeChart({
 
 
 }: {data: {label: string;value: number;}[];}) {
+  if (!data.length) {
+    return (
+      <div className="flex h-full min-h-[100px] items-center justify-center rounded-lg bg-slate-50 text-sm text-gray-400">
+        No response time samples
+      </div>
+    );
+  }
   const W = 500;
   const H = 120;
   const PAD = {
@@ -782,8 +469,8 @@ function ResponseTimeChart({
   };
   const chartW = W - PAD.left - PAD.right;
   const chartH = H - PAD.top - PAD.bottom;
-  const maxVal = 300;
-  const xStep = chartW / (data.length - 1);
+  const maxVal = Math.max(300, ...data.map((d) => d.value));
+  const xStep = data.length > 1 ? chartW / (data.length - 1) : chartW / 2;
   const yScale = (v: number) => chartH - v / maxVal * chartH;
   const linePath = data.
   map(
@@ -888,14 +575,26 @@ export function AnalyticsReports() {
     'daily');
   const [dateFrom, setDateFrom] = useState('2024-01-01');
   const [dateTo, setDateTo] = useState('2024-12-31');
+  const [exportNotice, setExportNotice] = useState('');
   const activityData =
   activityPeriod === 'daily' ?
   DAILY_ACTIVITY :
   activityPeriod === 'weekly' ?
   WEEKLY_ACTIVITY :
   MONTHLY_ACTIVITY;
+  const activityTotals = useMemo(
+    () => ({
+      users: activityData.reduce((s, d) => s + d.users, 0),
+      bookings: activityData.reduce((s, d) => s + d.bookings, 0)
+    }),
+    [activityData]
+  );
+  const userStatusTotal = useMemo(
+    () => USER_STATUS_DATA.reduce((s, d) => s + d.value, 0),
+    []
+  );
   const handleExport = (format: 'pdf' | 'csv') => {
-    alert(`Exporting report as ${format.toUpperCase()}... (demo)`);
+    setExportNotice(`Exporting report as ${format.toUpperCase()}... (demo)`);
   };
   const containerVariants = {
     hidden: {},
@@ -972,6 +671,12 @@ export function AnalyticsReports() {
           </button>
         </div>
       </motion.div>
+      {exportNotice &&
+      <motion.div variants={cardVariants} className="rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-700 px-4 py-2 text-sm flex items-center justify-between">
+          <span>{exportNotice}</span>
+          <button className="font-semibold" onClick={() => setExportNotice('')}>Close</button>
+        </motion.div>
+      }
 
       {/* ── Section 1: Platform Activity Analytics ── */}
       <motion.div
@@ -1024,27 +729,19 @@ export function AnalyticsReports() {
         <div className="grid grid-cols-3 gap-4 mt-5 pt-5 border-t border-gray-100">
           <div className="text-center">
             <p className="text-xl font-black text-gray-900 font-display">
-              {activityPeriod === 'daily' ?
-              '3,175' :
-              activityPeriod === 'weekly' ?
-              '15,600' :
-              '61,300'}
+              {activityTotals.users.toLocaleString()}
             </p>
             <p className="text-xs text-gray-400 mt-0.5">Total Users</p>
           </div>
           <div className="text-center border-x border-gray-100">
             <p className="text-xl font-black text-gray-900 font-display">
-              {activityPeriod === 'daily' ?
-              '475' :
-              activityPeriod === 'weekly' ?
-              '2,337' :
-              '9,195'}
+              {activityTotals.bookings.toLocaleString()}
             </p>
             <p className="text-xs text-gray-400 mt-0.5">Total Bookings</p>
           </div>
           <div className="text-center">
             <p className="text-xl font-black text-gray-900 font-display flex items-center justify-center gap-1">
-              <TrendingUpIcon className="w-4 h-4 text-emerald-500" /> +18%
+              —
             </p>
             <p className="text-xs text-gray-400 mt-0.5">Growth Rate</p>
           </div>
@@ -1093,7 +790,9 @@ export function AnalyticsReports() {
                     {item.value.toLocaleString()}
                   </p>
                   <p className="text-xs text-gray-400">
-                    {(item.value / 21840 * 100).toFixed(1)}%
+                    {userStatusTotal ?
+                    `${(item.value / userStatusTotal * 100).toFixed(1)}%` :
+                    '—'}
                   </p>
                 </div>
               </div>
@@ -1120,7 +819,11 @@ export function AnalyticsReports() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-5">
-          {TOP_ARTISANS.slice(0, 3).map((artisan, i) =>
+          {TOP_ARTISANS.length === 0 ?
+          <p className="col-span-full text-sm text-gray-400 py-6 text-center">
+            No artisan ranking data yet.
+          </p> :
+          TOP_ARTISANS.slice(0, 3).map((artisan, i) =>
           <motion.div
             key={artisan.rank}
             variants={cardVariants}
@@ -1226,7 +929,13 @@ export function AnalyticsReports() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
-              {TOP_ARTISANS.map((a, i) =>
+              {TOP_ARTISANS.length === 0 ?
+              <tr>
+                <td colSpan={7} className="px-6 py-8 text-center text-sm text-gray-400">
+                  No rankings to display.
+                </td>
+              </tr> :
+              TOP_ARTISANS.map((a, i) =>
               <motion.tr
                 key={a.rank}
                 initial={{
@@ -1432,7 +1141,11 @@ export function AnalyticsReports() {
 
         {/* Metric Cards */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-          {SYSTEM_METRICS.map((m, i) =>
+          {SYSTEM_METRICS.length === 0 ?
+          <p className="col-span-full text-sm text-gray-400 py-4">
+            No system metrics configured.
+          </p> :
+          SYSTEM_METRICS.map((m, i) =>
           <motion.div
             key={m.label}
             initial={{
@@ -1473,7 +1186,15 @@ export function AnalyticsReports() {
             </p>
             <div className="flex items-center gap-1.5 text-xs text-gray-400">
               <div className="w-3 h-0.5 bg-indigo-500 rounded" />
-              <span>Avg: 142ms</span>
+              <span>
+                Avg:{' '}
+                {RESPONSE_TIME_DATA.length ?
+                `${Math.round(
+                  RESPONSE_TIME_DATA.reduce((s, d) => s + d.value, 0) /
+                    RESPONSE_TIME_DATA.length
+                )}ms` :
+                '—'}
+              </span>
             </div>
           </div>
           <div className="h-28">
@@ -1490,7 +1211,9 @@ export function AnalyticsReports() {
             </button>
           </div>
           <div className="space-y-2">
-            {ERROR_LOGS.map((log, i) =>
+            {ERROR_LOGS.length === 0 ?
+            <p className="text-sm text-gray-400 py-4">No error log entries.</p> :
+            ERROR_LOGS.map((log, i) =>
             <motion.div
               key={log.id}
               initial={{

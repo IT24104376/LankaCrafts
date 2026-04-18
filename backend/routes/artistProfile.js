@@ -1,7 +1,8 @@
 import express from 'express';
+import Artist from '../models/Artist.js';
 import { getArtistProfile, updateArtistProfile, deleteArtistProfile } from '../services/artistService.js';
 import { verifyToken } from '../services/artistService.js';
-import { getCraftsByArtist } from '../services/craftService.js';
+import { getCraftsByArtist, createCraft, updateCraft, deleteCraft } from '../services/craftService.js';
 
 const router = express.Router();
 
@@ -69,8 +70,58 @@ router.delete('/profile', authenticate, async (req, res) => {
 
 router.get('/crafts', authenticate, async (req, res) => {
   try {
-    const crafts = await getCraftsByArtist(req.uid);
+    const artist = await Artist.findOne({ firebaseUid: req.uid});
+    if (!artist) return res.status(404).json({error: 'Artist not found' });
+    const crafts = await getCraftsByArtist(artist._id);
     res.json({ crafts });
+  } catch (err) {
+    res.status(err.status || 500).json({ error: err.message });
+  }
+});
+
+router.post('/crafts', authenticate, async (req, res) => {
+  try {
+    const artist = await Artist.findOne({ firebaseUid: req.uid });
+    if (!artist) {
+      return res.status(404).json({ error: 'Artist profile not found.' });
+    }
+
+    const craft = await createCraft(artist._id, req.body);
+    res.status(201).json({
+      message: 'Craft created successfully.',
+      craft
+    });
+  } catch (err) {
+    res.status(err.status || 500).json({ error: err.message });
+  }
+});
+
+router.patch('/crafts/:id', authenticate, async (req, res) => {
+  try {
+    const artist = await Artist.findOne({ firebaseUid: req.uid });
+    if (!artist) {
+      return res.status(404).json({ error: 'Artist profile not found.' });
+    }
+
+    const craft = await updateCraft(req.params.id, artist._id, req.body);
+    res.json({
+      message: 'Craft updated successfully.',
+      craft
+    });
+  } catch (err) {
+    res.status(err.status || 500).json({ error: err.message });
+  }
+});
+
+router.delete('/crafts/:id', authenticate, async (req, res) => {
+  try {
+    const artist = await Artist.findOne({ firebaseUid: req.uid });
+    if (!artist) {
+      return res.status(404).json({ error: 'Artist profile not found.' });
+    }
+
+    await deleteCraft(req.params.id, artist._id);
+    res.json({ message: 'Craft deleted successfully.' });
   } catch (err) {
     res.status(err.status || 500).json({ error: err.message });
   }

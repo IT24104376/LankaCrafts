@@ -40,14 +40,14 @@ const EditBooking = () => {
         <input
           type="date"
           value={formData.bookingDate}
-          onChange={(e) => setFormData({...formData, bookingDate: e.target.value})}
+          onChange={(e) => setFormData({ ...formData, bookingDate: e.target.value })}
           className="w-full border p-2 rounded"
         />
 
         <input
           type="time"
           value={formData.bookingTime}
-          onChange={(e) => setFormData({...formData, bookingTime: e.target.value})}
+          onChange={(e) => setFormData({ ...formData, bookingTime: e.target.value })}
           className="w-full border p-2 rounded"
         />
 

@@ -11,26 +11,57 @@ export function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-10 mb-12">
           {/* Brand */}
           <div className="md:col-span-1">
-            <div className="flex items-center gap-3 mb-4">
-              <svg width="28" height="28" viewBox="0 0 32 32" fill="none">
-                <path
-                  d="M16 4 C10 4 6 10 6 16 C6 22 10 28 16 28 C22 28 26 22 26 16 C26 10 22 4 16 4Z"
-                  fill="rgba(255,255,255,0.3)" />
+            <Link to="/" className="flex items-center gap-2.5 shrink-0">
+              <svg
+                width="32"
+                height="32"
+                viewBox="0 0 32 32"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg">
 
-                <path
-                  d="M16 8 L18 14 L24 14 L19 18 L21 24 L16 20 L11 24 L13 18 L8 14 L14 14 Z"
-                  fill="#C9A227" />
+                <ellipse
+                  cx="16"
+                  cy="8"
+                  rx="4"
+                  ry="7"
+                  fill="#C9A227"
+                  opacity="0.9" />
 
+                <ellipse
+                  cx="24"
+                  cy="16"
+                  rx="7"
+                  ry="4"
+                  fill="#C9A227"
+                  opacity="0.75" />
+
+                <ellipse
+                  cx="16"
+                  cy="24"
+                  rx="4"
+                  ry="7"
+                  fill="#C9A227"
+                  opacity="0.6" />
+
+                <ellipse
+                  cx="8"
+                  cy="16"
+                  rx="7"
+                  ry="4"
+                  fill="#C9A227"
+                  opacity="0.75" />
+
+                <circle cx="16" cy="16" r="3.5" fill="#C9A227" />
               </svg>
               <span
-                className="text-white text-lg font-bold"
+                className="text-xl font-display font-bold tracking-tight"
                 style={{
-                  fontFamily: 'Fraunces, serif'
+                  color: '#C9A227'
                 }}>
 
                 Lanka Crafts
               </span>
-            </div>
+            </Link>
             <p
               className="text-white/70 text-sm leading-relaxed"
               style={{
@@ -168,7 +199,7 @@ export function Footer() {
               fontFamily: 'Inter, sans-serif'
             }}>
 
-            © {new Date().getFullYear()} Lanka Crafts Tourism Board. All rights
+            © {new Date().getFullYear()} Lanka Craft Tourism Board. All rights
             reserved.
           </p>
           <div className="flex gap-6">

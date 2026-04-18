@@ -24,7 +24,9 @@
     "react-leaflet": "^4.2.1",
     "react-router-dom": "^6.30.3",
     "react-router-hash-link": "^2.4.3",
-    "tailwind-merge": "latest"
+    "tailwind-merge": "latest",
+    "html2canvas": "^1.4.1",
+    "jspdf": "^4.2.1"
   },
   "devDependencies": {
     "@types/leaflet": "^1.9.21",
