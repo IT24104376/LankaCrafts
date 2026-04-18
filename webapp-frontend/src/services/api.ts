@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { auth } from '../config/firebase';
 
-const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+const BASE_URL = 'http://localhost:5000';
 
 const api = axios.create({
   baseURL: BASE_URL,
@@ -55,6 +55,20 @@ export const getReviews = () =>
 
 export const updateReviews = (reviewIds: string[]) =>
   api.post('/api/tourist/reviews', { reviewIds });
+
+
+
+// ── Saved Crafts ─────────────────────────────────────────────────────────────
+
+export const getSavedCrafts = () =>
+  api.get('/tourist/saved-crafts');
+
+export const addSavedCraft = (craftId: string) =>
+  api.post('/tourist/saved-crafts', { craftId });
+
+export const removeSavedCraft = (craftId: string) =>
+  api.delete(`/tourist/saved-crafts/${craftId}`);
+
 
 // ── Blogs ─────────────────────────────────────────────────────────────────────
 

@@ -10,7 +10,6 @@ export const createBooking = async (req, res) => {
       craftId,
       craftName,
       artisanName,
-      customerId,
       location,
       name,
       email,
@@ -26,7 +25,6 @@ export const createBooking = async (req, res) => {
       craftName,
       artisanName,
       location,
-      customerId,
       customerName: name,
       customerEmail: email,
       customerPhone: phone,
@@ -76,23 +74,6 @@ export const getBookingsByEmail = async (req, res) => {
     res.json(bookings);
   } catch (err) {
     res.status(500).json({ error: "Could not fetch user bookings" });
-  }
-};
-
-// --------------------
-// GET BOOKING BY ID
-// --------------------
-export const getBookingById = async (req, res) => {
-  try {
-    const booking = await Booking.findById(req.params.id);
-
-    if (!booking) {
-      return res.status(404).json({ error: "Booking not found" });
-    }
-
-    res.json(booking);
-  } catch (err) {
-    res.status(500).json({ error: "Could not fetch booking" });
   }
 };
 

@@ -1,29 +1,25 @@
+import axiosInstance from './axios';
 import api from './axiosInstance';
 
 export interface BookingData {
-  artisanId?: string;
+  email?: string;
+  touristEmail?: string;
+  artisanId?: number | string | null;
   craftId?: string;
-  craftName?: string;
-  artisanName?: string;
-  location?: string;
-  customerId?: string;
-  customerName?: string;
-  customerEmail?: string;
-  customerPhone?: string;
-  bookingDate?: string;
-  bookingTime?: string;
-  groupSize?: number;
-  status?: string;
+  date?: string;
+  time?: string;
+  timeSlot?: string;
+  [key: string]: any;
 }
 
 export const bookingApi = {
   createBooking: async (data: BookingData) => {
-    const response = await api.post('/bookings', data);
+    const response = await axiosInstance.post('/bookings', data);
     return response.data;
   },
 
   getAllBookings: async () => {
-    const response = await api.get('/bookings');
+    const response = await axiosInstance.get('/bookings');
     return response.data;
   },
 
@@ -33,17 +29,17 @@ export const bookingApi = {
   },
 
   getBookingById: async (id: string) => {
-    const response = await api.get(`/bookings/${id}`);
+    const response = await axiosInstance.get(`/bookings/${id}`);
     return response.data;
   },
 
   updateBooking: async (id: string, data: Partial<BookingData>) => {
-    const response = await api.put(`/bookings/${id}`, data);
+    const response = await axiosInstance.put(`/bookings/${id}`, data);
     return response.data;
   },
 
   deleteBooking: async (id: string) => {
-    const response = await api.delete(`/bookings/${id}`);
+    const response = await axiosInstance.delete(`/bookings/${id}`);
     return response.data;
   }
 };

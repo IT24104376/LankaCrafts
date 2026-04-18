@@ -1,10 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
+import axios from 'axios';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { bookingApi } from '../api';
-import { getArtists } from '../services/api';
-import { INTEREST_MAP } from '../constants/touristConstants';
 import {
   Calendar,
   Users,
@@ -14,10 +13,9 @@ import {
   User,
   Mail,
   Phone,
-  MapPin,
-  Loader2
-} from 'lucide-react';
-import { useAuth } from '../context/AuthContext';
+  MapPin
+} from
+  'lucide-react';
 import { useSearchParams } from 'react-router-dom';
 import { Navbar } from '../components/Navbar';
 import { Footer } from '../components/Footer';
@@ -29,63 +27,15 @@ export function BookWorkshop() {
   const [searchParams] = useSearchParams();
   const [step, setStep] = useState(1);
   const [selectedCraft, setSelectedCraft] = useState('');
-  const [selectedArtisan, setSelectedArtisan] = useState<string | null>(null);
+  const [selectedArtisan, setSelectedArtisan] = useState<number | null>(null);
   const [selectedDate, setSelectedDate] = useState('');
   const [selectedTime, setSelectedTime] = useState('');
-  const { tourist, loading: authLoading } = useAuth();
-
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     phone: '',
     groupSize: 1
   });
-
-  useEffect(() => {
-    if (tourist) {
-      setFormData(prev => ({
-        ...prev,
-        id: tourist.id || '',
-        name: tourist.fullName || '',
-        email: tourist.email || ''
-      }));
-    }
-  }, [tourist]);
-
-  // Dynamic data from API
-  const [allArtists, setAllArtists] = useState<any[]>([]);
-  const [craftCategories, setCraftCategories] = useState<{ id: string; name: string; icon: string }[]>([]);
-  const [artistsLoading, setArtistsLoading] = useState(true);
-
-  // Fetch artists from API on mount
-  useEffect(() => {
-    const fetchArtists = async () => {
-      try {
-        const res = await getArtists(1, 100);
-        const artists = res.data?.artists || [];
-        setAllArtists(artists);
-
-        // Derive unique craft categories from artists
-        const craftSet = new Map<string, { id: string; name: string; icon: string }>();
-        for (const a of artists) {
-          if (a.craftType && !craftSet.has(a.craftType)) {
-            const mapped = INTEREST_MAP[a.craftType];
-            craftSet.set(a.craftType, {
-              id: a.craftType,
-              name: mapped?.label || a.craftType.charAt(0).toUpperCase() + a.craftType.slice(1),
-              icon: mapped?.emoji || '',
-            });
-          }
-        }
-        setCraftCategories(Array.from(craftSet.values()));
-      } catch (err) {
-        console.error('Failed to fetch artists:', err);
-      } finally {
-        setArtistsLoading(false);
-      }
-    };
-    fetchArtists();
-  }, []);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
 
@@ -119,73 +69,71 @@ export function BookWorkshop() {
   };
 
   useEffect(() => {
-    if (artistsLoading || allArtists.length === 0) return;
     const craftParam = searchParams.get('craft');
     const artisanParam = searchParams.get('artisan');
-    if (craftParam && craftCategories.find((c) => c.id === craftParam)) {
+    if (craftParam && CRAFTS.find((c) => c.id === craftParam)) {
       setSelectedCraft(craftParam);
       if (artisanParam) {
-        const artisan = allArtists.find(
-          (a) => (a._id === artisanParam || a.id === artisanParam) && a.craftType === craftParam
+        const artisanId = parseInt(artisanParam);
+        const artisan = ARTISANS.find(
+          (a) => a.id === artisanId && a.craftId === craftParam
         );
         if (artisan) {
-          setSelectedArtisan(artisan._id || artisan.id);
-          setStep(3);
+          setSelectedArtisan(artisanId);
+          setStep(3); // Skip to Date & Time since craft + artisan are pre-filled
         } else {
-          setStep(2);
+          setStep(2); // Craft is set, go to artisan selection
         }
       } else {
-        setStep(2);
+        setStep(2); // Only craft is set, go to artisan selection
       }
     }
-  }, [searchParams, artistsLoading, allArtists, craftCategories]);
-
+  }, [searchParams]);
   // Filter artisans based on selected craft
-  const filteredArtisans = allArtists.filter((a) => a.craftType === selectedCraft);
+  const filteredArtisans = ARTISANS.filter((a) => a.craftId === selectedCraft);
   const handleNext = () => {
     if (step < 4) setStep(step + 1);
   };
   const handleBack = () => {
     if (step > 1) setStep(step - 1);
   };
-
+  
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!validateForm()) return;
+  e.preventDefault();
+  if (!validateForm()) return;
 
-    setIsSubmitting(true);
+  setIsSubmitting(true);
 
-    // 1. Find the selected artisan and craft objects
-    const artisanData = allArtists.find((a) => (a._id || a.id) === selectedArtisan);
-    const craftData = craftCategories.find((c) => c.id === selectedCraft);
+  // 1. Find the selected artisan and craft objects
+  const artisanData = ARTISANS.find((a) => a.id === selectedArtisan);
+  const craftData = CRAFTS.find((c) => c.id === selectedCraft);
 
-    // 2. Build the payload including the extra info
-    const bookingPayload = {
-      artisanId: selectedArtisan as string,
-      artisanName: artisanData?.fullName || 'Unknown Artisan',
-      location: artisanData?.address?.city || artisanData?.address?.district || 'Unknown Location',
-      craftId: selectedCraft,
-      craftName: craftData?.name || 'Unknown Craft',
-      customerId: tourist?.id,
-      name: formData.name,
-      email: formData.email,
-      phone: formData.phone,
-      date: selectedDate,
-      time: selectedTime,
-      groupSize: formData.groupSize
-    };
-
-    try {
-      await bookingApi.createBooking(bookingPayload);
-      setIsSuccess(true);
-      window.scrollTo(0, 0);
-    } catch (error) {
-      console.error("Error submitting booking:", error);
-      alert("Failed to save booking or server error. Please try again.");
-    } finally {
-      setIsSubmitting(false);
-    }
+  // 2. Build the payload including the extra info
+  const bookingPayload = {
+    artisanId: selectedArtisan,
+    artisanName: artisanData?.name || 'Unknown Artisan',
+    location: artisanData?.location || 'Unknown Location',
+    craftId: selectedCraft,
+    craftName: craftData?.name || 'Unknown Craft',
+    name: formData.name,
+    email: formData.email,
+    phone: formData.phone,
+    date: selectedDate,
+    time: selectedTime,
+    groupSize: formData.groupSize
   };
+
+  try {
+    await bookingApi.createBooking(bookingPayload);
+    setIsSuccess(true);
+    window.scrollTo(0, 0);
+  } catch (error) {
+    console.error("Error submitting booking:", error);
+    alert("Failed to save booking or server error. Please try again.");
+  } finally {
+    setIsSubmitting(false);
+  }
+};
   if (isSuccess) {
     return (
       <div className="min-h-screen bg-offwhite font-body flex flex-col">
@@ -211,7 +159,7 @@ export function BookWorkshop() {
             </h1>
             <p className="text-gray-600 mb-8">
               Thank you, {formData.name}. Your workshop with{' '}
-              {allArtists.find((a) => (a._id || a.id) === selectedArtisan)?.fullName || 'the artisan'} has been
+              {ARTISANS.find((a) => a.id === selectedArtisan)?.name} has been
               booked. We've sent a confirmation email to {formData.email}.
             </p>
             <div className="bg-gray-50 rounded-xl p-6 mb-8 text-left space-y-3">
@@ -260,28 +208,6 @@ export function BookWorkshop() {
       </div>);
 
   }
-
-  if (!authLoading && !tourist) {
-    return (
-      <div className="min-h-screen bg-offwhite font-body flex flex-col">
-        <Navbar />
-        <main className="flex-1 flex flex-col items-center justify-center px-6 py-24">
-          <div className="w-20 h-20 bg-mustard/10 rounded-full flex items-center justify-center mb-6 text-mustard">
-            <User className="w-10 h-10" />
-          </div>
-          <h2 className="text-3xl font-black text-forest mb-4 font-display">Login Required</h2>
-          <p className="text-gray-600 mb-8 max-w-md text-center">
-            You need to be logged in to book a workshop. Please log in or create an account to continue.
-          </p>
-          <Button onClick={() => window.location.href = '/login'} className="w-full max-w-xs">
-            Go to Login
-          </Button>
-        </main>
-        <Footer />
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-offwhite font-body flex flex-col">
       <Navbar />
@@ -337,7 +263,7 @@ export function BookWorkshop() {
                     <h3 className="font-bold text-forest">Select Craft</h3>
                     <p className="text-xs text-gray-500 mt-1">
                       {selectedCraft ?
-                        craftCategories.find((c) => c.id === selectedCraft)?.name :
+                        CRAFTS.find((c) => c.id === selectedCraft)?.name :
                         'Choose a workshop type'}
                     </p>
                   </div>
@@ -355,7 +281,7 @@ export function BookWorkshop() {
                     <h3 className="font-bold text-forest">Choose Artisan</h3>
                     <p className="text-xs text-gray-500 mt-1">
                       {selectedArtisan ?
-                        allArtists.find((a) => (a._id || a.id) === selectedArtisan)?.fullName :
+                        ARTISANS.find((a) => a.id === selectedArtisan)?.name :
                         'Select your mentor'}
                     </p>
                   </div>
@@ -406,14 +332,14 @@ export function BookWorkshop() {
                     <div className="flex justify-between">
                       <span className="text-gray-500">Workshop</span>
                       <span className="font-medium text-right">
-                        {craftCategories.find((c) => c.id === selectedCraft)?.name}
+                        {CRAFTS.find((c) => c.id === selectedCraft)?.name}
                       </span>
                     </div>
                     {selectedArtisan &&
                       <div className="flex justify-between">
                         <span className="text-gray-500">Artisan</span>
                         <span className="font-medium text-right">
-                          {allArtists.find((a) => (a._id || a.id) === selectedArtisan)?.fullName}
+                          {ARTISANS.find((a) => a.id === selectedArtisan)?.name}
                         </span>
                       </div>
                     }
@@ -446,41 +372,34 @@ export function BookWorkshop() {
                     <h2 className="text-2xl font-bold font-display text-forest mb-6">
                       What would you like to learn?
                     </h2>
-                    {artistsLoading ? (
-                      <div className="flex items-center justify-center py-16">
-                        <Loader2 className="w-8 h-8 text-forest animate-spin" />
-                        <span className="ml-3 text-gray-500">Loading workshops...</span>
-                      </div>
-                    ) : (
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {craftCategories.map((craft) =>
-                          <button
-                            key={craft.id}
-                            onClick={() => {
-                              setSelectedCraft(craft.id);
-                              setSelectedArtisan(null);
-                              handleNext();
-                            }}
-                            className={`p-6 rounded-xl border-2 text-left transition-all duration-200 hover:shadow-md flex items-center gap-4 group ${selectedCraft === craft.id ? 'border-mustard bg-mustard/5' : 'border-gray-100 bg-white hover:border-mustard/50'}`}>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {CRAFTS.map((craft) =>
+                        <button
+                          key={craft.id}
+                          onClick={() => {
+                            setSelectedCraft(craft.id);
+                            setSelectedArtisan(null); // Reset subsequent selections
+                            handleNext();
+                          }}
+                          className={`p-6 rounded-xl border-2 text-left transition-all duration-200 hover:shadow-md flex items-center gap-4 group ${selectedCraft === craft.id ? 'border-mustard bg-mustard/5' : 'border-gray-100 bg-white hover:border-mustard/50'}`}>
 
-                            <span className="text-3xl group-hover:scale-110 transition-transform duration-200">
-                              {craft.icon}
-                            </span>
-                            <div>
-                              <h3 className="font-bold text-gray-900">
-                                {craft.name}
-                              </h3>
-                              <p className="text-xs text-gray-500 mt-1">
-                                2-3 hour session
-                              </p>
-                            </div>
-                            <ChevronRight
-                              className={`ml-auto w-5 h-5 text-gray-300 group-hover:text-mustard transition-colors ${selectedCraft === craft.id ? 'text-mustard' : ''}`} />
+                          <span className="text-3xl group-hover:scale-110 transition-transform duration-200">
+                            {craft.icon}
+                          </span>
+                          <div>
+                            <h3 className="font-bold text-gray-900">
+                              {craft.name}
+                            </h3>
+                            <p className="text-xs text-gray-500 mt-1">
+                              2-3 hour session
+                            </p>
+                          </div>
+                          <ChevronRight
+                            className={`ml-auto w-5 h-5 text-gray-300 group-hover:text-mustard transition-colors ${selectedCraft === craft.id ? 'text-mustard' : ''}`} />
 
-                          </button>
-                        )}
-                      </div>
-                    )}
+                        </button>
+                      )}
+                    </div>
                   </motion.div>
                 }
 
@@ -517,47 +436,40 @@ export function BookWorkshop() {
 
                     {filteredArtisans.length > 0 ?
                       <div className="grid grid-cols-1 gap-4">
-                        {filteredArtisans.map((artisan) => {
-                          const artisanId = artisan._id || artisan.id;
-                          const artisanLocation = artisan.address?.city || artisan.address?.district || 'Sri Lanka';
-                          return (
-                            <button
-                              key={artisanId}
-                              onClick={() => {
-                                setSelectedArtisan(artisanId);
-                                handleNext();
-                              }}
-                              className={`p-4 rounded-xl border-2 text-left transition-all duration-200 hover:shadow-md flex items-center gap-4 group ${selectedArtisan === artisanId ? 'border-mustard bg-mustard/5' : 'border-gray-100 bg-white hover:border-mustard/50'}`}>
+                        {filteredArtisans.map((artisan) =>
+                          <button
+                            key={artisan.id}
+                            onClick={() => {
+                              setSelectedArtisan(artisan.id);
+                              handleNext();
+                            }}
+                            className={`p-4 rounded-xl border-2 text-left transition-all duration-200 hover:shadow-md flex items-center gap-4 group ${selectedArtisan === artisan.id ? 'border-mustard bg-mustard/5' : 'border-gray-100 bg-white hover:border-mustard/50'}`}>
 
-                              <div
-                                className="w-16 h-16 rounded-lg shrink-0 overflow-hidden bg-gray-200 flex items-center justify-center">
-                                {artisan.profilePicUrl ? (
-                                  <img src={artisan.profilePicUrl} alt={artisan.fullName} className="w-full h-full object-cover" />
-                                ) : (
-                                  <span className="text-xl font-bold text-gray-400">{artisan.initials || artisan.fullName?.[0] || 'A'}</span>
-                                )}
-                              </div>
+                            <div
+                              className="w-16 h-16 rounded-lg shrink-0"
+                              style={{
+                                backgroundColor: artisan.image
+                              }} />
 
-                              <div className="flex-1">
-                                <div className="flex justify-between items-start">
-                                  <h3 className="font-bold text-gray-900 text-lg">
-                                    {artisan.fullName}
-                                  </h3>
-                                  <div className="flex items-center gap-1 bg-green-50 px-2 py-1 rounded text-xs font-bold text-green-700">
-                                    <span>★</span> {artisan.rating || 'New'}
-                                  </div>
-                                </div>
-                                <div className="flex items-center gap-2 text-sm text-gray-500 mt-1">
-                                  <MapPin className="w-3 h-3" />{' '}
-                                  {artisanLocation}
+                            <div className="flex-1">
+                              <div className="flex justify-between items-start">
+                                <h3 className="font-bold text-gray-900 text-lg">
+                                  {artisan.name}
+                                </h3>
+                                <div className="flex items-center gap-1 bg-green-50 px-2 py-1 rounded text-xs font-bold text-green-700">
+                                  <span>★</span> {artisan.rating}
                                 </div>
                               </div>
-                              <ChevronRight
-                                className={`w-5 h-5 text-gray-300 group-hover:text-mustard transition-colors ${selectedArtisan === artisanId ? 'text-mustard' : ''}`} />
+                              <div className="flex items-center gap-2 text-sm text-gray-500 mt-1">
+                                <MapPin className="w-3 h-3" />{' '}
+                                {artisan.location}
+                              </div>
+                            </div>
+                            <ChevronRight
+                              className={`w-5 h-5 text-gray-300 group-hover:text-mustard transition-colors ${selectedArtisan === artisan.id ? 'text-mustard' : ''}`} />
 
-                            </button>
-                          );
-                        })}
+                          </button>
+                        )}
                       </div> :
 
                       <div className="text-center py-12">
@@ -696,7 +608,6 @@ export function BookWorkshop() {
                           <input
                             type="text"
                             required
-                            readOnly
                             value={formData.name}
                             onChange={(e) =>
                               setFormData({
@@ -704,7 +615,7 @@ export function BookWorkshop() {
                                 name: e.target.value
                               })
                             }
-                            className="w-full pl-12 pr-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-mustard focus:border-transparent outline-none bg-gray-100 cursor-not-allowed text-gray-500"
+                            className="w-full pl-12 pr-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-mustard focus:border-transparent outline-none"
                             placeholder="John Doe" />
 
                         </div>
@@ -720,7 +631,6 @@ export function BookWorkshop() {
                             <input
                               type="email"
                               required
-                              readOnly
                               value={formData.email}
                               onChange={(e) =>
                                 setFormData({
@@ -728,7 +638,7 @@ export function BookWorkshop() {
                                   email: e.target.value
                                 })
                               }
-                              className="w-full pl-12 pr-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-mustard focus:border-transparent outline-none bg-gray-100 cursor-not-allowed text-gray-500"
+                              className="w-full pl-12 pr-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-mustard focus:border-transparent outline-none"
                               placeholder="john@example.com" />
 
                           </div>
@@ -807,7 +717,7 @@ export function BookWorkshop() {
               context="workshop"
               workshopName={
                 selectedCraft ?
-                  craftCategories.find((c) => c.id === selectedCraft)?.name :
+                  CRAFTS.find((c) => c.id === selectedCraft)?.name :
                   'This Workshop'
               } />
 
@@ -819,7 +729,87 @@ export function BookWorkshop() {
 
 }
 
-// ARTISANS and CRAFTS are now fetched dynamically from the API in the component.
+const ARTISANS = [
+  {
+    id: 1,
+    name: 'Nimal Perera',
+    craftId: 'lacquer',
+    location: 'Kandy',
+    rating: 4.9,
+    image: '#C65D3B'
+  },
+  {
+    id: 2,
+    name: 'Kamala Wijesinghe',
+    craftId: 'batik',
+    location: 'Kandy',
+    rating: 4.8,
+    image: '#2F5D50'
+  },
+  {
+    id: 3,
+    name: 'Suresh Fernando',
+    craftId: 'masks',
+    location: 'Ambalangoda',
+    rating: 4.7,
+    image: '#C9A227'
+  },
+  {
+    id: 4,
+    name: 'Priya Rajapaksa',
+    craftId: 'weaving',
+    location: 'Jaffna',
+    rating: 4.9,
+    image: '#C65D3B'
+  },
+  {
+    id: 5,
+    name: 'Anura Dissanayake',
+    craftId: 'brass',
+    location: 'Colombo',
+    rating: 4.6,
+    image: '#2F5D50'
+  },
+  {
+    id: 6,
+    name: 'Rohan De Silva',
+    craftId: 'pottery',
+    location: 'Kelaniya',
+    rating: 4.8,
+    image: '#C65D3B'
+  }];
+
+const CRAFTS = [
+  {
+    id: 'batik',
+    name: 'Batik Textiles',
+    icon: ''
+  },
+  {
+    id: 'lacquer',
+    name: 'Lacquerwork',
+    icon: ''
+  },
+  {
+    id: 'masks',
+    name: 'Mask Carving',
+    icon: ''
+  },
+  {
+    id: 'pottery',
+    name: 'Pottery',
+    icon: ''
+  },
+  {
+    id: 'brass',
+    name: 'Brasswork',
+    icon: ''
+  },
+  {
+    id: 'weaving',
+    name: 'Handloom Weaving',
+    icon: ''
+  }];
 const AVAILABLE_TIMES = [
   {
     id: 't1',

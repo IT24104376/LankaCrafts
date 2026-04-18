@@ -36,7 +36,7 @@ const ROLE_CONFIG = {
     icon: PaletteIcon,
     color: '#2F5D50',
     bg: '#EBF4F1',
-    redirect: '/artist/login',
+    redirect: '/dashboard',
     description: 'Manage your artisan profile'
   },
   admin: {
@@ -57,12 +57,12 @@ export function UnifiedLogin() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const config = ROLE_CONFIG[selectedRole];
-  const { loginArtist, login, adminLogin } = useAuth();
+  const { loginArtist, login } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password) {
-      setError('Please enter both email and password.');
+      setError('Please enter both email and password.'); 
       return;
     }
 
@@ -71,8 +71,8 @@ export function UnifiedLogin() {
 
     try {
       if (selectedRole === 'admin') {
-        await adminLogin(email, password);
-      } else if (selectedRole === 'artist') {
+        await login(email, password);
+      } else if(selectedRole === 'artist') {
         await loginArtist(email, password);
       } else {
         await login(email, password);
@@ -237,21 +237,7 @@ export function UnifiedLogin() {
                       whileTap={{ scale: 0.98 }}
                       className="w-full py-3.5 rounded-xl text-white font-bold text-sm transition-all flex items-center justify-center gap-2"
                       style={{ backgroundColor: config.color }}>
-                      Go to Tourist Login Portal
-                    </motion.button>
-                  </div>
-                ) : selectedRole === 'artist' ? (
-                  <div className="space-y-4">
-                    <p className="text-sm font-semibold text-gray-700 text-center mb-6">
-                      Enter the Artist Portal to manage your crafts!
-                    </p>
-                    <motion.button
-                      onClick={() => navigate('/artist/login')}
-                      whileHover={{ scale: 1.01 }}
-                      whileTap={{ scale: 0.98 }}
-                      className="w-full py-3.5 rounded-xl text-white font-bold text-sm transition-all flex items-center justify-center gap-2"
-                      style={{ backgroundColor: config.color }}>
-                      Go to Artist Login Portal
+                      Go to Tourist Portal
                     </motion.button>
                   </div>
                 ) : selectedRole === 'artist' ? (
@@ -401,15 +387,17 @@ export function UnifiedLogin() {
                   </form>
                 )}
 
-                <p className="text-center text-sm text-gray-400 mt-5">
-                  Don't have an account?{' '}
-                  <Link
-                    to="/register"
-                    className="font-bold hover:underline"
-                    style={{ color: config.color }}>
-                    Register here
-                  </Link>
-                </p>
+                {selectedRole !== 'tourist' && (
+                  <p className="text-center text-sm text-gray-400 mt-5">
+                    Don't have an account?{' '}
+                    <Link
+                      to="/register"
+                      className="font-bold hover:underline"
+                      style={{ color: config.color }}>
+                      Register here
+                    </Link>
+                  </p>
+                )}
               </motion.div>
             </AnimatePresence>
           </motion.div>

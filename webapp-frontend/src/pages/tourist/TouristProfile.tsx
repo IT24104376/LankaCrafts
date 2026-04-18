@@ -4,11 +4,10 @@ import { TouristNavbar } from './TouristNavbar';
 import { BatikBackground } from '../../components/BatikBackground';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { getMyBlogs, getReviews, getSavedWorkshops, getArtistById } from '../../services/api';
+import { getMyBlogs, getBookings, getMockUpcomingWorkshops, MockWorkshop } from '../../services/api';
 import { bookingApi } from '../../api/index';
 import { INTEREST_MAP, REGIONS_MAP, COUNTRY_CODES } from '../../constants/touristConstants';
 import ReactCountryFlag from 'react-country-flag';
-
 import {
   CalendarIcon,
   HeartIcon,
@@ -17,8 +16,7 @@ import {
   EditIcon,
   ChevronRightIcon,
   MapPinIcon,
-  ClockIcon,
-  UserIcon,
+  ClockIcon
 } from 'lucide-react';
 
 const containerVariants = {
@@ -56,10 +54,8 @@ export function TouristProfile() {
   const { tourist, loading: authLoading } = useAuth();
   const [blogs, setBlogs] = useState<any[]>([]);
   const [bookings, setBookings] = useState<UpcomingWorkshop[]>([]);
-  const [wishlist, setWishlist] = useState<{ id: string; img: string; name: string; artisan: string; craftType: string; location: string }[]>([]);
-  const [reviews, setReviews] = useState<any[]>([]);
+  const [wishlist, setWishlist] = useState<MockWorkshop[]>([]);
   const [dataLoading, setDataLoading] = useState(true);
-
 
   useEffect(() => {
     if (!tourist) return;
@@ -67,44 +63,20 @@ export function TouristProfile() {
 
     const fetchData = async () => {
       try {
-        const [blogsRes, bookingsRes, reviewsRes] = await Promise.all([
+        const [blogsRes, bookingsRes, mockWorkshops] = await Promise.all([
           getMyBlogs(),
-          bookingApi.getBookingsByEmail(tourist.email),
-          getReviews({ mine: true }).catch(() => ({ data: { reviews: [] } }))
+          getBookings().catch(() => ({ data: { bookings: [] } })),
+          getMockUpcomingWorkshops()
         ]);
 
         setBlogs(blogsRes.data.blogs || []);
 
-        setBookings(bookingsRes.data || []);
+        setBookings(bookingsRes.data.bookings || []);
 
-        setReviews(reviewsRes.data.reviews || tourist.reviews || []);
-
-        // Fetch wishlist: savedWorkshops stores artist IDs
-        try {
-          const savedRes = await getSavedWorkshops();
-          const savedIds: string[] = savedRes.data.savedWorkshops || [];
-          if (savedIds.length > 0) {
-            const artistPromises = savedIds.map(id =>
-              getArtistById(id).then(res => res.data?.artist).catch(() => null)
-            );
-            const artists = await Promise.all(artistPromises);
-            const wishlistItems = artists
-              .filter(Boolean)
-              .map((a: any) => ({
-                id: a._id || a.id,
-                img: a.profilePicUrl || 'https://images.unsplash.com/photo-1513364776144-60967b0f800f?w=400&auto=format&fit=crop',
-                name: `${(a.craftType || 'Art').charAt(0).toUpperCase() + (a.craftType || 'Art').slice(1)} Workshop`,
-                artisan: a.fullName || 'Artisan',
-                craftType: a.craftType || '',
-                location: a.address?.city || a.address?.district || 'Sri Lanka',
-              }));
-            setWishlist(wishlistItems);
-          } else {
-            setWishlist([]);
-          }
-        } catch {
-          setWishlist([]);
-        }
+        // Mock wishlist using savedWorkshops IDs to pick from mock data
+        const savedIds = tourist.savedWorkshops?.map(Number) || [];
+        const myWishlist = mockWorkshops.filter(w => savedIds.includes(w.id));
+        setWishlist(myWishlist);
       } catch (err) {
         console.error('Failed to load profile data', err);
       } finally {
@@ -115,6 +87,14 @@ export function TouristProfile() {
     fetchData();
   }, [tourist]);
 
+  // Fetch saved workshops real data from backend
+  useEffect(() => {
+    if (!tourist) return;
+    getBookings().then(res => {
+      const saved = (res.data.savedWorkshops || []).map(Number);
+      setBookings(saved);
+    }).catch(console.error);
+  }, [tourist]);
 
   const isLoading = authLoading || dataLoading;
 
@@ -137,7 +117,7 @@ export function TouristProfile() {
     const fetchUpcoming = async () => {
       if (authLoading) return;
 
-      if (tourist?.id) {
+      if (tourist?.email) {
         try {
           const data = await bookingApi.getBookingsByEmail(tourist.email);
           setBookings(data || []);
@@ -148,43 +128,7 @@ export function TouristProfile() {
     };
 
     fetchUpcoming();
-  }, [tourist?.id, authLoading]);
-
-
-  if (!tourist) {
-    return (
-      <div className="min-h-screen bg-white font-body flex flex-col relative overflow-hidden">
-        <div className="relative z-20">
-          <TouristNavbar />
-        </div>
-
-        <div className="absolute inset-0 z-0 pointer-events-none">
-          <BatikBackground />
-        </div>
-
-        <main className="flex-1 flex flex-col items-center justify-center px-6 py-24 relative z-10">
-          <div className="w-20 h-20 bg-[#FDF0EB] rounded-full flex items-center justify-center mb-6 text-[#C1440E]">
-            <UserIcon className="w-10 h-10" />
-          </div>
-
-          <h2 className="text-3xl font-black text-[#1E1E1E] mb-4 font-display text-center">
-            Tourist Login Required
-          </h2>
-
-          <p className="text-gray-600 mb-8 max-w-md text-center">
-            You need to be logged in with a tourist account to access your profile and manage your blogs, bookings and wishlist.
-          </p>
-
-          <Link
-            to="/tourist/login"
-            className="px-8 py-3 bg-[#C1440E] text-white rounded-full font-bold shadow-lg hover:shadow-xl transition-all hover:-translate-y-1"
-          >
-            Go to Login
-          </Link>
-        </main>
-      </div>
-    );
-  }
+  }, [tourist?.email, authLoading]);
 
   return (
     <div className="min-h-screen font-body relative">
@@ -372,14 +316,11 @@ export function TouristProfile() {
                             }`}>
                             {b.status}
                           </span>
-                          <Link
-                            to="/my-bookings"
-                            className="p-2 border border-amber-200 text-amber-600 rounded-lg hover:bg-amber-50 transition-all shrink-0">
-                            <EditIcon className="w-4 h-4" />
+                          <Link to="/my-bookings">
+                            <button className="p-2 hover:bg-gray-200 rounded-lg transition-colors text-gray-400 hover:text-gray-600">
+                              <ChevronRightIcon className="w-5 h-5" />
+                            </button>
                           </Link>
-                          <button className="p-2 hover:bg-gray-200 rounded-lg transition-colors text-gray-400 hover:text-gray-600">
-                            <ChevronRightIcon className="w-5 h-5" />
-                          </button>
                         </div>
                       </div>
                     ))}
@@ -406,19 +347,17 @@ export function TouristProfile() {
                   [1, 2, 3].map(i => <SkeletonBlock key={i} className="h-40 w-full" />)
                 ) : wishlist.length > 0 ? (
                   wishlist.map(w => (
-                    <Link key={w.id} to={`/artist/${w.id}`} className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-100 flex flex-col hover:shadow-md transition-shadow">
+                    <div key={w.id} className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-100 flex flex-col">
                       <img src={w.img} alt={w.name} className="h-28 w-full object-cover" />
                       <div className="p-3">
                         <p className="font-bold text-sm text-[#1E1E1E] truncate">{w.name}</p>
                         <p className="text-xs text-gray-500">{w.artisan}</p>
-                        <p className="text-[10px] text-[#1A6B6B] font-semibold mt-1">{w.location}</p>
                       </div>
-                    </Link>
+                    </div>
                   ))
                 ) : (
-                  <div className="col-span-3 bg-white rounded-2xl p-6 border border-gray-100 shadow-sm flex flex-col items-center justify-center min-h-[120px]">
-                    <p className="text-gray-400 text-sm mb-2">Your wishlist is empty.</p>
-                    <Link to="/tourist/dashboard" className="text-[#C1440E] font-bold text-sm hover:underline">Browse workshops to save some ❤️</Link>
+                  <div className="col-span-3 bg-white rounded-2xl p-6 border border-gray-100 shadow-sm flex items-center justify-center min-h-[120px]">
+                    <p className="text-gray-400 text-sm">Your wishlist is empty.</p>
                   </div>
                 )}
               </div>
@@ -495,45 +434,14 @@ export function TouristProfile() {
               </div>
             </motion.section>
 
-            {/* My Reviews Section */}
+            {/* My Reviews Section (Placeholder) */}
             <motion.section variants={itemVariants} id="myReviews">
               <div className="flex items-center gap-2 mb-4">
                 <StarIcon className="w-5 h-5 text-amber-500" />
                 <h2 className="text-xl font-display font-bold text-[#1E1E1E]">My Reviews</h2>
               </div>
-              <div className="space-y-4">
-                {isLoading ? (
-                  [1, 2].map(i => <SkeletonBlock key={i} className="h-24 w-full" />)
-                ) : reviews && reviews.length > 0 ? (
-                  reviews.map((r: any) => (
-                    <div key={r._id || r.id} className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-1 text-amber-500">
-                          {[...Array(5)].map((_, i) => (
-                            <StarIcon key={i} className={`w-4 h-4 ${i < (r.rating || 5) ? 'fill-current' : 'text-gray-300'}`} />
-                          ))}
-                        </div>
-                        <span className="text-xs text-gray-400 font-body">
-                          {new Date(r.createdAt || Date.now()).toLocaleDateString()}
-                        </span>
-                      </div>
-                      <p className="text-sm font-bold text-[#1E1E1E] mb-1">
-                        {r.artisanName ? `${r.artisanName} Review` : 'Workshop Review'}
-                      </p>
-                      <p className="text-sm text-gray-600 line-clamp-3">{r.text || 'No text content provided.'}</p>
-                      {r.artisanReply && (
-                        <div className="mt-3 p-3 bg-[#F6F3EE] rounded-lg border-l-4 border-[#C1440E]">
-                          <p className="text-[10px] font-bold text-[#C1440E] uppercase mb-1">Artisan Reply</p>
-                          <p className="text-xs text-gray-600 italic">"{r.artisanReply.text}"</p>
-                        </div>
-                      )}
-                    </div>
-                  ))
-                ) : (
-                  <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm flex items-center justify-center min-h-[120px]">
-                    <p className="text-gray-400 text-sm">You haven't written any reviews yet.</p>
-                  </div>
-                )}
+              <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm min-h-[120px] flex items-center justify-center">
+                <p className="text-gray-400 text-sm">You haven't written any reviews yet.</p>
               </div>
             </motion.section>
 

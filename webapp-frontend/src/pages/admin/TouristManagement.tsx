@@ -1,5 +1,4 @@
-import React, { useEffect, useState } from 'react';
-import { getTourists, toggleTouristStatus } from '../../api/adminApi';
+import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   SearchIcon,
@@ -26,7 +25,7 @@ interface WorkshopAttendance {
   craft: string;
 }
 interface Tourist {
-  id: string;
+  id: number;
   name: string;
   email: string;
   phone: string;
@@ -39,6 +38,7 @@ interface Tourist {
   totalBookings: number;
   lastActive: string;
 }
+const TOURISTS: Tourist[] = [];
 
 const CRAFT_COLORS: Record<string, string> = {
   Lacquerwork: '#C65D3B',
@@ -50,27 +50,7 @@ const CRAFT_COLORS: Record<string, string> = {
   Gems: '#C65D3B'
 };
 export function TouristManagement() {
-  const [tourists, setTourists] = useState<Tourist[]>([]);
-
-  useEffect(() => {
-    getTourists().then(res => {
-      const list = (res.data.data || res.data.tourists || []).map((t: any) => ({
-        id: t._id,
-        name: t.fullName || t.name || '',
-        email: t.email || '',
-        phone: t.phone || '',
-        country: t.country || '',
-        joinedDate: t.createdAt || t.joinedDate || '',
-        status: t.status || 'active',
-        initials: t.initials || (t.fullName || t.name || 'T').split(' ').map((n: string) => n[0]).join('').slice(0, 2),
-        color: t.color || '#2F5D50',
-        workshopsAttended: [],
-        totalBookings: t.totalBookings || 0,
-        lastActive: t.lastActive || t.updatedAt || '',
-      }));
-      setTourists(list);
-    }).catch(() => {});
-  }, []);
+  const [tourists, setTourists] = useState<Tourist[]>(TOURISTS);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<AccountStatus | 'all'>('all');
   const [selectedTourist, setSelectedTourist] = useState<Tourist | null>(null);
@@ -83,14 +63,27 @@ export function TouristManagement() {
     const matchStatus = statusFilter === 'all' || t.status === statusFilter;
     return matchSearch && matchStatus;
   });
-  const handleToggleStatus = async (id: string) => {
-    try {
-      await toggleTouristStatus(id);
-      setTourists(prev => prev.map(t => t.id === id ? { ...t, status: t.status === 'active' ? 'suspended' : 'active' } : t));
-      if (selectedTourist?.id === id) {
-        setSelectedTourist(prev => prev ? { ...prev, status: prev.status === 'active' ? 'suspended' : 'active' } : null);
-      }
-    } catch {}
+  const handleToggleStatus = (id: number) => {
+    setTourists((prev) =>
+    prev.map((t) =>
+    t.id === id ?
+    {
+      ...t,
+      status: t.status === 'active' ? 'suspended' : 'active'
+    } :
+    t
+    )
+    );
+    if (selectedTourist?.id === id) {
+      setSelectedTourist((prev) =>
+      prev ?
+      {
+        ...prev,
+        status: prev.status === 'active' ? 'suspended' : 'active'
+      } :
+      null
+      );
+    }
   };
   const counts = {
     all: tourists.length,

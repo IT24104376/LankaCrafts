@@ -8,27 +8,27 @@ export const getMe = () => api.get('/auth/me');
 
 // ── Artisans ──────────────────────────────────────────────────────────────────
 export const getArtisans = (params?: Record<string, string>) =>
-  api.get('/admin/artisans', { params });
+  api.get('/artisans', { params });
 
 export const updateArtisanStatus = (id: string, status: string) =>
-  api.patch(`/admin/artisans/${id}/status`, { status });
+  api.patch(`/artisans/${id}/status`, { status });
 
 // ── Tourists ──────────────────────────────────────────────────────────────────
 export const getTourists = (params?: Record<string, string>) =>
-  api.get('/admin/tourists', { params });
+  api.get('/tourists', { params });
 
 export const toggleTouristStatus = (id: string) =>
-  api.patch(`/admin/tourists/${id}/status`);
+  api.patch(`/tourists/${id}/status`);
 
 // ── Workshops ─────────────────────────────────────────────────────────────────
 export const getWorkshops = (params?: Record<string, string>) =>
-  api.get('/admin/workshops', { params });
+  api.get('/workshops', { params });
 
 export const updateWorkshopStatus = (id: string, status: string) =>
-  api.patch(`/admin/workshops/${id}/status`, { status });
+  api.patch(`/workshops/${id}/status`, { status });
 
 export const getBookings = (params?: Record<string, string>) =>
-  api.get('/admin/workshops/bookings', { params });
+  api.get('/workshops/bookings', { params });
 
 // ── Reviews ───────────────────────────────────────────────────────────────────
 export const getReviews = (params?: Record<string, string>) =>

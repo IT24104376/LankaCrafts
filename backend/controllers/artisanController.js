@@ -1,94 +1,52 @@
-import Artist from '../models/Artist.js';
-import ActivityLog from '../models/ActivityLog.js';
-import Booking from '../models/workshopBooking.js';
+// import { find, findById, findByIdAndUpdate } from '../models/Artisan.js';
+// import { create } from '../models/ActivityLog.js';
 
-/**
- * Get all artisans (artists) - Admin
- */
 export async function getArtisans(req, res, next) {
   try {
-    const { status, search } = req.query;
+    const { status, region, search } = req.query;
     const filter = {};
-
-    if (status && status !== 'all') {
-      filter.status = status;
-    }
-
+    if (status && status !== 'all') filter.status = status;
+    if (region && region !== 'all') filter.region = region;
     if (search) {
       filter.$or = [
-        { fullName: { $regex: search, $options: 'i' } },
-        { email: { $regex: search, $options: 'i' } },
-        { craftType: { $regex: search, $options: 'i' } },
+        { name: { $regex: search, $options: 'i' } },
+        { craft: { $regex: search, $options: 'i' } },
+        { region: { $regex: search, $options: 'i' } },
       ];
     }
-
-    const artisans = await Artist.find(filter).sort({ createdAt: -1 });
-
-    const data = await Promise.all(artisans.map(async (a) => {
-      const bookingsCount = await Booking.countDocuments({ artisanId: a._id.toString() });
-      return {
-        _id: a._id,
-        name: a.fullName,
-        email: a.email,
-        phone: a.phone || '',
-        craft: a.craftType,
-        location: `${a.address.city}, ${a.address.district}`,
-        joinedDate: a.createdAt,
-        status: a.status || 'active',
-        initials: a.initials || (a.fullName || 'A').split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase(),
-        totalBookings: bookingsCount,
-        avgRating: a.rating || 0,
-        workshopsConducted: a.workshopsConducted || 0,
-      };
-    }));
-
-    res.json({ success: true, data, count: data.length });
+    const artisans = await find(filter).sort({ submittedDate: -1 });
+    res.json({ success: true, data: artisans, count: artisans.length });
   } catch (err) {
     next(err);
   }
 }
 
-/**
- * Get single artisan by ID - Admin
- */
 export async function getArtisan(req, res, next) {
   try {
-    const artisan = await Artist.findById(req.params.id);
-    if (!artisan) {
-      return res.status(404).json({ success: false, message: 'Artisan not found.' });
-    }
+    const artisan = await findById(req.params.id);
+    if (!artisan) return res.status(404).json({ success: false, message: 'Artisan not found.' });
     res.json({ success: true, data: artisan });
   } catch (err) {
     next(err);
   }
 }
 
-/**
- * Update artisan status - Admin
- */
 export async function updateArtisanStatus(req, res, next) {
   try {
     const { status } = req.body;
-
-    if (!['active', 'deactivated', 'pending'].includes(status)) {
-      return res.status(400).json({ success: false, message: 'Invalid status.' });
+    if (!['verified', 'rejected', 'pending'].includes(status)) {
+      return res.status(400).json({ success: false, message: 'Invalid status. Must be verified, rejected, or pending.' });
     }
+    const artisan = await findByIdAndUpdate(req.params.id, { status }, { new: true, runValidators: true });
+    if (!artisan) return res.status(404).json({ success: false, message: 'Artisan not found.' });
 
-    const artisan = await Artist.findByIdAndUpdate(
-      req.params.id,
-      { status },
-      { new: true, runValidators: true }
-    );
-
-    if (!artisan) {
-      return res.status(404).json({ success: false, message: 'Artisan not found.' });
-    }
-
-    await ActivityLog.create({
-      type: status === 'active' ? 'verify' : 'reject',
-      user: artisan.fullName || 'Unknown',
-      description: `Artisan ${status}: ${artisan.fullName}`,
-      page: '/admin/artisan-management',
+    await create({
+      type: status === 'verified' ? 'verify' : 'reject',
+      user: artisan.name,
+      initials: artisan.initials || artisan.name.split(' ').map(n => n[0]).join(''),
+      color: artisan.color || '#2F5D50',
+      description: `Artisan ${status === 'verified' ? 'verified' : 'rejected'}: ${artisan.name}`,
+      page: '/admin/artisan-verification',
     });
 
     res.json({ success: true, data: artisan });

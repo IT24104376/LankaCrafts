@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
+import { uploadImageToCloudianry } from '../utils/CloudinaryUpload';
 import {
   EyeIcon,
   Edit2,
@@ -107,6 +108,7 @@ export function ArtistDashboard() {
     stock: 1,
   });
   const [showAddCraft, setShowAddCraft] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
 
   useEffect(() => {
     if (!firebaseUser) {
@@ -176,6 +178,21 @@ export function ArtistDashboard() {
       setSubmitting(false);
     }
   };
+
+  const handleUploadProfilePic = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadingImage(true);
+    try {
+      const imageUrl = await uploadImageToCloudianry(file);
+      setEditForm({ ...editForm, profilePicUrl: imageUrl });
+    } catch (err) {
+      setError('Failed to upload image');
+    } finally {
+      setUploadingImage(false);
+    }
+  }
 
   const handleAddCraft = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -415,6 +432,20 @@ export function ArtistDashboard() {
                             onChange={(e) => setEditForm({ ...editForm, bio: e.target.value })}
                             className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-[#2F5D50] outline-none text-sm resize-none"
                           />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-bold text-gray-700 mb-2">Profile Picture</label>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={handleUploadProfilePic}
+                            disabled={uploadingImage}
+                            className="w-full px-4 py-3 rounded-xl border border-gray-200"
+                          />
+                          {uploadingImage && <p className="text-sm text-gray-500">Uploading...</p>}
+                          {editForm.profilePicUrl && (
+                            <img src={editForm.profilePicUrl} alt="Profile" className="w-20 h-20 rounded-full mt-2" />
+                          )}
                         </div>
                       </div>
                     </form>

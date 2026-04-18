@@ -29,7 +29,7 @@ interface Props {
 const MyBookings: React.FC = () => {
   const navigate = useNavigate();
   // Using useAuth to get Firebase tied email or fallbacks intelligently
-  const { tourist, firebaseUser, loading: isAuthLoading } = useAuth();
+  const { tourist, firebaseUser } = useAuth();
 
   const storedUser = localStorage.getItem("tourist");
   const localEmail = storedUser ? JSON.parse(storedUser).email : null;
@@ -91,11 +91,9 @@ const MyBookings: React.FC = () => {
     if (email) {
       fetchBookings();
     } else {
-      if (!isAuthLoading) {
-        setLoading(false);
-      }
+      setLoading(false);
     }
-  }, [email, isAuthLoading]);
+  }, []);
 
   // Loading State UI
   if (loading) return (

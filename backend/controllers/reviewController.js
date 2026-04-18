@@ -1,12 +1,11 @@
 import { Review } from '../models/Review.js';
-import Tourist from '../models/Tourist.js';
 
 const getActor = (req) => ({
-  email: String(req.headers['x-user-email'] || req.user?.email || req.admin?.email || '')
+  email: String(req.headers['x-user-email'] || '')
     .trim()
     .toLowerCase(),
-  role: String(req.headers['x-user-role'] || req.user?.role || req.admin?.role || '').trim().toLowerCase(),
-  username: String(req.headers['x-username'] || req.user?.username || req.admin?.name || '')
+  role: String(req.headers['x-user-role'] || '').trim().toLowerCase(),
+  username: String(req.headers['x-username'] || '')
     .trim()
     .toLowerCase(),
   artistName: String(req.headers['x-artist-name'] || '').trim()
@@ -97,9 +96,9 @@ const normalizeReview = (reviewDoc, actor = { email: '', role: '' }) => ({
   canEdit: !!actor.email && reviewDoc.authorEmail === actor.email && canEditByTime(reviewDoc.createdAt),
   artisanReply: reviewDoc.artisanReply
     ? {
-      text: reviewDoc.artisanReply.text,
-      date: reviewDoc.artisanReply.date
-    }
+        text: reviewDoc.artisanReply.text,
+        date: reviewDoc.artisanReply.date
+      }
     : null,
   datePosted: reviewDoc.createdAt,
   createdAt: reviewDoc.createdAt,
@@ -118,10 +117,10 @@ export const getReviews = async (req, res) => {
   const total = reviews.length;
   const avgRating = total
     ? Number(
-      (
-        reviews.reduce((sum, review) => sum + review.rating, 0) / total
-      ).toFixed(1)
-    )
+        (
+          reviews.reduce((sum, review) => sum + review.rating, 0) / total
+        ).toFixed(1)
+      )
     : 0;
 
   const ratingDistribution = [5, 4, 3, 2, 1].map((stars) => {
@@ -226,21 +225,6 @@ export const createReview = async (req, res) => {
       touristInitials: initialsFrom(touristName),
       isOwn: true
     });
-
-    // Update Tourist stats
-    try {
-      await Tourist.findOneAndUpdate(
-        { email: actor.email },
-        { 
-          $inc: { reviewsGiven: 1 },
-          $push: { reviews: review._id.toString() }
-        }
-      );
-    } catch (statsErr) {
-      console.error('Failed to update tourist review stats:', statsErr);
-      // We don't fail the request if just stats update fails, but we log it
-    }
-
     return res.status(201).json(normalizeReview(review, actor));
   } catch (error) {
     // eslint-disable-next-line no-console
@@ -309,7 +293,7 @@ export const replyToReview = async (req, res) => {
 
   review.artisanReply = { text: req.body.text.trim(), date: new Date() };
   const saved = await review.save();
-  res.json(normalizeReview(saved, actor));
+  res.json(normalizeReview(saved, actor.email));
 };
 
 export const markHelpful = async (req, res) => {

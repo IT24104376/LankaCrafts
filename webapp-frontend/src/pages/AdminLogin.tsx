@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { EyeIcon, EyeOffIcon, ShieldIcon, AlertCircleIcon } from 'lucide-react';
 
 export function AdminLogin() {
-  const { adminLogin, isAdminAuthenticated, loading } = useAuth();
+  const { login, isAuthenticated, loading } = useAuth();
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -12,7 +12,7 @@ export function AdminLogin() {
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
-  if (!loading && isAdminAuthenticated) return <Navigate to="/admin" replace />;
+  if (!loading && isAuthenticated) return <Navigate to="/admin" replace />;
 
   const validate = () => {
     if (!email.trim()) return 'Email is required.';
@@ -29,7 +29,7 @@ export function AdminLogin() {
     setError('');
     setSubmitting(true);
     try {
-      await adminLogin(email.trim().toLowerCase(), password);
+      await login(email.trim().toLowerCase(), password);
       navigate('/admin', { replace: true });
     } catch (err: any) {
       const msg = err.response?.data?.message || err.response?.data?.errors?.[0]?.msg || 'Login failed. Please try again.';
@@ -62,7 +62,7 @@ export function AdminLogin() {
                 <ShieldIcon className="w-5 h-5 text-[#2F5D50]" />
               </div>
               <div>
-                <p className="text-white font-bold text-lg leading-tight">Lanka Crafts</p>
+                <p className="text-white font-bold text-lg leading-tight">Lanka Craft</p>
                 <p className="text-white/50 text-xs uppercase tracking-widest">Admin Portal</p>
               </div>
             </div>
@@ -132,7 +132,7 @@ export function AdminLogin() {
             </button>
           </form>
         </div>
-        <p className="text-center text-xs text-gray-400 mt-4">Lanka Crafts Admin v1.0</p>
+        <p className="text-center text-xs text-gray-400 mt-4">Lanka Craft Admin v1.0</p>
       </div>
     </div>
   );

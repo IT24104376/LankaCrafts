@@ -1,5 +1,4 @@
-import React, { useEffect, useState } from 'react';
-import { getArtisans, updateArtisanStatus } from '../../api/adminApi';
+import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   SearchIcon,
@@ -19,7 +18,7 @@ import {
 'lucide-react';
 type ArtisanStatus = 'pending' | 'verified' | 'rejected';
 interface Artisan {
-  id: string;
+  id: number;
   name: string;
   craft: string;
   region: string;
@@ -35,6 +34,7 @@ interface Artisan {
   certifications: string[];
   workshops: number;
 }
+const ARTISANS: Artisan[] = [];
 
 const STATUS_CONFIG: Record<
   ArtisanStatus,
@@ -68,37 +68,13 @@ interface ArtisanVerificationProps {
   onNavigate?: (section: string) => void;
 }
 export function ArtisanVerification({ onNavigate }: ArtisanVerificationProps) {
-  const [artisans, setArtisans] = useState<Artisan[]>([]);
+  const [artisans, setArtisans] = useState<Artisan[]>(ARTISANS);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<ArtisanStatus | 'all'>('all');
   const [regionFilter, setRegionFilter] = useState('all');
   const [selectedArtisan, setSelectedArtisan] = useState<Artisan | null>(null);
   const [showFilterDropdown, setShowFilterDropdown] = useState(false);
-
-  useEffect(() => {
-    getArtisans().then(res => {
-      const list = (res.data.data || []).map((a: any) => ({
-        id: a._id,
-        name: a.name || a.fullName || '',
-        craft: a.craft || a.craftType || '',
-        region: a.region || a.location?.formattedAddress || '',
-        email: a.email || '',
-        phone: a.phone || '',
-        submittedDate: a.submittedDate || a.createdAt || '',
-        status: a.status || 'pending',
-        rating: a.rating || 0,
-        experience: a.experience || '',
-        bio: a.bio || '',
-        initials: a.initials || (a.name || a.fullName || 'A').split(' ').map((n: string) => n[0]).join('').slice(0, 2),
-        color: a.color || '#2F5D50',
-        certifications: a.certifications || [],
-        workshops: a.workshops || 0,
-      }));
-      setArtisans(list);
-    }).catch(() => {});
-  }, []);
-
-  const regions = ['all', ...Array.from(new Set(artisans.map((a) => a.region)))];
+  const regions = ['all', ...Array.from(new Set(ARTISANS.map((a) => a.region)))];
   const filtered = artisans.filter((a) => {
     const matchSearch =
     a.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -108,19 +84,47 @@ export function ArtisanVerification({ onNavigate }: ArtisanVerificationProps) {
     const matchRegion = regionFilter === 'all' || a.region === regionFilter;
     return matchSearch && matchStatus && matchRegion;
   });
-  const handleApprove = async (id: string) => {
-    try {
-      await updateArtisanStatus(id, 'verified');
-      setArtisans(prev => prev.map(a => a.id === id ? { ...a, status: 'verified' as ArtisanStatus } : a));
-      if (selectedArtisan?.id === id) setSelectedArtisan(prev => prev ? { ...prev, status: 'verified' } : null);
-    } catch {}
+  const handleApprove = (id: number) => {
+    setArtisans((prev) =>
+    prev.map((a) =>
+    a.id === id ?
+    {
+      ...a,
+      status: 'verified' as ArtisanStatus
+    } :
+    a
+    )
+    );
+    if (selectedArtisan?.id === id)
+    setSelectedArtisan((prev) =>
+    prev ?
+    {
+      ...prev,
+      status: 'verified'
+    } :
+    null
+    );
   };
-  const handleReject = async (id: string) => {
-    try {
-      await updateArtisanStatus(id, 'rejected');
-      setArtisans(prev => prev.map(a => a.id === id ? { ...a, status: 'rejected' as ArtisanStatus } : a));
-      if (selectedArtisan?.id === id) setSelectedArtisan(prev => prev ? { ...prev, status: 'rejected' } : null);
-    } catch {}
+  const handleReject = (id: number) => {
+    setArtisans((prev) =>
+    prev.map((a) =>
+    a.id === id ?
+    {
+      ...a,
+      status: 'rejected' as ArtisanStatus
+    } :
+    a
+    )
+    );
+    if (selectedArtisan?.id === id)
+    setSelectedArtisan((prev) =>
+    prev ?
+    {
+      ...prev,
+      status: 'rejected'
+    } :
+    null
+    );
   };
   const counts = {
     all: artisans.length,

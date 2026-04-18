@@ -151,10 +151,10 @@ function MiniCalendar({ workshops = [] }: { workshops?: UpcomingWorkshop[] }) {
 
               <div
                 className={`relative z-10 w-7 h-7 flex items-center justify-center rounded-full text-xs font-body transition-all ${isToday
-                  ? 'text-white font-bold shadow-md'
-                  : hasWorkshop
-                    ? 'text-[#1E1E1E] font-bold' // Darker text if there's a star
-                    : 'text-gray-600 hover:bg-gray-100'
+                    ? 'text-white font-bold shadow-md'
+                    : hasWorkshop
+                      ? 'text-[#1E1E1E] font-bold' // Darker text if there's a star
+                      : 'text-gray-600 hover:bg-gray-100'
                   }`}
                 style={isToday ? { backgroundColor: '#C1440E' } : {}}
               >
@@ -184,8 +184,7 @@ interface Stats {
 }
 
 interface UpcomingWorkshop {
-  _id: string;
-  artisanId: string;
+  id: string | number;
   img?: string;
   artisanName: string;
   craftName: string;
@@ -202,14 +201,16 @@ export function TouristDashboard() {
   const [statsLoading, setStatsLoading] = useState(true);
 
   const [upcomingWorkshops, setUpcomingWorkshops] = useState<UpcomingWorkshop[]>([]);
-  const [savedWorkshops, setSavedWorkshops] = useState<string[]>([]);
+  const [savedWorkshops, setSavedWorkshops] = useState<number[]>([]);
 
   const [mapPinpoints, setMapPinpoints] = useState<{ id: string, position: [number, number], label: string }[]>([]);
   const [recommendedWorkshops, setRecommendedWorkshops] = useState<any[]>([]);
 
   useEffect(() => {
     const fetchUpcoming = async () => {
-      if (tourist?.id) {
+      if (authLoading) return;
+
+      if (tourist?.email) {
         try {
           const data = await bookingApi.getBookingsByEmail(tourist.email);
           setUpcomingWorkshops(data || []);
@@ -220,18 +221,18 @@ export function TouristDashboard() {
     };
 
     fetchUpcoming();
-  }, [tourist?.id]);
+  }, [tourist?.email, authLoading]);
 
   // Fetch saved workshops real data from backend
   useEffect(() => {
     if (!tourist) return;
     getSavedWorkshops().then(res => {
-      const saved: string[] = res.data.savedWorkshops || [];
+      const saved = (res.data.savedWorkshops || []).map(Number);
       setSavedWorkshops(saved);
     }).catch(console.error);
   }, [tourist]);
 
-  const toggleSave = async (id: string) => {
+  const toggleSave = async (id: number) => {
     const isSaved = savedWorkshops.includes(id);
     try {
       if (isSaved) {
@@ -291,7 +292,7 @@ export function TouristDashboard() {
           .filter((a: any) => a.location?.coordinates && a.location.coordinates.length === 2 && a.location.coordinates[0] !== 0)
           .map((a: any) => ({
             id: a._id || a.id,
-            position: [a.location.coordinates[1], a.location.coordinates[0]],
+            position: [a.location.coordinates[1], a.location.coordinates[0]], // [lat, lng]
             label: a.fullName
           }));
 
@@ -361,41 +362,12 @@ export function TouristDashboard() {
     }
   }, [tourist, authLoading]);
 
+  // // Load mock upcoming workshops
+  // useEffect(() => {
+  //   getMockUpcomingWorkshops().then(setUpcomingWorkshops);
+  // }, []);
+
   const isLoading = authLoading || statsLoading;
-
-  if (!tourist && !isLoading) {
-    return (
-      <div className="min-h-screen bg-white font-body flex flex-col relative overflow-hidden">
-        <div className="relative z-20">
-          <TouristNavbar />
-        </div>
-        <div className="absolute inset-0 z-0 pointer-events-none">
-          <BatikBackground />
-        </div>
-        <main className="flex-1 flex flex-col items-center justify-center px-6 py-24 relative z-10">
-          <div className="w-20 h-20 bg-[#FDF0EB] rounded-full flex items-center justify-center mb-6 text-[#C1440E]">
-            <UserIcon className="w-10 h-10" />
-          </div>
-
-          <h2 className="text-3xl font-black text-[#1E1E1E] mb-4 font-display text-center">
-            Tourist Login Required
-          </h2>
-
-          <p className="text-gray-600 mb-8 max-w-md text-center">
-            You need to be logged in with a tourist account to access your dashboard and manage your workshops.
-          </p>
-
-          <Link
-            to="/tourist/login"
-            className="px-8 py-3 bg-[#C1440E] text-white rounded-full font-bold shadow-lg hover:shadow-xl transition-all hover:-translate-y-1"
-          >
-            Go to Login
-          </Link>
-        </main>
-      </div>
-    );
-  }
-
 
   // Derive display values from live profile
   // const fullName = tourist?.fullName ?? 'Traveller';
@@ -592,7 +564,7 @@ export function TouristDashboard() {
               <div className="flex gap-5 overflow-x-auto pb-3 scrollbar-hide">
                 {upcomingWorkshops.map((w) => (
                   <div
-                    key={w._id}
+                    key={w.id}
                     className="bg-white rounded-2xl overflow-hidden shrink-0 w-80 border border-gray-100 shadow-sm hover:shadow-md transition-shadow duration-200"
                   >
                     <div className="relative">

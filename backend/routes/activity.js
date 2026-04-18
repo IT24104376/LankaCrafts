@@ -1,12 +1,11 @@
-import { Router } from 'express';
-import { protect } from '../middleware/auth.js';
-import { getActivityFeed, getRecentActivity } from '../controllers/activityController.js';
+// import { Router } from 'express';
+// const router = Router();
+// import { protect } from '../middleware/auth.js';
+// import { getActivityFeed, getRecentActivity } from '../controllers/activityController.js';
 
-const router = Router();
+// router.use(protect);
 
-router.use(protect);
+// router.get('/', getActivityFeed);
+// router.get('/recent', getRecentActivity);
 
-router.get('/', getActivityFeed);
-router.get('/recent', getRecentActivity);
-
-export default router;
+// export default router;

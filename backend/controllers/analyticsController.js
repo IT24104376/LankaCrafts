@@ -1,22 +1,25 @@
-import Artist from '../models/Artist.js';
-import Tourist from '../models/Tourist.js';
-import Booking from '../models/workshopBooking.js';
+
+// import { countDocuments, find } from '../models/Artisan.js';
+// import { countDocuments as _countDocuments, aggregate } from '../models/Tourist.js';
+// import { countDocuments as __countDocuments, find as _find } from '../models/Workshop.js';
+import { Review } from '../models/Review.js';
 
 export async function getOverview(req, res, next) {
   try {
-    const [totalArtisans, totalTourists, activeArtists, pendingArtists] = await Promise.all([
-      Artist.countDocuments(),
-      Tourist.countDocuments(),
-      Artist.countDocuments({ status: 'active' }),
-      Artist.countDocuments({ status: 'pending' }),
+    const [totalArtisans, totalTourists, activeWorkshops, pendingArtisans, pendingWorkshops] = await Promise.all([
+      countDocuments(),
+      _countDocuments(),
+      __countDocuments({ status: 'approved' }),
+      countDocuments({ status: 'pending' }),
+      __countDocuments({ status: 'pending' }),
     ]);
     res.json({
       success: true,
       data: {
         totalArtisans,
         totalTourists,
-        activeWorkshops: activeArtists,
-        pendingVerifications: pendingArtists,
+        activeWorkshops,
+        pendingVerifications: pendingArtisans + pendingWorkshops,
       },
     });
   } catch (err) {
@@ -26,17 +29,24 @@ export async function getOverview(req, res, next) {
 
 export async function getActivityChart(req, res, next) {
   try {
-    const bookings = await Booking.aggregate([
-      {
-        $group: {
-          _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } },
-          bookings: { $sum: 1 }
-        }
-      },
-      { $sort: { _id: -1 } },
-      { $limit: 7 }
-    ]);
-    const data = bookings.map(b => ({ label: b._id, users: 0, bookings: b.bookings })).reverse();
+    const { period = 'daily' } = req.query;
+    const DAILY = [
+      { label: 'Mon', users: 320, bookings: 48 }, { label: 'Tue', users: 410, bookings: 62 },
+      { label: 'Wed', users: 380, bookings: 55 }, { label: 'Thu', users: 520, bookings: 78 },
+      { label: 'Fri', users: 490, bookings: 71 }, { label: 'Sat', users: 610, bookings: 94 },
+      { label: 'Sun', users: 445, bookings: 67 },
+    ];
+    const WEEKLY = [
+      { label: 'W1', users: 2100, bookings: 310 }, { label: 'W2', users: 2450, bookings: 368 },
+      { label: 'W3', users: 2280, bookings: 342 }, { label: 'W4', users: 2890, bookings: 435 },
+      { label: 'W5', users: 3120, bookings: 468 }, { label: 'W6', users: 2760, bookings: 414 },
+    ];
+    const MONTHLY = [
+      { label: 'Jul', users: 8200, bookings: 1230 }, { label: 'Aug', users: 9400, bookings: 1410 },
+      { label: 'Sep', users: 8800, bookings: 1320 }, { label: 'Oct', users: 10200, bookings: 1530 },
+      { label: 'Nov', users: 11500, bookings: 1725 }, { label: 'Dec', users: 13200, bookings: 1980 },
+    ];
+    const data = period === 'weekly' ? WEEKLY : period === 'monthly' ? MONTHLY : DAILY;
     res.json({ success: true, data });
   } catch (err) {
     next(err);
@@ -45,8 +55,8 @@ export async function getActivityChart(req, res, next) {
 
 export async function getTopArtisans(req, res, next) {
   try {
-    const artisans = await Artist.find({ status: 'active' })
-      .sort({ rating: -1, workshopsConducted: -1 })
+    const artisans = await find({ status: 'verified' })
+      .sort({ rating: -1, workshops: -1 })
       .limit(6);
     res.json({ success: true, data: artisans });
   } catch (err) {
@@ -57,15 +67,15 @@ export async function getTopArtisans(req, res, next) {
 export async function getTouristDemographics(req, res, next) {
   try {
     const pipeline = [
-      { $group: { _id: '$country', tourists: { $sum: 1 } } },
+      { $group: { _id: '$country', tourists: { $sum: 1 }, bookings: { $sum: '$totalBookings' } } },
       { $sort: { tourists: -1 } },
       { $limit: 6 },
     ];
-    const raw = await Tourist.aggregate(pipeline);
+    const raw = await aggregate(pipeline);
     const data = raw.map((d) => ({
       country: d._id || 'Unknown',
       count: d.tourists,
-      bookings: 0,
+      bookings: d.bookings || 0,
     }));
     res.json({ success: true, data });
   } catch (err) {
@@ -75,16 +85,14 @@ export async function getTouristDemographics(req, res, next) {
 
 export async function getWorkshopPopularity(req, res, next) {
   try {
-    const pipeline = [
-      { $group: { _id: { name: '$craftName', craft: '$craftId' }, bookings: { $sum: 1 } } },
-      { $sort: { bookings: -1 } },
-      { $limit: 7 }
-    ];
-    const raw = await Booking.aggregate(pipeline);
-    const data = raw.map((b) => ({
-      name: b._id.name || 'Unknown',
-      craft: b._id.craft || 'Unknown',
-      bookings: b.bookings
+    const raw = await _find({ status: 'approved' })
+      .sort({ totalBookings: -1 })
+      .limit(7)
+      .select('name craft totalBookings');
+    const data = raw.map((w) => ({
+      name: w.name,
+      craft: w.craft,
+      bookings: w.totalBookings || 0,
     }));
     res.json({ success: true, data });
   } catch (err) {
