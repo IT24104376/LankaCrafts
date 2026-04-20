@@ -11,6 +11,7 @@ export const createBooking = async (req, res) => {
       craftName,
       artisanName,
       location,
+      touristId,
       name,
       email,
       phone,
@@ -25,6 +26,7 @@ export const createBooking = async (req, res) => {
       craftName,
       artisanName,
       location,
+      customerId: touristId,
       customerName: name,
       customerEmail: email,
       customerPhone: phone,
@@ -63,12 +65,12 @@ export const getAllBookings = async (req, res) => {
 };
 
 // --------------------
-// GET BOOKINGS BY EMAIL
+// GET BOOKINGS BY UID
 // --------------------
-export const getBookingsByEmail = async (req, res) => {
+export const getBookingsByUid = async (req, res) => {
   try {
     const bookings = await Booking.find({
-      customerEmail: req.params.email
+      customerId: req.params.uid
     }).sort({ bookingDate: 1 });
 
     res.json(bookings);

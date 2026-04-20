@@ -29,6 +29,7 @@ interface TouristProfile {
   preferredLanguages: string[];
   preferredRegions: string[];
   savedWorkshops: string[];
+  savedCrafts: string[];
   initials: string;
   idNumber?: string;
   dateOfBirth?: string;
@@ -39,6 +40,7 @@ interface TouristProfile {
     postalCode?: string;
   };
   profilePicUrl?: string;
+  reviews?: string[];
 }
 
 interface ArtistProfile {
@@ -74,7 +76,7 @@ interface ArtistProfile {
 interface AuthContextType {
   // Common
   loading: boolean;
-  
+
   // Tourist/Artist (Firebase)
   firebaseUser: User | null;
   tourist: TouristProfile | null;
@@ -103,11 +105,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [firebaseUser, setFirebaseUser] = useState<User | null>(null);
   const [tourist, setTourist] = useState<TouristProfile | null>(null);
   const [artist, setArtist] = useState<ArtistProfile | null>(null);
-  
+
   // State for Admin
   const [admin, setAdmin] = useState<AdminUser | null>(null);
   const [adminToken, setAdminToken] = useState<string | null>(localStorage.getItem('admin_token'));
-  
+
   const [loading, setLoading] = useState(true);
 
   // --- Initialization Logic ---

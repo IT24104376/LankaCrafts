@@ -2,19 +2,24 @@ import axiosInstance from './axios';
 import api from './axiosInstance';
 
 export interface BookingData {
-  email?: string;
-  touristEmail?: string;
-  artisanId?: number | string | null;
+  artisanId?: string;
   craftId?: string;
-  date?: string;
-  time?: string;
-  timeSlot?: string;
-  [key: string]: any;
+  craftName?: string;
+  artisanName?: string;
+  location?: string;
+  customerId?: string;
+  customerName?: string;
+  customerEmail?: string;
+  customerPhone?: string;
+  bookingDate?: string;
+  bookingTime?: string;
+  groupSize?: number;
+  status?: string;
 }
 
 export const bookingApi = {
   createBooking: async (data: BookingData) => {
-    const response = await axiosInstance.post('/bookings', data);
+    const response = await api.post('/bookings', data);
     return response.data;
   },
 
@@ -23,8 +28,8 @@ export const bookingApi = {
     return response.data;
   },
 
-  getBookingsByEmail: async (email: string) => {
-    const response = await api.get(`/bookings/user/${email}`);
+  getBookingsByUid: async (id: string) => {
+    const response = await api.get(`/bookings/user/${id}`);
     return response.data;
   },
 

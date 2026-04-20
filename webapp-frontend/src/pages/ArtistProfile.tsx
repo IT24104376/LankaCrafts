@@ -6,6 +6,7 @@ import { Footer } from '../components/Footer';
 import { Button } from '../components/ui/Button';
 import { ReviewSection } from '../components/ReviewSection';
 import { getArtistById, getCrafts } from '../services/api';
+import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 
 // Types for artist data
 interface ArtistData {
@@ -14,11 +15,13 @@ interface ArtistData {
   initials: string;
   craft: string;
   location: string;
+  coordinates: [number, number];
   bio: string;
   specialties: string[];
   schedule: { day: string; slots: string[] }[];
   craftId?: string;
   artisanId?: string;
+  profilePicUrl?: string;
 }
 
 // // Mock data fallback (until API is properly connected)
@@ -46,10 +49,12 @@ export function ArtistProfile() {
     id: string;
   }>();
   const navigate = useNavigate();
-  
+
   const [artist, setArtist] = useState<ArtistData | null>(null);
   const [crafts, setCrafts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [mapPinpoints, setMapPinpoints] = useState<{ id: string; position: [number, number]; label: string }[]>([]);
+
 
   useEffect(() => {
     async function loadArtist() {
@@ -58,8 +63,56 @@ export function ArtistProfile() {
         return;
       }
       try {
-        const data = await getArtistById(id);
-        setArtist(data.data?.artist || null);
+        const response = await getArtistById(id);
+        const backendArtist = response.data?.artist;
+        if (backendArtist) {
+          const coordinates: [number, number] =
+            backendArtist.location?.coordinates && backendArtist.location.coordinates.length === 2
+              ? [backendArtist.location.coordinates[1], backendArtist.location.coordinates[0]]
+              : [7.8731, 80.7718]; // Default to SL center
+
+          const mappedArtist: ArtistData = {
+            id: backendArtist._id || backendArtist.id,
+            name: backendArtist.businessName || backendArtist.fullName || backendArtist.name || 'Unknown Artisan',
+            initials: backendArtist.initials || backendArtist.name?.[0] || 'A',
+            craft: backendArtist.craftType || backendArtist.craft || 'Craft Artisan',
+            location: backendArtist.location?.formattedAddress ||
+              (backendArtist.address ? `${backendArtist.address.city || ''}, ${backendArtist.address.district || ''}`.replace(/^,\ /, '') : 'Sri Lanka'),
+            coordinates,
+            bio: backendArtist.bio || 'This artisan has not provided a biography yet.',
+            specialties: backendArtist.specialties || [],
+            schedule: backendArtist.availability ?
+              Object.entries(backendArtist.availability)
+                .filter(([_, slots]: [string, any]) => slots && (slots.morning || slots.afternoon || slots.evening))
+                .map(([day, slots]: [string, any]) => {
+                  const availableSlots = [];
+                  if (slots.morning) availableSlots.push('Morning');
+                  if (slots.afternoon) availableSlots.push('Afternoon');
+                  if (slots.evening) availableSlots.push('Evening');
+                  return {
+                    day: day.charAt(0).toUpperCase() + day.slice(1),
+                    slots: availableSlots
+                  };
+                }) : [
+                { day: 'Monday', slots: ['Morning', 'Afternoon'] },
+                { day: 'Wednesday', slots: ['Morning'] }
+              ],
+            craftId: backendArtist.craftId || '1',
+            artisanId: backendArtist._id || backendArtist.id,
+            profilePicUrl: backendArtist.profilePicUrl
+          };
+          setArtist(mappedArtist);
+
+          // Set map pinpoint for this specific artist
+          setMapPinpoints([{
+            id: mappedArtist.id,
+            position: coordinates,
+            label: mappedArtist.name
+          }]);
+        } else {
+          setArtist(null);
+          setMapPinpoints([]);
+        }
       } catch (error) {
         console.error('Failed to load artist:', error);
         setArtist(null);
@@ -71,7 +124,7 @@ export function ArtistProfile() {
 
   // Use fallback data if artist is not loaded yet
   const displayArtist = artist;
-  
+
   // Show loading state
   if (loading) {
     return (
@@ -138,7 +191,7 @@ export function ArtistProfile() {
         <div className="max-w-7xl mx-auto px-6 h-full flex flex-col justify-end pb-12 relative z-10">
           <div className="flex flex-col md:flex-row md:items-end gap-6 md:gap-8">
             <div className="w-32 h-32 md:w-40 md:h-40 rounded-full border-4 border-white bg-terracotta shadow-xl flex items-center justify-center text-white text-4xl font-display font-bold">
-              {displayArtist.initials}
+              <img src={displayArtist.profilePicUrl} alt={displayArtist.initials} className='w-full h-full object-cover rounded-full' />
             </div>
             <div className="flex-1 text-white">
               <div className="flex items-center gap-2 mb-2 text-mustard font-bold uppercase tracking-wider text-sm">
@@ -191,9 +244,9 @@ export function ArtistProfile() {
                 </p>
                 <div className="mt-6 flex flex-wrap gap-3">
                   {displayArtist.specialties.map((tag: string) =>
-                  <span
-                    key={tag}
-                    className="px-4 py-2 bg-offwhite rounded-lg text-sm font-semibold text-forest-dark">
+                    <span
+                      key={tag}
+                      className="px-4 py-2 bg-offwhite rounded-lg text-sm font-semibold text-forest-dark">
 
                       {tag}
                     </span>
@@ -209,14 +262,14 @@ export function ArtistProfile() {
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {(crafts.length > 0 ? crafts : [{ id: 1 }, { id: 2 }, { id: 3 }]).map((item) =>
-                <div
-                  key={item.id}
-                  className="bg-white rounded-xl overflow-hidden border border-gray-100 shadow-sm hover:shadow-md transition-shadow group">
+                  <div
+                    key={item.id}
+                    className="bg-white rounded-xl overflow-hidden border border-gray-100 shadow-sm hover:shadow-md transition-shadow group">
 
                     <div className="h-48 bg-gray-100 relative">
                       <div className="absolute inset-0 flex items-center justify-center text-gray-300">
                         <span className="font-display text-4xl opacity-20">
-                          {item}
+                          {item.id}
                         </span>
                       </div>
                     </div>
@@ -259,22 +312,22 @@ export function ArtistProfile() {
 
               <div className="space-y-3">
                 {displayArtist.schedule.map((day: { day: string; slots: string[] }) =>
-                <div
-                  key={day.day}
-                  className="flex items-start border-b border-gray-50 pb-3 last:border-0">
+                  <div
+                    key={day.day}
+                    className="flex items-start border-b border-gray-50 pb-3 last:border-0">
 
                     <span className="w-12 font-bold text-gray-900 pt-1">
                       {day.day}
                     </span>
                     <div className="flex flex-wrap gap-2">
                       {day.slots.map((slot: string) =>
-                    <span
-                      key={slot}
-                      className="px-2 py-1 bg-green-50 text-forest-dark text-xs font-bold rounded">
+                        <span
+                          key={slot}
+                          className="px-2 py-1 bg-green-50 text-forest-dark text-xs font-bold rounded">
 
                           {slot}
                         </span>
-                    )}
+                      )}
                     </div>
                   </div>
                 )}
@@ -299,22 +352,32 @@ export function ArtistProfile() {
               <h3 className="text-xl font-bold text-forest mb-4 font-display flex items-center gap-2">
                 <MapPin className="w-5 h-5" /> Location
               </h3>
-              <div className="aspect-square bg-blue-50 rounded-xl mb-4 relative overflow-hidden">
-                <svg viewBox="0 0 100 100" className="w-full h-full opacity-50">
-                  <path d="M20 20 L80 20 L80 80 L20 80 Z" fill="#E5E7EB" />
-                  <circle cx="50" cy="50" r="4" fill="#C65D3B" />
-                  <circle cx="50" cy="50" r="10" fill="#C65D3B" opacity="0.2" />
-                </svg>
-              </div>
+              {/* Artisan Map */}
+              {mapPinpoints.length > 0 && (
+                <div id="artisanMap" className="mb-6">
+                  <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden" style={{ height: '350px' }}>
+                    <MapContainer
+                      center={mapPinpoints[0]?.position || [7.8731, 80.7718]}
+                      zoom={8}
+                      scrollWheelZoom={true}
+                      style={{ height: '100%', width: '100%' }}
+                    >
+                      <TileLayer
+                        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                      />
+                      {mapPinpoints.map((pin) => (
+                        <Marker key={pin.id} position={pin.position}>
+                          <Popup>{pin.label}</Popup>
+                        </Marker>
+                      ))}
+                    </MapContainer>
+                  </div>
+                </div>
+              )}
               <p className="text-sm text-gray-600 font-medium">
-                124 Temple Road, Pilimathalawa, Kandy
+                {displayArtist.location}
               </p>
-              <a
-                href="#"
-                className="text-xs text-terracotta font-bold mt-2 inline-block hover:underline">
-
-                Get Directions
-              </a>
             </div>
           </div>
         </div>
