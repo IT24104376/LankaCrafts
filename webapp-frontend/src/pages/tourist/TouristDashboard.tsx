@@ -201,7 +201,7 @@ export function TouristDashboard() {
   const [statsLoading, setStatsLoading] = useState(true);
 
   const [upcomingWorkshops, setUpcomingWorkshops] = useState<UpcomingWorkshop[]>([]);
-  const [savedWorkshops, setSavedWorkshops] = useState<number[]>([]);
+  const [savedWorkshops, setSavedWorkshops] = useState<string[]>([]);
 
   const [mapPinpoints, setMapPinpoints] = useState<{ id: string, position: [number, number], label: string }[]>([]);
   const [recommendedWorkshops, setRecommendedWorkshops] = useState<any[]>([]);
@@ -210,9 +210,9 @@ export function TouristDashboard() {
     const fetchUpcoming = async () => {
       if (authLoading) return;
 
-      if (tourist?.email) {
+      if (tourist?.id) {
         try {
-          const data = await bookingApi.getBookingsByEmail(tourist.email);
+          const data = await bookingApi.getBookingsByUid(tourist.id);
           setUpcomingWorkshops(data || []);
         } catch (err) {
           console.error("API Error:", err);
@@ -221,18 +221,18 @@ export function TouristDashboard() {
     };
 
     fetchUpcoming();
-  }, [tourist?.email, authLoading]);
+  }, [tourist?.id, authLoading]);
 
   // Fetch saved workshops real data from backend
   useEffect(() => {
     if (!tourist) return;
     getSavedWorkshops().then(res => {
-      const saved = (res.data.savedWorkshops || []).map(Number);
+      const saved: string[] = res.data.savedWorkshops || [];
       setSavedWorkshops(saved);
     }).catch(console.error);
   }, [tourist]);
 
-  const toggleSave = async (id: number) => {
+  const toggleSave = async (id: string) => {
     const isSaved = savedWorkshops.includes(id);
     try {
       if (isSaved) {

@@ -3,29 +3,30 @@ import admin from '../config/firebase.js';
 import Tourist from '../models/Tourist.js';
 
 /**
- * Middleware: protectAdmin
+ * Middleware: protect
  * Verifies custom JWT for Admin roles.
  */
 export const protect = (req, res, next) => {
-  const header = req.headers.authorization;
+  const authHeader = req.headers.authorization;
 
-  if (!header || !header.startsWith('Bearer ')) {
-    return res.status(401).json({ 
-      success: false, 
-      message: 'No token provided. Access denied.' 
+  if (!authHeader || !authHeader.toLowerCase().startsWith('bearer ')) {
+    return res.status(401).json({
+      success: false,
+      message: 'No token provided. Access denied.'
     });
   }
 
-  const token = header.split(' ')[1];
+  // Split by space and take the second element
+  const token = authHeader.split(' ')[1];
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     req.admin = decoded;
     next();
   } catch (err) {
-    return res.status(401).json({ 
-      success: false, 
-      message: 'Invalid or expired token.' 
+    return res.status(401).json({
+      success: false,
+      message: 'Invalid or expired token.'
     });
   }
 };
@@ -36,18 +37,29 @@ export const protect = (req, res, next) => {
  */
 export const verifyFirebaseToken = async (req, res, next) => {
   try {
-    const authHeader = req.headers.authorization || '';
+    const authHeader = req.headers.authorization;
 
-    if (!authHeader.startsWith('Bearer ')) {
-      return res.status(401).json({ 
-        error: 'No token provided. Authorization header must start with "Bearer ".' 
+    // Check if header exists and format is correct (case-insensitive check)
+    if (!authHeader || !authHeader.toLowerCase().startsWith('bearer ')) {
+      return res.status(401).json({
+        error: 'No token provided. Authorization header must start with "Bearer ".'
       });
     }
 
-    const idToken = authHeader.split('Bearer ')[1];
+    // Safely extract the token by splitting at the space
+    const idToken = authHeader.split(' ')[1];
+
+    if (!idToken) {
+      return res.status(401).json({ error: 'Malformed authorization header.' });
+    }
 
     // Verify with Firebase Admin SDK
     const decodedToken = await admin.auth().verifyIdToken(idToken);
+
+    if (!decodedToken) {
+      return res.status(401).json({ error: 'Failed to authenticate with Firebase.' });
+    }
+
     const { uid, email } = decodedToken;
 
     // Find the tourist profile in MongoDB

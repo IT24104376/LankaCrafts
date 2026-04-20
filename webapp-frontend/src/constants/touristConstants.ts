@@ -12,9 +12,10 @@ export const INTERESTS: Interest[] = [
   { id: 'woodcarving', label: 'Wood Carving', emoji: '🪵' },
   { id: 'weaving', label: 'Weaving', emoji: '🧵' },
   { id: 'masks', label: 'Mask Making', emoji: '🎭' },
+  { id: 'brasswork', label: 'Brass Work', emoji: '🎺' },
   { id: 'lacquer', label: 'Lacquer Work', emoji: '✨' },
-  { id: 'drumming', label: 'Drumming', emoji: '🥁' },
-  { id: 'cooking', label: 'Cooking', emoji: '🍛' },
+  { id: 'jewelry', label: 'Jewelry Making', emoji: '💍' },
+  { id: 'handloom', label: 'Handloom', emoji: '🪡' },
 ];
 
 export const INTEREST_MAP: Record<string, Interest> = Object.fromEntries(
@@ -55,7 +56,7 @@ export const REGIONS_MAP: Record<string, Regions> = Object.fromEntries(
 //-------------------- Blog Hashtags -----------------------------------
 
 export const TRENDING_TAGS = [
-  '#Batik', '#Pottery', '#Masks', '#Weaving', '#Lacquer', '#Cooking', '#Drumming', '#WoodCarving',
+  '#Batik', '#Pottery', '#Masks', '#Weaving', '#LacquerWork', '#BrassWork', '#JewelryMaking', '#Handloom', '#WoodCarving',
   '#Colombo', '#Kandy', '#Galle', '#Jaffna', '#Anuradhapura', '#Sigiriya', '#Ella', '#Trincomalee', '#Negombo',
   '#SriLanka',
 ];

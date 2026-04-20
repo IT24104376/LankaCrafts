@@ -4,10 +4,24 @@ import { TouristNavbar } from './TouristNavbar';
 import { BatikBackground } from '../../components/BatikBackground';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { getMyBlogs, getBookings, getMockUpcomingWorkshops, MockWorkshop } from '../../services/api';
+import { getMyBlogs, getReviews, getSavedWorkshops, getArtistById } from '../../services/api';
 import { bookingApi } from '../../api/index';
 import { INTEREST_MAP, REGIONS_MAP, COUNTRY_CODES } from '../../constants/touristConstants';
 import ReactCountryFlag from 'react-country-flag';
+import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import 'leaflet/dist/leaflet.css';
+import L from 'leaflet';
+import iconUrl from 'leaflet/dist/images/marker-icon.png';
+import iconShadow from 'leaflet/dist/images/marker-shadow.png';
+
+// Fix default Leaflet marker icon
+const DefaultIcon = L.icon({
+  iconUrl,
+  shadowUrl: iconShadow,
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+});
+L.Marker.prototype.options.icon = DefaultIcon;
 import {
   CalendarIcon,
   HeartIcon,
@@ -16,7 +30,8 @@ import {
   EditIcon,
   ChevronRightIcon,
   MapPinIcon,
-  ClockIcon
+  ClockIcon,
+  MapIcon
 } from 'lucide-react';
 
 const containerVariants = {
@@ -54,8 +69,10 @@ export function TouristProfile() {
   const { tourist, loading: authLoading } = useAuth();
   const [blogs, setBlogs] = useState<any[]>([]);
   const [bookings, setBookings] = useState<UpcomingWorkshop[]>([]);
-  const [wishlist, setWishlist] = useState<MockWorkshop[]>([]);
+  const [wishlist, setWishlist] = useState<{ id: string; img: string; name: string; artisan: string; craftType: string; location: string }[]>([]);
+  const [reviews, setReviews] = useState<any[]>([]);
   const [dataLoading, setDataLoading] = useState(true);
+  const [mapPinpoints, setMapPinpoints] = useState<{ id: string; position: [number, number]; label: string }[]>([]);
 
   useEffect(() => {
     if (!tourist) return;
@@ -63,20 +80,44 @@ export function TouristProfile() {
 
     const fetchData = async () => {
       try {
-        const [blogsRes, bookingsRes, mockWorkshops] = await Promise.all([
+        const [blogsRes, bookingsRes, reviewsRes] = await Promise.all([
           getMyBlogs(),
-          getBookings().catch(() => ({ data: { bookings: [] } })),
-          getMockUpcomingWorkshops()
+          bookingApi.getBookingsByUid(tourist.id),
+          getReviews().catch(() => ({ data: { reviews: [] } }))
         ]);
 
         setBlogs(blogsRes.data.blogs || []);
 
-        setBookings(bookingsRes.data.bookings || []);
+        setBookings(bookingsRes.data || []);
 
-        // Mock wishlist using savedWorkshops IDs to pick from mock data
-        const savedIds = tourist.savedWorkshops?.map(Number) || [];
-        const myWishlist = mockWorkshops.filter(w => savedIds.includes(w.id));
-        setWishlist(myWishlist);
+        setReviews(reviewsRes.data.reviews || tourist.reviews || []);
+
+        // Fetch wishlist: savedWorkshops stores artist IDs
+        try {
+          const savedRes = await getSavedWorkshops();
+          const savedIds: string[] = savedRes.data.savedWorkshops || [];
+          if (savedIds.length > 0) {
+            const artistPromises = savedIds.map(id =>
+              getArtistById(id).then(res => res.data?.artist).catch(() => null)
+            );
+            const artists = await Promise.all(artistPromises);
+            const wishlistItems = artists
+              .filter(Boolean)
+              .map((a: any) => ({
+                id: a._id || a.id,
+                img: a.profilePicUrl || 'https://images.unsplash.com/photo-1513364776144-60967b0f800f?w=400&auto=format&fit=crop',
+                name: `${(a.craftType || 'Art').charAt(0).toUpperCase() + (a.craftType || 'Art').slice(1)} Workshop`,
+                artisan: a.fullName || 'Artisan',
+                craftType: a.craftType || '',
+                location: a.address?.city || a.address?.district || 'Sri Lanka',
+              }));
+            setWishlist(wishlistItems);
+          } else {
+            setWishlist([]);
+          }
+        } catch {
+          setWishlist([]);
+        }
       } catch (err) {
         console.error('Failed to load profile data', err);
       } finally {
@@ -87,14 +128,6 @@ export function TouristProfile() {
     fetchData();
   }, [tourist]);
 
-  // Fetch saved workshops real data from backend
-  useEffect(() => {
-    if (!tourist) return;
-    getBookings().then(res => {
-      const saved = (res.data.savedWorkshops || []).map(Number);
-      setBookings(saved);
-    }).catch(console.error);
-  }, [tourist]);
 
   const isLoading = authLoading || dataLoading;
 
@@ -117,9 +150,9 @@ export function TouristProfile() {
     const fetchUpcoming = async () => {
       if (authLoading) return;
 
-      if (tourist?.email) {
+      if (tourist?.id) {
         try {
-          const data = await bookingApi.getBookingsByEmail(tourist.email);
+          const data = await bookingApi.getBookingsByUid(tourist.id);
           setBookings(data || []);
         } catch (err) {
           console.error("API Error:", err);
@@ -128,7 +161,7 @@ export function TouristProfile() {
     };
 
     fetchUpcoming();
-  }, [tourist?.email, authLoading]);
+  }, [tourist?.id, authLoading]);
 
   return (
     <div className="min-h-screen font-body relative">
@@ -347,17 +380,19 @@ export function TouristProfile() {
                   [1, 2, 3].map(i => <SkeletonBlock key={i} className="h-40 w-full" />)
                 ) : wishlist.length > 0 ? (
                   wishlist.map(w => (
-                    <div key={w.id} className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-100 flex flex-col">
+                    <Link key={w.id} to={`/artist/${w.id}`} className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-100 flex flex-col hover:shadow-md transition-shadow">
                       <img src={w.img} alt={w.name} className="h-28 w-full object-cover" />
                       <div className="p-3">
                         <p className="font-bold text-sm text-[#1E1E1E] truncate">{w.name}</p>
                         <p className="text-xs text-gray-500">{w.artisan}</p>
+                        <p className="text-[10px] text-[#1A6B6B] font-semibold mt-1">{w.location}</p>
                       </div>
-                    </div>
+                    </Link>
                   ))
                 ) : (
-                  <div className="col-span-3 bg-white rounded-2xl p-6 border border-gray-100 shadow-sm flex items-center justify-center min-h-[120px]">
-                    <p className="text-gray-400 text-sm">Your wishlist is empty.</p>
+                  <div className="col-span-3 bg-white rounded-2xl p-6 border border-gray-100 shadow-sm flex flex-col items-center justify-center min-h-[120px]">
+                    <p className="text-gray-400 text-sm mb-2">Your wishlist is empty.</p>
+                    <Link to="/tourist/dashboard" className="text-[#C1440E] font-bold text-sm hover:underline">Browse workshops to save some ❤️</Link>
                   </div>
                 )}
               </div>
@@ -434,14 +469,37 @@ export function TouristProfile() {
               </div>
             </motion.section>
 
-            {/* My Reviews Section (Placeholder) */}
+            {/* My Reviews Section */}
             <motion.section variants={itemVariants} id="myReviews">
               <div className="flex items-center gap-2 mb-4">
                 <StarIcon className="w-5 h-5 text-amber-500" />
                 <h2 className="text-xl font-display font-bold text-[#1E1E1E]">My Reviews</h2>
               </div>
-              <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm min-h-[120px] flex items-center justify-center">
-                <p className="text-gray-400 text-sm">You haven't written any reviews yet.</p>
+              <div className="space-y-4">
+                {isLoading ? (
+                  [1, 2].map(i => <SkeletonBlock key={i} className="h-24 w-full" />)
+                ) : reviews && reviews.length > 0 ? (
+                  reviews.map((r: any) => (
+                    <div key={r._id || r.id} className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-1 text-amber-500">
+                          {[...Array(5)].map((_, i) => (
+                            <StarIcon key={i} className={`w-4 h-4 ${i < (r.rating || 5) ? 'fill-current' : 'text-gray-300'}`} />
+                          ))}
+                        </div>
+                        <span className="text-xs text-gray-400 font-body">
+                          {new Date(r.createdAt || Date.now()).toLocaleDateString()}
+                        </span>
+                      </div>
+                      <p className="text-sm font-bold text-[#1E1E1E] mb-1">{r.itemType ? `${r.itemType} Review` : 'Review'}</p>
+                      <p className="text-sm text-gray-600">{r.comment || r.content || 'No text content provided.'}</p>
+                    </div>
+                  ))
+                ) : (
+                  <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm flex items-center justify-center min-h-[120px]">
+                    <p className="text-gray-400 text-sm">You haven't written any reviews yet.</p>
+                  </div>
+                )}
               </div>
             </motion.section>
 
