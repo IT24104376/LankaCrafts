@@ -62,7 +62,7 @@ export function UnifiedLogin() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password) {
-      setError('Please enter both email and password.'); 
+      setError('Please enter both email and password.');
       return;
     }
 
@@ -72,7 +72,7 @@ export function UnifiedLogin() {
     try {
       if (selectedRole === 'admin') {
         await login(email, password);
-      } else if(selectedRole === 'artist') {
+      } else if (selectedRole === 'artist') {
         await loginArtist(email, password);
       } else {
         await login(email, password);
@@ -237,7 +237,7 @@ export function UnifiedLogin() {
                       whileTap={{ scale: 0.98 }}
                       className="w-full py-3.5 rounded-xl text-white font-bold text-sm transition-all flex items-center justify-center gap-2"
                       style={{ backgroundColor: config.color }}>
-                      Go to Tourist Portal
+                      Go to Tourist Login Portal
                     </motion.button>
                   </div>
                 ) : selectedRole === 'artist' ? (
@@ -387,17 +387,15 @@ export function UnifiedLogin() {
                   </form>
                 )}
 
-                {selectedRole !== 'tourist' && (
-                  <p className="text-center text-sm text-gray-400 mt-5">
-                    Don't have an account?{' '}
-                    <Link
-                      to="/register"
-                      className="font-bold hover:underline"
-                      style={{ color: config.color }}>
-                      Register here
-                    </Link>
-                  </p>
-                )}
+                <p className="text-center text-sm text-gray-400 mt-5">
+                  Don't have an account?{' '}
+                  <Link
+                    to="/register"
+                    className="font-bold hover:underline"
+                    style={{ color: config.color }}>
+                    Register here
+                  </Link>
+                </p>
               </motion.div>
             </AnimatePresence>
           </motion.div>

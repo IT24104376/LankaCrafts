@@ -1,7 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { uploadImageToCloudianry } from '../utils/CloudinaryUpload';
 import {
   EyeIcon,
   Edit2,
@@ -26,6 +25,7 @@ import {
   getArtistProfile,
   updateArtistProfile,
   deleteArtistProfile,
+  uploadArtistProfilePic,
   getMyCrafts,
   createCraft,
   updateCraft,
@@ -184,11 +184,16 @@ export function ArtistDashboard() {
     if (!file) return;
 
     setUploadingImage(true);
+    setError('');
+    setSuccess('');
     try {
-      const imageUrl = await uploadImageToCloudianry(file);
-      setEditForm({ ...editForm, profilePicUrl: imageUrl });
-    } catch (err) {
-      setError('Failed to upload image');
+      const formData = new FormData();
+      formData.append('profilePic', file);
+      const response = await uploadArtistProfilePic(formData);
+      setEditForm({ ...editForm, profilePicUrl: response.data.profilePicUrl });
+      setSuccess('Profile picture updated successfully!');
+    } catch (err: any) {
+      setError(err.response?.data?.error || 'Failed to upload image');
     } finally {
       setUploadingImage(false);
     }
@@ -280,7 +285,15 @@ export function ArtistDashboard() {
               <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden sticky top-32">
                 <div className="p-6 border-b border-gray-100 bg-[#2F5D50] text-white text-center">
                   <div className="w-20 h-20 bg-[#C9A227] rounded-full mx-auto mb-3 flex items-center justify-center text-2xl font-bold text-[#2F5D50] border-4 border-white/20">
-                    {artistData?.initials || 'LC'}
+                    {artistData?.profilePicUrl ? (
+                      <img
+                        src={artistData.profilePicUrl}
+                        alt="Profile"
+                        className="w-full h-full object-cover rounded-full"
+                      />
+                    ) : (
+                      artistData?.initials
+                    )}
                   </div>
                   <h3 className="font-bold text-lg">{artistData?.fullName || 'Artist'}</h3>
                   <p className="text-white/70 text-sm">{artistData?.craftType || 'Craftsman'}</p>
@@ -322,7 +335,15 @@ export function ArtistDashboard() {
                       <div className="absolute bottom-0 left-0 right-0 p-8">
                         <div className="flex flex-col md:flex-row md:items-end gap-6">
                           <div className="w-24 h-24 rounded-full border-4 border-white bg-[#C1440E] shadow-xl flex items-center justify-center text-white text-2xl font-bold">
-                            {artistData?.initials || 'LC'}
+                            {artistData?.profilePicUrl ? (
+                              <img
+                                src={artistData.profilePicUrl}
+                                alt="Profile"
+                                className="w-full h-full object-cover rounded-full"
+                              />
+                            ) : (
+                              artistData?.initials
+                            )}
                           </div>
                           <div className="flex-1 text-white">
                             <div className="flex items-center gap-2 mb-2 text-[#C9A227] font-bold uppercase tracking-wider text-xs">

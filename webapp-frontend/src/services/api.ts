@@ -129,6 +129,11 @@ export const updateArtistProfile = (data: object) =>
 export const deleteArtistProfile = () =>
   api.delete('/api/artist/profile');
 
+export const uploadArtistProfilePic = (formData: FormData) =>
+  api.post('/api/artist/profile-picture', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+
 // ── Artist Crafts ─────────────────────────────────────────────────────────────
 
 export const getMyCrafts = () =>

@@ -151,10 +151,10 @@ function MiniCalendar({ workshops = [] }: { workshops?: UpcomingWorkshop[] }) {
 
               <div
                 className={`relative z-10 w-7 h-7 flex items-center justify-center rounded-full text-xs font-body transition-all ${isToday
-                    ? 'text-white font-bold shadow-md'
-                    : hasWorkshop
-                      ? 'text-[#1E1E1E] font-bold' // Darker text if there's a star
-                      : 'text-gray-600 hover:bg-gray-100'
+                  ? 'text-white font-bold shadow-md'
+                  : hasWorkshop
+                    ? 'text-[#1E1E1E] font-bold' // Darker text if there's a star
+                    : 'text-gray-600 hover:bg-gray-100'
                   }`}
                 style={isToday ? { backgroundColor: '#C1440E' } : {}}
               >
@@ -184,7 +184,8 @@ interface Stats {
 }
 
 interface UpcomingWorkshop {
-  id: string | number;
+  _id: string;
+  artisanId: string;
   img?: string;
   artisanName: string;
   craftName: string;
@@ -208,8 +209,6 @@ export function TouristDashboard() {
 
   useEffect(() => {
     const fetchUpcoming = async () => {
-      if (authLoading) return;
-
       if (tourist?.id) {
         try {
           const data = await bookingApi.getBookingsByUid(tourist.id);
@@ -221,7 +220,7 @@ export function TouristDashboard() {
     };
 
     fetchUpcoming();
-  }, [tourist?.id, authLoading]);
+  }, [tourist?.id]);
 
   // Fetch saved workshops real data from backend
   useEffect(() => {
@@ -292,7 +291,7 @@ export function TouristDashboard() {
           .filter((a: any) => a.location?.coordinates && a.location.coordinates.length === 2 && a.location.coordinates[0] !== 0)
           .map((a: any) => ({
             id: a._id || a.id,
-            position: [a.location.coordinates[1], a.location.coordinates[0]], // [lat, lng]
+            position: [a.location.coordinates[1], a.location.coordinates[0]],
             label: a.fullName
           }));
 
@@ -361,6 +360,39 @@ export function TouristDashboard() {
       fetchArtistsData();
     }
   }, [tourist, authLoading]);
+
+  if (!tourist) {
+    return (
+      <div className="min-h-screen bg-white font-body flex flex-col relative overflow-hidden">
+        <div className="relative z-20">
+          <TouristNavbar />
+        </div>
+        <div className="absolute inset-0 z-0 pointer-events-none">
+          <BatikBackground />
+        </div>
+        <main className="flex-1 flex flex-col items-center justify-center px-6 py-24 relative z-10">
+          <div className="w-20 h-20 bg-[#FDF0EB] rounded-full flex items-center justify-center mb-6 text-[#C1440E]">
+            <UserIcon className="w-10 h-10" />
+          </div>
+
+          <h2 className="text-3xl font-black text-[#1E1E1E] mb-4 font-display text-center">
+            Tourist Login Required
+          </h2>
+
+          <p className="text-gray-600 mb-8 max-w-md text-center">
+            You need to be logged in with a tourist account to access your dashboard and manage your workshops.
+          </p>
+
+          <Link
+            to="/tourist/login"
+            className="px-8 py-3 bg-[#C1440E] text-white rounded-full font-bold shadow-lg hover:shadow-xl transition-all hover:-translate-y-1"
+          >
+            Go to Login
+          </Link>
+        </main>
+      </div>
+    );
+  }
 
   // // Load mock upcoming workshops
   // useEffect(() => {
@@ -564,7 +596,7 @@ export function TouristDashboard() {
               <div className="flex gap-5 overflow-x-auto pb-3 scrollbar-hide">
                 {upcomingWorkshops.map((w) => (
                   <div
-                    key={w.id}
+                    key={w._id}
                     className="bg-white rounded-2xl overflow-hidden shrink-0 w-80 border border-gray-100 shadow-sm hover:shadow-md transition-shadow duration-200"
                   >
                     <div className="relative">

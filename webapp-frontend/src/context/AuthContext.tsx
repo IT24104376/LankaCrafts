@@ -7,7 +7,13 @@ import {
   User,
 } from 'firebase/auth';
 import { auth } from '../config/firebase';
-import { registerTourist, loginTourist, getProfile } from '../services/api';
+import {
+  registerTourist,
+  getProfile,
+  registerArtist,
+  loginArtist,
+  getArtistProfile
+} from '../services/api';
 import { loginAdmin, getMe } from '../api/adminApi';
 
 // --- Interfaces ---
@@ -74,10 +80,7 @@ interface ArtistProfile {
 }
 
 interface AuthContextType {
-  // Common
   loading: boolean;
-
-  // Tourist/Artist (Firebase)
   firebaseUser: User | null;
   tourist: TouristProfile | null;
   artist: ArtistProfile | null;
@@ -89,8 +92,6 @@ interface AuthContextType {
   registerArtist: (email: string, password: string, profileData: object) => Promise<void>;
   logoutArtist: () => Promise<void>;
   refreshArtist: () => Promise<void>;
-
-  // Admin (Custom JWT)
   admin: AdminUser | null;
   adminToken: string | null;
   adminLogin: (email: string, password: string) => Promise<void>;
@@ -101,36 +102,48 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  // State for Firebase Users
   const [firebaseUser, setFirebaseUser] = useState<User | null>(null);
   const [tourist, setTourist] = useState<TouristProfile | null>(null);
   const [artist, setArtist] = useState<ArtistProfile | null>(null);
-
-  // State for Admin
   const [admin, setAdmin] = useState<AdminUser | null>(null);
   const [adminToken, setAdminToken] = useState<string | null>(localStorage.getItem('admin_token'));
-
   const [loading, setLoading] = useState(true);
 
-  // --- Initialization Logic ---
+  // --- Profile Resolver Logic ---
+  // This helper tries to find who the user is after they log in
+  const fetchCorrectProfile = async () => {
+    try {
+      // 1. Try Tourist first
+      const res = await getProfile();
+      setTourist(res.data.tourist);
+      setArtist(null);
+    } catch {
+      try {
+        // 2. If not a tourist, try Artist
+        const res = await getArtistProfile();
+        setArtist(res.data.artist);
+        setTourist(null);
+      } catch {
+        setTourist(null);
+        setArtist(null);
+      }
+    }
+  };
+
   useEffect(() => {
-    // 1. Initialize Firebase Auth
+    // Initialize Firebase Auth Listener
     const unsubscribeFirebase = onAuthStateChanged(auth, async (user) => {
       setFirebaseUser(user);
       if (user) {
-        try {
-          const res = await loginTourist();
-          setTourist(res.data.tourist);
-        } catch {
-          setTourist(null);
-        }
+        await fetchCorrectProfile();
       } else {
         setTourist(null);
+        setArtist(null);
       }
       setLoading(false);
     });
 
-    // 2. Initialize Admin Auth
+    // Initialize Admin Auth
     const initAdmin = async () => {
       const storedToken = localStorage.getItem('admin_token');
       if (storedToken) {
@@ -138,28 +151,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           const res = await getMe();
           setAdmin(res.data.admin);
         } catch {
-          localStorage.removeItem('admin_token');
-          localStorage.removeItem('admin_user');
-          setAdminToken(null);
-          setAdmin(null);
+          adminLogout();
         }
       }
     };
 
     initAdmin();
-
     return () => unsubscribeFirebase();
   }, []);
 
   // --- Tourist Actions ---
   const login = async (email: string, password: string) => {
     await signInWithEmailAndPassword(auth, email, password);
+    // Profile is handled by onAuthStateChanged
   };
 
   const register = async (email: string, password: string, profileData: object) => {
     await createUserWithEmailAndPassword(auth, email, password);
     const res = await registerTourist({ email, ...profileData });
     setTourist(res.data.tourist);
+    setArtist(null);
   };
 
   const logout = async () => {
@@ -173,17 +184,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const res = await getProfile();
       setTourist(res.data.tourist);
     } catch (err) {
-      console.error('Failed to refresh user profile:', err);
+      console.error('Failed to refresh tourist profile:', err);
     }
   };
 
   // --- Artist Actions ---
-  const loginArtist = async (email: string, password: string) => {
+  const handleLoginArtist = async (email: string, password: string) => {
     await signInWithEmailAndPassword(auth, email, password);
+    const res = await loginArtist(); // Handled by API helper
+    setArtist(res.data.artist);
+    setTourist(null);
   };
 
-  const registerArtist = async (email: string, password: string, profileData: object) => {
+  const handleRegisterArtist = async (email: string, password: string, profileData: object) => {
     await createUserWithEmailAndPassword(auth, email, password);
+    const res = await registerArtist({ email, ...profileData });
+    setArtist(res.data.artist);
+    setTourist(null);
   };
 
   const logoutArtist = async () => {
@@ -194,12 +211,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const refreshArtist = async () => {
     try {
-      const token = await auth.currentUser?.getIdToken();
-      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/artist/profile`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      const data = await res.json();
-      setArtist(data.artist);
+      const res = await getArtistProfile();
+      setArtist(res.data.artist);
     } catch (err) {
       console.error('Failed to refresh artist profile:', err);
     }
@@ -226,7 +239,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     <AuthContext.Provider
       value={{
         loading,
-        // Tourist/Artist
         firebaseUser,
         tourist,
         artist,
@@ -234,11 +246,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         register,
         logout,
         refreshUser,
-        loginArtist,
-        registerArtist,
+        loginArtist: handleLoginArtist,
+        registerArtist: handleRegisterArtist,
         logoutArtist,
         refreshArtist,
-        // Admin
         admin,
         adminToken,
         adminLogin,

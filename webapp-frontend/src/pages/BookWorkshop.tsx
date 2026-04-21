@@ -269,9 +269,9 @@ export function BookWorkshop() {
           <div className="w-20 h-20 bg-mustard/10 rounded-full flex items-center justify-center mb-6 text-mustard">
             <User className="w-10 h-10" />
           </div>
-          <h2 className="text-3xl font-black text-forest mb-4 font-display">Login Required</h2>
+          <h2 className="text-3xl font-black text-forest mb-4 font-display">Tourist Login Required</h2>
           <p className="text-gray-600 mb-8 max-w-md text-center">
-            You need to be logged in to book a workshop. Please log in or create an account to continue.
+            You need to be logged in with a tourist account to book a workshop. Please log in or create an account to continue.
           </p>
           <Button onClick={() => window.location.href = '/login'} className="w-full max-w-xs">
             Go to Login

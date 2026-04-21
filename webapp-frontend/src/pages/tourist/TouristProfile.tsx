@@ -8,20 +8,7 @@ import { getMyBlogs, getReviews, getSavedWorkshops, getArtistById } from '../../
 import { bookingApi } from '../../api/index';
 import { INTEREST_MAP, REGIONS_MAP, COUNTRY_CODES } from '../../constants/touristConstants';
 import ReactCountryFlag from 'react-country-flag';
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
-import 'leaflet/dist/leaflet.css';
-import L from 'leaflet';
-import iconUrl from 'leaflet/dist/images/marker-icon.png';
-import iconShadow from 'leaflet/dist/images/marker-shadow.png';
 
-// Fix default Leaflet marker icon
-const DefaultIcon = L.icon({
-  iconUrl,
-  shadowUrl: iconShadow,
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-});
-L.Marker.prototype.options.icon = DefaultIcon;
 import {
   CalendarIcon,
   HeartIcon,
@@ -31,7 +18,7 @@ import {
   ChevronRightIcon,
   MapPinIcon,
   ClockIcon,
-  MapIcon
+  UserIcon,
 } from 'lucide-react';
 
 const containerVariants = {
@@ -72,7 +59,7 @@ export function TouristProfile() {
   const [wishlist, setWishlist] = useState<{ id: string; img: string; name: string; artisan: string; craftType: string; location: string }[]>([]);
   const [reviews, setReviews] = useState<any[]>([]);
   const [dataLoading, setDataLoading] = useState(true);
-  const [mapPinpoints, setMapPinpoints] = useState<{ id: string; position: [number, number]; label: string }[]>([]);
+
 
   useEffect(() => {
     if (!tourist) return;
@@ -162,6 +149,42 @@ export function TouristProfile() {
 
     fetchUpcoming();
   }, [tourist?.id, authLoading]);
+
+
+  if (!tourist) {
+    return (
+      <div className="min-h-screen bg-white font-body flex flex-col relative overflow-hidden">
+        <div className="relative z-20">
+          <TouristNavbar />
+        </div>
+
+        <div className="absolute inset-0 z-0 pointer-events-none">
+          <BatikBackground />
+        </div>
+
+        <main className="flex-1 flex flex-col items-center justify-center px-6 py-24 relative z-10">
+          <div className="w-20 h-20 bg-[#FDF0EB] rounded-full flex items-center justify-center mb-6 text-[#C1440E]">
+            <UserIcon className="w-10 h-10" />
+          </div>
+
+          <h2 className="text-3xl font-black text-[#1E1E1E] mb-4 font-display text-center">
+            Tourist Login Required
+          </h2>
+
+          <p className="text-gray-600 mb-8 max-w-md text-center">
+            You need to be logged in with a tourist account to access your profile and manage your blogs, bookings and wishlist.
+          </p>
+
+          <Link
+            to="/tourist/login"
+            className="px-8 py-3 bg-[#C1440E] text-white rounded-full font-bold shadow-lg hover:shadow-xl transition-all hover:-translate-y-1"
+          >
+            Go to Login
+          </Link>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen font-body relative">
