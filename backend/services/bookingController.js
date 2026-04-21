@@ -73,7 +73,12 @@ export const getBookingsByUid = async (req, res) => {
       customerId: req.params.uid
     }).sort({ bookingDate: 1 });
 
-    res.json(bookings);
+    const formattedBookings = bookings.map(booking => ({
+      ...booking._doc, // Spread the original document data
+      id: booking._id,  // Add a clean 'id' field
+    }));
+
+    res.json(formattedBookings);
   } catch (err) {
     res.status(500).json({ error: "Could not fetch user bookings" });
   }

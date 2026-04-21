@@ -30,9 +30,9 @@ export function TouristNavbar({ activeTab }: TouristNavbarProps) {
 
   }, [tourist]);
 
-  const userName = tourist?.fullName ?? 'User';
-  const callingName = tourist?.callingName ?? 'User';
-  const userInitials = tourist?.initials ?? 'U';
+  const userName = tourist?.fullName ?? 'Not Logged In';
+  const callingName = tourist?.callingName ?? 'Not Logged In';
+  const userInitials = tourist?.initials ?? 'N';
   const userProfilePic = tourist?.profilePicUrl ?? '';
 
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -153,123 +153,123 @@ export function TouristNavbar({ activeTab }: TouristNavbarProps) {
 
         {/* Right: Bell + User */}
         <div className="flex items-center gap-3">
-          <motion.button
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            className="relative w-9 h-9 flex items-center justify-center rounded-full transition-all duration-200"
-            style={{
-              backgroundColor: '#f4e8e8'
-            }}
-            aria-label="Notifications">
-
-            <BellIcon
-              className="w-5 h-5 hover:fill-[#C1440E]"
+          {tourist && (
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              className="relative w-9 h-9 flex items-center justify-center rounded-full transition-all duration-200"
               style={{
-                color: '#C1440E'
-              }} />
+                backgroundColor: '#f4e8e8'
+              }}
+              aria-label="Notifications">
 
-            <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-[#C1440E] rounded-full border-2 border-white" />
-          </motion.button>
+              <BellIcon
+                className="w-5 h-5 hover:fill-[#C1440E]"
+                style={{
+                  color: '#C1440E'
+                }} />
+
+              <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-[#C1440E] rounded-full border-2 border-white" />
+            </motion.button>
+          )}
 
           {/* User Dropdown */}
-          <div className="relative">
-            <button onClick={() => setDropdownOpen(!dropdownOpen)} className="flex items-center gap-2 pl-1 pr-3 py-1 rounded-full hover:bg-gray-50 transition-colors border-2 border-gray-400">
-              <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold font-body overflow-hidden"
-                style={{ backgroundColor: '#C1440E' }}>
-                {userProfilePic ? (
-                  <img src={userProfilePic} alt={callingName} className="w-full h-full object-cover" />
-                ) : (
-                  <span>{userInitials}</span>
-                )}
-              </div>
+          {tourist ? (
+            <div className="relative">
+              <button
+                onClick={() => setDropdownOpen(!dropdownOpen)}
+                className="flex items-center gap-2 pl-1 pr-3 py-1 rounded-full hover:bg-gray-50 transition-colors border-2 border-gray-400"
+              >
+                <div
+                  className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold font-body overflow-hidden"
+                  style={{ backgroundColor: '#C1440E' }}
+                >
+                  {userProfilePic ? (
+                    <img src={userProfilePic} alt={callingName} className="w-full h-full object-cover" />
+                  ) : (
+                    <span>{userInitials}</span>
+                  )}
+                </div>
 
-              <span className="text-sm font-medium text-[#1E1E1E] font-body hidden sm:block">
-                {callingName}
-              </span>
+                <span className="text-sm font-medium text-[#1E1E1E] font-body hidden sm:block">
+                  {callingName}
+                </span>
 
-              <ChevronDownIcon
-                className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${dropdownOpen ? 'rotate-180' : ''}`}
-              />
-            </button>
+                <ChevronDownIcon
+                  className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${dropdownOpen ? 'rotate-180' : ''}`}
+                />
+              </button>
 
-            <AnimatePresence>
-              {dropdownOpen &&
-                <motion.div
-                  initial={{
-                    opacity: 0,
-                    y: 8,
-                    scale: 0.96
-                  }}
-                  animate={{
-                    opacity: 1,
-                    y: 0,
-                    scale: 1
-                  }}
-                  exit={{
-                    opacity: 0,
-                    y: 8,
-                    scale: 0.96
-                  }}
-                  transition={{
-                    duration: 0.15
-                  }}
-                  className="absolute right-0 top-full mt-2 w-52 bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden z-50">
-
-                  <div className="p-2">
-                    <div className="px-3 py-2 mb-1">
-                      <p className="text-xs text-gray-400 font-body">
-                        Signed in as
-                      </p>
-                      <p className="text-sm font-semibold text-[#1E1E1E] font-body truncate">
-                        {userName}
-                      </p>
-                    </div>
-                    <div className="border-t border-gray-100 my-1" />
-                    {[
-                      {
-                        icon: UserIcon,
-                        label: 'My Profile',
-                        href: '/tourist/profile'
-                      },
-                      {
-                        icon: HeartIcon,
-                        label: 'My Wishlist',
-                        href: '/tourist/profile#myWishlist'
-                      },
-                      {
-                        icon: CalendarIcon,
-                        label: 'My Bookings',
-                        href: '/tourist/profile#myBookings'
-                      },
-                      {
-                        icon: MessageCircleIcon,
-                        label: 'Inbox',
-                        href: '/inbox'
-                      }].
-                      map(({ icon: Icon, label, href }) =>
+              <AnimatePresence>
+                {dropdownOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 8, scale: 0.96 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 8, scale: 0.96 }}
+                    transition={{ duration: 0.15 }}
+                    className="absolute right-0 top-full mt-2 w-52 bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden z-50"
+                  >
+                    <div className="p-2">
+                      <div className="px-3 py-2 mb-1">
+                        <p className="text-xs text-gray-400 font-body">Signed in as</p>
+                        <p className="text-sm font-semibold text-[#1E1E1E] font-body truncate">
+                          {userName}
+                        </p>
+                      </div>
+                      <div className="border-t border-gray-100 my-1" />
+                      {[
+                        { icon: UserIcon, label: 'My Profile', href: '/tourist/profile' },
+                        { icon: HeartIcon, label: 'My Wishlist', href: '/tourist/profile#myWishlist' },
+                        { icon: CalendarIcon, label: 'My Bookings', href: '/tourist/profile#myBookings' },
+                        { icon: MessageCircleIcon, label: 'Inbox', href: '/inbox' },
+                      ].map(({ icon: Icon, label, href }) => (
                         <Link
                           key={label}
                           to={href}
                           onClick={() => setDropdownOpen(false)}
-                          className="group flex items-center gap-3 px-3 py-2 rounded-xl text-sm text-[#1E1E1E] hover:bg-[#FAF6F0] hover:text-[#C1440E] transition-colors font-body">
+                          className="group flex items-center gap-3 px-3 py-2 rounded-xl text-sm text-[#1E1E1E] hover:bg-[#FAF6F0] hover:text-[#C1440E] transition-colors font-body"
+                        >
                           <Icon className="w-4 h-4 text-[#C1440E] group-hover:fill-[#C1440E] group-hover:text-[#000000] " />
                           {label}
                         </Link>
-                      )}
-                    <div className="border-t border-gray-100 my-1" />
-                    <Link
-                      to="/tourist/login"
-                      onClick={() => handleLogout()}
-                      className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm text-red-500 hover:bg-red-50 transition-colors font-body group">
-
-                      <LogOutIcon className="w-4 h-4 group-hover:animate-pulse" />
-                      Logout
-                    </Link>
-                  </div>
-                </motion.div>
-              }
-            </AnimatePresence>
-          </div>
+                      ))}
+                      <div className="border-t border-gray-100 my-1" />
+                      <button
+                        onClick={() => handleLogout()}
+                        className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm text-red-500 hover:bg-red-50 transition-colors font-body group"
+                      >
+                        <LogOutIcon className="w-4 h-4 group-hover:animate-pulse" />
+                        Logout
+                      </button>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          ) : (
+            <div className="flex items-center gap-3">
+              <Link
+                to="/tourist/login"
+                className="px-5 py-2.5 rounded-full text-sm font-semibold transition-all duration-200 hover:scale-105 text-[#C1440E] hover:bg-[#FDF0EB] border border-[#C1440E]/20"
+              >
+                Login
+              </Link>
+              <Link
+                to="/tourist/register"
+                className="px-5 py-2.5 rounded-full text-sm font-semibold transition-all duration-200 hover:scale-105 border-2 text-white border-[#C1440E] bg-[#C1440E] hover:bg-white hover:text-[#C1440E]"
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = 'white';
+                  e.currentTarget.style.color = '#C1440E';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = '#C1440E';
+                  e.currentTarget.style.color = 'white';
+                }}
+              >
+                Register
+              </Link>
+            </div>
+          )}
         </div>
       </div>
     </nav>);

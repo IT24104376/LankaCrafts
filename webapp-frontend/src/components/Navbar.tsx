@@ -16,11 +16,12 @@ export function Navbar({ artistMode = false }: NavbarProps) {
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
-  const { tourist, logout } = useAuth();
-  const userName = tourist?.fullName ?? 'User';
-  const callingName = tourist?.callingName ?? 'User';
-  const userInitials = tourist?.initials ?? 'U';
-  const userProfilePic = tourist?.profilePicUrl ?? '';
+  const { tourist, artist, logout, logoutArtist } = useAuth();
+  const activeUser = artist || tourist;
+  const userName = activeUser?.fullName ?? 'User';
+  const callingName = activeUser?.callingName ?? 'User';
+  const userInitials = activeUser?.initials ?? 'U';
+  const userProfilePic = activeUser?.profilePicUrl ?? '';
 
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
@@ -33,11 +34,11 @@ export function Navbar({ artistMode = false }: NavbarProps) {
     }
   };
 
-  const leftLinks = artistMode ?
+  const leftLinks = (artist || artistMode) ?
     [
       {
         name: 'Home',
-        path: '/artist/home'
+        path: '/'
       },
       {
         name: 'Dashboard',
@@ -188,7 +189,81 @@ export function Navbar({ artistMode = false }: NavbarProps) {
 
         {/* Desktop: Right Auth Buttons */}
         <div className="hidden md:flex items-center gap-3 shrink-0">
-          {tourist && !artistMode ? (
+          {artist ? (
+            <>
+              {/* Notification Bell */}
+              <button
+                className="relative w-9 h-9 flex items-center justify-center rounded-full transition-colors"
+                style={{ backgroundColor: 'rgba(255,255,255,0.1)' }}
+                aria-label="Notifications">
+                <BellIcon className="w-5 h-5 text-white" />
+                <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-[#2F5D50]" />
+              </button>
+
+              {/* Artist Profile Dropdown */}
+              <div className="relative">
+                <button
+                  onClick={() => setDropdownOpen(!dropdownOpen)}
+                  className="flex items-center gap-2 pl-1 pr-3 py-1 rounded-full hover:bg-white/10 transition-colors border border-white/20">
+                  <div
+                    className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold font-body overflow-hidden"
+                    style={{ backgroundColor: '#C9A227' }}>
+                    {userProfilePic ? (
+                      <img src={userProfilePic} alt={callingName} className="w-full h-full object-cover" />
+                    ) : (
+                      <span>{userInitials}</span>
+                    )}
+                  </div>
+                  <span className="text-sm font-medium text-white font-body hidden sm:block">
+                    {callingName}
+                  </span>
+                  <ChevronDownIcon
+                    className={`w-4 h-4 text-white/70 transition-transform duration-200 ${dropdownOpen ? 'rotate-180' : ''}`}
+                  />
+                </button>
+
+                <AnimatePresence>
+                  {dropdownOpen && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 8, scale: 0.96 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: 8, scale: 0.96 }}
+                      transition={{ duration: 0.15 }}
+                      className="absolute right-0 top-full mt-2 w-52 bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden z-50">
+                      <div className="p-2">
+                        <div className="px-3 py-2 mb-1">
+                          <p className="text-xs text-gray-400 font-body">Logged in as Artist</p>
+                          <p className="text-sm font-semibold text-[#1E1E1E] font-body truncate">{userName}</p>
+                        </div>
+                        <div className="border-t border-gray-100 my-1" />
+                        <Link
+                          to="/dashboard"
+                          onClick={() => setDropdownOpen(false)}
+                          className="flex items-center gap-3 px-3 py-2 rounded-xl text-sm text-[#1E1E1E] hover:bg-[#FAF6F0] transition-colors font-body">
+                          <UserIcon className="w-4 h-4 text-[#C9A227]" />
+                          My Dashboard
+                        </Link>
+                        <Link
+                          to="/dashboard?tab=crafts"
+                          onClick={() => setDropdownOpen(false)}
+                          className="flex items-center gap-3 px-3 py-2 rounded-xl text-sm text-[#1E1E1E] hover:bg-[#FAF6F0] transition-colors font-body">
+                          <HeartIcon className="w-4 h-4 text-[#C9A227]" />
+                          Manage Crafts
+                        </Link>
+                        <div className="border-t border-gray-100 my-1" />
+                        <button
+                          onClick={() => { logoutArtist(); setDropdownOpen(false); }}
+                          className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm text-red-500 hover:bg-red-50 transition-colors font-body">
+                          <LogOutIcon className="w-4 h-4" />
+                          Logout
+                        </button>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            </>
+          ) : tourist && !artistMode ? (
             <>
               {/* Notification Bell */}
               <button
@@ -337,7 +412,32 @@ export function Navbar({ artistMode = false }: NavbarProps) {
               )}
             </div>
             <div className="border-t border-white/10 pt-3 flex flex-col gap-2">
-              {tourist && !artistMode ? (
+              {artist ? (
+                <div className="flex flex-col gap-2">
+                  <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-white/5 border border-white/10">
+                    <div
+                      className="w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-bold font-body overflow-hidden"
+                      style={{ backgroundColor: '#C9A227' }}>
+                      {userProfilePic ? (
+                        <img src={userProfilePic} alt={callingName} className="w-full h-full object-cover" />
+                      ) : (
+                        <span>{userInitials}</span>
+                      )}
+                    </div>
+                    <div>
+                      <p className="text-sm font-bold text-white font-body">{callingName}</p>
+                      <p className="text-xs text-white/60 font-body">Artist Account</p>
+                    </div>
+                    <div className="ml-auto w-2 h-2 rounded-full bg-green-400" />
+                  </div>
+                  <button
+                    onClick={() => { logoutArtist(); setMenuOpen(false); }}
+                    className="px-5 py-2.5 rounded-full text-sm font-semibold text-center text-red-200 border border-red-500/30 hover:bg-red-500/10 transition-colors flex justify-center items-center gap-2">
+                    <LogOutIcon className="w-4 h-4" />
+                    Logout
+                  </button>
+                </div>
+              ) : tourist && !artistMode ? (
                 <button
                   onClick={() => { handleLogout(); setMenuOpen(false); }}
                   className="px-5 py-2.5 rounded-full text-sm font-semibold text-center text-red-200 border border-red-500/30 hover:bg-red-500/10 transition-colors flex justify-center items-center gap-2">

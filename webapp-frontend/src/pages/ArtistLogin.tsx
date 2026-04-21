@@ -177,6 +177,8 @@ export function ArtistLogin() {
             <Link to="/artist/register" className="font-bold" style={{ color: '#2F5D50' }}>
               Register here
             </Link>
+            <br />
+            <Link to="/" className="font-bold" style={{ color: '#2F5D50' }}>Back to Home</Link>
           </p>
         </motion.div>
       </div>
