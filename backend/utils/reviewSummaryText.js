@@ -63,9 +63,9 @@ export const buildSyntheticSummary = (artisanName, safe, avg) => {
     tone =
       avg >= 4 ?
         'The only review so far leans positive.'
-      : avg <= 2 ?
-        'The only review so far is largely critical.'
-      : 'The only review so far is mixed.';
+        : avg <= 2 ?
+          'The only review so far is largely critical.'
+          : 'The only review so far is mixed.';
   } else if (hi > lo && hi > mid) {
     tone = 'Most ratings are on the high side; guests often sound pleased.';
   } else if (lo > hi && lo > mid) {

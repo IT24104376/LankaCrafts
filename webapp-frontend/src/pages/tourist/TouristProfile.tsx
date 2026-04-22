@@ -70,7 +70,7 @@ export function TouristProfile() {
         const [blogsRes, bookingsRes, reviewsRes] = await Promise.all([
           getMyBlogs(),
           bookingApi.getBookingsByUid(tourist.id),
-          getReviews().catch(() => ({ data: { reviews: [] } }))
+          getReviews({ mine: true }).catch(() => ({ data: { reviews: [] } }))
         ]);
 
         setBlogs(blogsRes.data.blogs || []);
@@ -514,8 +514,16 @@ export function TouristProfile() {
                           {new Date(r.createdAt || Date.now()).toLocaleDateString()}
                         </span>
                       </div>
-                      <p className="text-sm font-bold text-[#1E1E1E] mb-1">{r.itemType ? `${r.itemType} Review` : 'Review'}</p>
-                      <p className="text-sm text-gray-600">{r.comment || r.content || 'No text content provided.'}</p>
+                      <p className="text-sm font-bold text-[#1E1E1E] mb-1">
+                        {r.artisanName ? `${r.artisanName} Review` : 'Workshop Review'}
+                      </p>
+                      <p className="text-sm text-gray-600 line-clamp-3">{r.text || 'No text content provided.'}</p>
+                      {r.artisanReply && (
+                        <div className="mt-3 p-3 bg-[#F6F3EE] rounded-lg border-l-4 border-[#C1440E]">
+                          <p className="text-[10px] font-bold text-[#C1440E] uppercase mb-1">Artisan Reply</p>
+                          <p className="text-xs text-gray-600 italic">"{r.artisanReply.text}"</p>
+                        </div>
+                      )}
                     </div>
                   ))
                 ) : (

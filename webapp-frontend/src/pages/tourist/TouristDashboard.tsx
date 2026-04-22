@@ -361,7 +361,9 @@ export function TouristDashboard() {
     }
   }, [tourist, authLoading]);
 
-  if (!tourist) {
+  const isLoading = authLoading || statsLoading;
+
+  if (!tourist && !isLoading) {
     return (
       <div className="min-h-screen bg-white font-body flex flex-col relative overflow-hidden">
         <div className="relative z-20">
@@ -394,12 +396,6 @@ export function TouristDashboard() {
     );
   }
 
-  // // Load mock upcoming workshops
-  // useEffect(() => {
-  //   getMockUpcomingWorkshops().then(setUpcomingWorkshops);
-  // }, []);
-
-  const isLoading = authLoading || statsLoading;
 
   // Derive display values from live profile
   // const fullName = tourist?.fullName ?? 'Traveller';

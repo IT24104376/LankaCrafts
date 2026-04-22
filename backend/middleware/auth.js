@@ -1,6 +1,7 @@
 import jwt from 'jsonwebtoken';
 import admin from '../config/firebase.js';
 import Tourist from '../models/Tourist.js';
+import Artist from '../models/Artist.js';
 
 /**
  * Middleware: protect
@@ -80,6 +81,100 @@ export const verifyFirebaseToken = async (req, res, next) => {
     next();
   } catch (err) {
     // Handle specific Firebase Auth errors
+    if (err.code === 'auth/id-token-expired') {
+      return res.status(401).json({ error: 'Token expired. Please log in again.' });
+    }
+    if (err.code === 'auth/argument-error' || err.code === 'auth/id-token-revoked') {
+      return res.status(401).json({ error: 'Invalid token.' });
+    }
+
+    console.error('Auth middleware error:', err.message);
+    return res.status(500).json({ error: 'Authentication error.' });
+  }
+};
+
+/**
+ * Middleware: optionalVerifyAnyFirebaseToken
+ * Optionally verifies Firebase ID token. If no token or invalid token,
+ * it just continues without setting req.user.
+ */
+export const optionalVerifyAnyFirebaseToken = async (req, res, next) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.toLowerCase().startsWith('bearer ')) {
+      return next();
+    }
+
+    const idToken = authHeader.split(' ')[1];
+    if (!idToken) return next();
+
+    const decodedToken = await admin.auth().verifyIdToken(idToken);
+    if (!decodedToken) return next();
+
+    const { uid, email } = decodedToken;
+
+    let user = await Tourist.findOne({ firebaseUid: uid, status: 'active' });
+    let role = 'tourist';
+
+    if (!user) {
+      user = await Artist.findOne({ firebaseUid: uid, status: 'active' });
+      role = 'artist';
+    }
+
+    if (user) {
+      req.user = { uid: user._id, role, firebaseUid: uid, email };
+    }
+    next();
+  } catch (err) {
+    // If verification fails, we just proceed as unauthenticated
+    next();
+  }
+};
+
+/**
+ * Middleware: verifyAnyFirebaseToken
+ * Verifies Firebase ID token and loads either Tourist or Artist profile.
+ */
+export const verifyAnyFirebaseToken = async (req, res, next) => {
+  try {
+    const authHeader = req.headers.authorization;
+
+    if (!authHeader || !authHeader.toLowerCase().startsWith('bearer ')) {
+      return res.status(401).json({
+        error: 'No token provided. Authorization header must start with "Bearer ".'
+      });
+    }
+
+    const idToken = authHeader.split(' ')[1];
+    if (!idToken) {
+      return res.status(401).json({ error: 'Malformed authorization header.' });
+    }
+
+    const decodedToken = await admin.auth().verifyIdToken(idToken);
+    if (!decodedToken) {
+      return res.status(401).json({ error: 'Failed to authenticate with Firebase.' });
+    }
+
+    const { uid, email } = decodedToken;
+
+    let user = await Tourist.findOne({ firebaseUid: uid, status: 'active' });
+    let role = 'tourist';
+
+    if (!user) {
+      user = await Artist.findOne({ firebaseUid: uid, status: 'active' });
+      role = 'artist';
+    }
+
+    if (!user) {
+      return res.status(404).json({
+        error: 'User profile not found or deactivated.',
+        uid,
+      });
+    }
+
+    req.user = { uid: user._id, role, firebaseUid: uid, email };
+    next();
+  } catch (err) {
     if (err.code === 'auth/id-token-expired') {
       return res.status(401).json({ error: 'Token expired. Please log in again.' });
     }

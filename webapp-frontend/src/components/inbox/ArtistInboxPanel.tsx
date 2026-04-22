@@ -63,7 +63,7 @@ const pickAvatarColor = (seed: string) => {
 };
 
 export function ArtistInboxPanel() {
-  const { firebaseUser, artist } = useAuth();
+  const { firebaseUser } = useAuth();
   const [conversations, setConversations] = useState<ChatConversation[]>([]);
   const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -81,8 +81,6 @@ export function ArtistInboxPanel() {
     () => conversations.find((conversation) => conversation.id === activeConversationId) || null,
     [activeConversationId, conversations]
   );
-
-  const currentUserId = artist?.id || '';
 
   const filteredConversations = useMemo(() => {
     const normalized = searchQuery.trim().toLowerCase();
@@ -347,7 +345,7 @@ export function ArtistInboxPanel() {
                 <div className="text-sm text-gray-400">Loading messages...</div>
               ) : messages.length > 0 ? (
                 messages.map((message, index) => {
-                  const isMe = message.sender.id === currentUserId;
+                  const isMe = message.sender.role === 'artist';
                   const showDate =
                     index === 0 ||
                     new Date(messages[index - 1].createdAt).toDateString() !==

@@ -10,15 +10,25 @@ const messageSchema = new mongoose.Schema(
     },
     senderId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'User',
+      refPath: 'senderModel',
       required: true,
       index: true,
     },
+    senderModel: {
+      type: String,
+      required: true,
+      enum: ['Artist', 'Tourist', 'Admin']
+    },
     recipientId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'User',
+      refPath: 'recipientModel',
       required: true,
       index: true,
+    },
+    recipientModel: {
+      type: String,
+      required: true,
+      enum: ['Artist', 'Tourist', 'Admin']
     },
     text: {
       type: String,

@@ -24,26 +24,6 @@ interface ArtistData {
   profilePicUrl?: string;
 }
 
-// // Mock data fallback (until API is properly connected)
-// const ARTISTS_DATA: Record<string, ArtistData> = {
-//   '1': {
-//     id: '1',
-//     name: 'Kamala Wijesinghe',
-//     initials: 'KW',
-//     craft: 'Batik Master',
-//     location: 'Kandy, Sri Lanka',
-//     bio: 'Kamala has been practicing the ancient art of Batik for over 40 years, learning from her grandmother who was a royal batik artist. Her work combines traditional Sinhalese patterns with contemporary designs, earning international recognition.',
-//     specialties: ['Traditional Batik', 'Hand-drawn Patterns', 'Natural Dyes'],
-//     schedule: [
-//       { day: 'Monday', slots: ['9:00 AM', '2:00 PM'] },
-//       { day: 'Wednesday', slots: ['10:00 AM', '3:00 PM'] },
-//       { day: 'Friday', slots: ['9:00 AM', '11:00 AM'] },
-//     ],
-//     craftId: 'batik-1',
-//     artisanId: '1',
-//   },
-// };
-
 export function ArtistProfile() {
   const { id } = useParams<{
     id: string;
@@ -109,6 +89,10 @@ export function ArtistProfile() {
             position: coordinates,
             label: mappedArtist.name
           }]);
+
+          // Fetch real crafts for this artist
+          const craftsRes = await getCrafts(1, 10, undefined, undefined, id);
+          setCrafts(craftsRes.data?.crafts || []);
         } else {
           setArtist(null);
           setMapPinpoints([]);
@@ -120,7 +104,7 @@ export function ArtistProfile() {
       setLoading(false);
     }
     loadArtist();
-  }, [id]);
+  }, [id, navigate]);
 
   // Use fallback data if artist is not loaded yet
   const displayArtist = artist;
@@ -190,8 +174,12 @@ export function ArtistProfile() {
 
         <div className="max-w-7xl mx-auto px-6 h-full flex flex-col justify-end pb-12 relative z-10">
           <div className="flex flex-col md:flex-row md:items-end gap-6 md:gap-8">
-            <div className="w-32 h-32 md:w-40 md:h-40 rounded-full border-4 border-white bg-terracotta shadow-xl flex items-center justify-center text-white text-4xl font-display font-bold">
-              <img src={displayArtist.profilePicUrl} alt={displayArtist.initials} className='w-full h-full object-cover rounded-full' />
+            <div className="w-32 h-32 md:w-40 md:h-40 rounded-full border-4 border-white bg-terracotta shadow-xl flex items-center justify-center text-white text-4xl font-display font-bold overflow-hidden relative">
+              {displayArtist.profilePicUrl ? (
+                <img src={displayArtist.profilePicUrl} alt={displayArtist.initials} className='w-full h-full object-cover' />
+              ) : (
+                <span>{displayArtist.initials}</span>
+              )}
             </div>
             <div className="flex-1 text-white">
               <div className="flex items-center gap-2 mb-2 text-mustard font-bold uppercase tracking-wider text-sm">
@@ -261,28 +249,24 @@ export function ArtistProfile() {
                 Available Crafts
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {(crafts.length > 0 ? crafts : [{ id: 1 }, { id: 2 }, { id: 3 }]).map((item) =>
+                {crafts.map((item) =>
                   <div
-                    key={item.id}
+                    key={item._id}
                     className="bg-white rounded-xl overflow-hidden border border-gray-100 shadow-sm hover:shadow-md transition-shadow group">
 
                     <div className="h-48 bg-gray-100 relative">
-                      <div className="absolute inset-0 flex items-center justify-center text-gray-300">
-                        <span className="font-display text-4xl opacity-20">
-                          {item.id}
-                        </span>
-                      </div>
+                      <img src={item.images?.[0] || 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&auto=format&fit=crop'} alt={item.name} className="w-full h-full object-cover" />
                     </div>
                     <div className="p-5">
                       <h3 className="font-bold text-lg text-gray-900 mb-1 font-display">
-                        Hand-turned Lacquer Vase
+                        {item.name}
                       </h3>
-                      <p className="text-sm text-gray-500 mb-3">
-                        Traditional red and yellow geometric patterns.
+                      <p className="text-sm text-gray-500 mb-3 line-clamp-2">
+                        {item.description}
                       </p>
                       <div className="flex items-center justify-between">
                         <span className="font-bold text-terracotta text-lg">
-                          $45.00
+                          {item.currency === 'USD' ? '$' : 'LKR '} {item.price}
                         </span>
                         <button className="text-sm font-bold text-forest hover:underline">
                           View Details
@@ -290,6 +274,9 @@ export function ArtistProfile() {
                       </div>
                     </div>
                   </div>
+                )}
+                {crafts.length === 0 && (
+                   <p className="text-gray-400 italic">No crafts listed by this artisan yet.</p>
                 )}
               </div>
             </section>

@@ -25,8 +25,9 @@ import {
   ClockIcon,
   AlertCircleIcon,
   UserIcon,
-  MessageSquareIcon } from
-'lucide-react';
+  MessageSquareIcon
+} from
+  'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { ArtisanVerification } from './admin/ArtisanVerification';
 import { TouristManagement } from './admin/TouristManagement';
@@ -38,15 +39,15 @@ import { useAuth } from '../context/AuthContext';
 import { getAnalyticsOverview, getRecentActivity, getArtisans, updateArtisanStatus } from '../api/adminApi';
 
 type Section =
-'overview' |
-'artisan-verification' |
-'workshop-verification' |
-'tourist-management' |
-'user-activity' |
-'analytics' |
-'review-monitoring' |
-'role-management' |
-'settings';
+  'overview' |
+  'artisan-verification' |
+  'workshop-verification' |
+  'tourist-management' |
+  'user-activity' |
+  'analytics' |
+  'review-monitoring' |
+  'role-management' |
+  'settings';
 
 interface NavItem {
   id: Section;
@@ -56,54 +57,54 @@ interface NavItem {
 }
 
 const NAV_ITEMS: NavItem[] = [
-{
-  id: 'overview',
-  label: 'Dashboard Overview',
-  icon: <LayoutDashboardIcon className="w-4.5 h-4.5" />
-},
-{
-  id: 'artisan-verification',
-  label: 'Artisan Verification',
-  icon: <UserCheckIcon className="w-4.5 h-4.5" />,
-  badge: 3
-},
-{
-  id: 'workshop-verification',
-  label: 'Workshop Verification',
-  icon: <BuildingIcon className="w-4.5 h-4.5" />,
-  badge: 1
-},
-{
-  id: 'tourist-management',
-  label: 'Tourist Management',
-  icon: <UsersIcon className="w-4.5 h-4.5" />
-},
-{
-  id: 'user-activity',
-  label: 'User Activity Monitoring',
-  icon: <ActivityIcon className="w-4.5 h-4.5" />
-},
-{
-  id: 'analytics',
-  label: 'Analytics & Reports',
-  icon: <BarChart3Icon className="w-4.5 h-4.5" />
-},
-{
-  id: 'review-monitoring',
-  label: 'Review Monitoring',
-  icon: <MessageSquareIcon className="w-4.5 h-4.5" />,
-  badge: 2
-},
-{
-  id: 'role-management',
-  label: 'Role Management',
-  icon: <ShieldIcon className="w-4.5 h-4.5" />
-},
-{
-  id: 'settings',
-  label: 'Settings',
-  icon: <SettingsIcon className="w-4.5 h-4.5" />
-}];
+  {
+    id: 'overview',
+    label: 'Dashboard Overview',
+    icon: <LayoutDashboardIcon className="w-4.5 h-4.5" />
+  },
+  {
+    id: 'artisan-verification',
+    label: 'Artisan Verification',
+    icon: <UserCheckIcon className="w-4.5 h-4.5" />,
+    badge: 3
+  },
+  {
+    id: 'workshop-verification',
+    label: 'Workshop Verification',
+    icon: <BuildingIcon className="w-4.5 h-4.5" />,
+    badge: 1
+  },
+  {
+    id: 'tourist-management',
+    label: 'Tourist Management',
+    icon: <UsersIcon className="w-4.5 h-4.5" />
+  },
+  {
+    id: 'user-activity',
+    label: 'User Activity Monitoring',
+    icon: <ActivityIcon className="w-4.5 h-4.5" />
+  },
+  {
+    id: 'analytics',
+    label: 'Analytics & Reports',
+    icon: <BarChart3Icon className="w-4.5 h-4.5" />
+  },
+  {
+    id: 'review-monitoring',
+    label: 'Review Monitoring',
+    icon: <MessageSquareIcon className="w-4.5 h-4.5" />,
+    badge: 2
+  },
+  {
+    id: 'role-management',
+    label: 'Role Management',
+    icon: <ShieldIcon className="w-4.5 h-4.5" />
+  },
+  {
+    id: 'settings',
+    label: 'Settings',
+    icon: <SettingsIcon className="w-4.5 h-4.5" />
+  }];
 
 const ACTIVITY_ICONS: Record<string, React.ReactNode> = {
   register: <UserIcon className="w-3.5 h-3.5" />,
@@ -116,7 +117,7 @@ const ACTIVITY_ICONS: Record<string, React.ReactNode> = {
 
 function DashboardOverview({
   onNavigate
-}: {onNavigate: (s: Section) => void;}) {
+}: { onNavigate: (s: Section) => void; }) {
   const [kpiData, setKpiData] = useState<{
     totalArtisans: number;
     totalTourists: number;
@@ -132,17 +133,17 @@ function DashboardOverview({
   useEffect(() => {
     getAnalyticsOverview()
       .then(res => setKpiData(res.data.data))
-      .catch(() => {})
+      .catch(() => { })
       .finally(() => setLoadingKpi(false));
 
     getRecentActivity()
       .then(res => setActivityFeed(res.data.data || []))
-      .catch(() => {})
+      .catch(() => { })
       .finally(() => setLoadingActivity(false));
 
     getArtisans({ status: 'pending' })
       .then(res => setVerificationRequests(res.data.data || []))
-      .catch(() => {})
+      .catch(() => { })
       .finally(() => setLoadingRequests(false));
   }, []);
 
@@ -150,14 +151,14 @@ function DashboardOverview({
     try {
       await updateArtisanStatus(id, 'verified');
       setVerificationRequests(prev => prev.filter(r => r._id !== id));
-    } catch {}
+    } catch { }
   };
 
   const handleReject = async (id: string) => {
     try {
       await updateArtisanStatus(id, 'rejected');
       setVerificationRequests(prev => prev.filter(r => r._id !== id));
-    } catch {}
+    } catch { }
   };
 
   const kpiCards = kpiData ? [
@@ -213,28 +214,28 @@ function DashboardOverview({
           ))
         ) : (
           kpiCards.map((card, i) =>
-          <motion.div
-            key={card.title}
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.07 }}
-            className="bg-white rounded-2xl border border-gray-200 p-5 relative overflow-hidden">
+            <motion.div
+              key={card.title}
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: i * 0.07 }}
+              className="bg-white rounded-2xl border border-gray-200 p-5 relative overflow-hidden">
 
               <div
-              className="absolute left-0 top-0 bottom-0 w-1 rounded-l-2xl"
-              style={{ backgroundColor: card.color }} />
+                className="absolute left-0 top-0 bottom-0 w-1 rounded-l-2xl"
+                style={{ backgroundColor: card.color }} />
 
               <div className="flex items-start justify-between mb-4">
                 <div
-                className={`w-10 h-10 ${card.bg} rounded-xl flex items-center justify-center`}
-                style={{ color: card.color }}>
+                  className={`w-10 h-10 ${card.bg} rounded-xl flex items-center justify-center`}
+                  style={{ color: card.color }}>
                   {card.icon}
                 </div>
                 <div
-                className={`flex items-center gap-1 text-xs font-semibold px-2 py-1 rounded-full ${card.trend === 'up' ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-500'}`}>
+                  className={`flex items-center gap-1 text-xs font-semibold px-2 py-1 rounded-full ${card.trend === 'up' ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-500'}`}>
                   {card.trend === 'up' ?
-                  <TrendingUpIcon className="w-3 h-3" /> :
-                  <TrendingDownIcon className="w-3 h-3" />
+                    <TrendingUpIcon className="w-3 h-3" /> :
+                    <TrendingDownIcon className="w-3 h-3" />
                   }
                   {card.change}
                 </div>
@@ -286,10 +287,10 @@ function DashboardOverview({
               </div>
             ) : (
               verificationRequests.map((req) =>
-              <div key={req._id} className="flex items-center gap-4 px-6 py-4">
+                <div key={req._id} className="flex items-center gap-4 px-6 py-4">
                   <div
-                className="w-10 h-10 rounded-xl flex items-center justify-center text-white text-sm font-bold shrink-0"
-                style={{ backgroundColor: req.color || '#2F5D50' }}>
+                    className="w-10 h-10 rounded-xl flex items-center justify-center text-white text-sm font-bold shrink-0"
+                    style={{ backgroundColor: req.color || '#2F5D50' }}>
                     {req.initials || (req.name || '').split(' ').map((n: string) => n[0]).join('')}
                   </div>
                   <div className="flex-1 min-w-0">
@@ -310,13 +311,13 @@ function DashboardOverview({
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
                     <button
-                  onClick={() => handleApprove(req._id)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg text-xs font-bold transition-colors">
+                      onClick={() => handleApprove(req._id)}
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg text-xs font-bold transition-colors">
                       <CheckCircleIcon className="w-3.5 h-3.5" /> Approve
                     </button>
                     <button
-                  onClick={() => handleReject(req._id)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg text-xs font-bold transition-colors">
+                      onClick={() => handleReject(req._id)}
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg text-xs font-bold transition-colors">
                       <XCircleIcon className="w-3.5 h-3.5" /> Reject
                     </button>
                   </div>
@@ -348,16 +349,16 @@ function DashboardOverview({
               <div className="py-8 text-center text-gray-400 text-sm">No recent activity</div>
             ) : (
               activityFeed.map((item, i) =>
-              <motion.div
-                key={item._id || i}
-                initial={{ opacity: 0, x: 10 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.4 + i * 0.05 }}
-                className="flex items-start gap-3 px-6 py-3.5">
+                <motion.div
+                  key={item._id || i}
+                  initial={{ opacity: 0, x: 10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.4 + i * 0.05 }}
+                  className="flex items-start gap-3 px-6 py-3.5">
 
                   <div
-                className="w-7 h-7 rounded-lg flex items-center justify-center text-white shrink-0 mt-0.5"
-                style={{ backgroundColor: item.color || '#2F5D50' }}>
+                    className="w-7 h-7 rounded-lg flex items-center justify-center text-white shrink-0 mt-0.5"
+                    style={{ backgroundColor: item.color || '#2F5D50' }}>
                     {ACTIVITY_ICONS[item.type] || <ActivityIcon className="w-3.5 h-3.5" />}
                   </div>
                   <div className="flex-1 min-w-0">
@@ -421,7 +422,7 @@ function PlaceholderSection({
   title,
   description,
   icon
-}: {title: string;description: string;icon: React.ReactNode;}) {
+}: { title: string; description: string; icon: React.ReactNode; }) {
   return (
     <div className="flex flex-col items-center justify-center h-full min-h-[400px] text-center">
       <div className="w-16 h-16 bg-forest/10 rounded-2xl flex items-center justify-center text-forest mb-4">
@@ -497,12 +498,12 @@ export function AdminDashboard() {
       {/* Sidebar */}
       <AnimatePresence initial={false}>
         {sidebarOpen &&
-        <motion.aside
-          initial={{ width: 0, opacity: 0 }}
-          animate={{ width: 256, opacity: 1 }}
-          exit={{ width: 0, opacity: 0 }}
-          transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
-          className="bg-forest flex flex-col shrink-0 overflow-hidden h-full z-20">
+          <motion.aside
+            initial={{ width: 0, opacity: 0 }}
+            animate={{ width: 256, opacity: 1 }}
+            exit={{ width: 0, opacity: 0 }}
+            transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+            className="bg-forest flex flex-col shrink-0 overflow-hidden h-full z-20">
 
             {/* Sidebar Header */}
             <div className="relative px-5 py-5 border-b border-white/10 shrink-0 overflow-hidden">
@@ -518,9 +519,19 @@ export function AdminDashboard() {
                 </svg>
               </div>
               <div className="relative flex items-center gap-3">
-                <div className="w-8 h-8 bg-mustard rounded-lg flex items-center justify-center shrink-0">
-                  <svg width="16" height="16" viewBox="0 0 32 32" fill="none">
-                    <path d="M16 8 L18 14 L24 14 L19 18 L21 24 L16 20 L11 24 L13 18 L8 14 L14 14 Z" fill="#2F5D50" />
+                <div className="w-8 h-8 flex items-center justify-center shrink-0">
+                  <svg
+                    width="32"
+                    height="32"
+                    viewBox="0 0 32 32"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <ellipse cx="16" cy="8" rx="4" ry="7" fill="#C9A227" opacity="0.9" />
+                    <ellipse cx="24" cy="16" rx="7" ry="4" fill="#C9A227" opacity="0.75" />
+                    <ellipse cx="16" cy="24" rx="4" ry="7" fill="#C9A227" opacity="0.6" />
+                    <ellipse cx="8" cy="16" rx="7" ry="4" fill="#C9A227" opacity="0.75" />
+                    <circle cx="16" cy="16" r="3.5" fill="#C9A227" />
                   </svg>
                 </div>
                 <div>
@@ -541,33 +552,33 @@ export function AdminDashboard() {
               </p>
               <div className="space-y-0.5">
                 {NAV_ITEMS.map((item) => {
-                const isActive = activeSection === item.id;
-                return (
-                  <button
-                    key={item.id}
-                    onClick={() => setActiveSection(item.id)}
-                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 group relative ${isActive ? 'bg-white/15 text-white' : 'text-white/60 hover:text-white hover:bg-white/8'}`}>
+                  const isActive = activeSection === item.id;
+                  return (
+                    <button
+                      key={item.id}
+                      onClick={() => setActiveSection(item.id)}
+                      className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 group relative ${isActive ? 'bg-white/15 text-white' : 'text-white/60 hover:text-white hover:bg-white/8'}`}>
 
                       {isActive &&
-                    <motion.div
-                      layoutId="sidebar-active"
-                      className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-mustard rounded-r-full" />
-                    }
+                        <motion.div
+                          layoutId="sidebar-active"
+                          className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-mustard rounded-r-full" />
+                      }
                       <span
-                      className={`shrink-0 transition-colors ${isActive ? 'text-mustard' : 'text-white/50 group-hover:text-white/80'}`}>
+                        className={`shrink-0 transition-colors ${isActive ? 'text-mustard' : 'text-white/50 group-hover:text-white/80'}`}>
                         {item.icon}
                       </span>
                       <span className="flex-1 text-left truncate">
                         {item.label}
                       </span>
                       {item.badge &&
-                    <span className="bg-terracotta text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full shrink-0">
+                        <span className="bg-terracotta text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full shrink-0">
                           {item.badge}
                         </span>
-                    }
+                      }
                     </button>);
 
-              })}
+                })}
               </div>
             </nav>
 
@@ -631,7 +642,7 @@ export function AdminDashboard() {
           <button className="relative p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
             <BellIcon className="w-5 h-5" />
             {notifCount > 0 &&
-            <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-terracotta rounded-full" />
+              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-terracotta rounded-full" />
             }
           </button>
 

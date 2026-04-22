@@ -9,16 +9,17 @@ import {
   replyToReview,
   updateReview
 } from '../controllers/reviewController.js';
+import { verifyAnyFirebaseToken, protect, optionalVerifyAnyFirebaseToken } from '../middleware/auth.js';
 
 const router = Router();
 
-router.get('/', getReviews);
-router.get('/admin', getAdminReviews);
-router.post('/', createReview);
-router.patch('/:id', updateReview);
-router.delete('/:id', deleteReview);
-router.post('/:id/reply', replyToReview);
-router.post('/:id/helpful', markHelpful);
-router.post('/:id/moderate', moderateReview);
+router.get('/', optionalVerifyAnyFirebaseToken, getReviews);
+router.get('/admin', protect, getAdminReviews);
+router.post('/', verifyAnyFirebaseToken, createReview);
+router.patch('/:id', verifyAnyFirebaseToken, updateReview);
+router.delete('/:id', verifyAnyFirebaseToken, deleteReview);
+router.post('/:id/reply', verifyAnyFirebaseToken, replyToReview);
+router.post('/:id/helpful', verifyAnyFirebaseToken, markHelpful);
+router.post('/:id/moderate', protect, moderateReview);
 
 export default router;

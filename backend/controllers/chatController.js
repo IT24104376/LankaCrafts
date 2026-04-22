@@ -1,8 +1,14 @@
 import Artist from '../models/Artist.js';
 import Conversation from '../models/Conversation.js';
 import Message from '../models/Message.js';
-import User from '../models/User.js';
+import Tourist from '../models/Tourist.js';
 import { asyncHandler, AppError } from '../middleware/errorHandler.js';
+
+const ensureUnreadCountsMap = (conversation) => {
+  if (!conversation.unreadCounts || typeof conversation.unreadCounts.set !== 'function') {
+    conversation.unreadCounts = new Map();
+  }
+};
 
 const getConversationParticipants = (conversation) => [
   conversation.artistUserId.toString(),
@@ -19,6 +25,40 @@ const getOtherParticipantId = (conversation, userId) =>
   conversation.artistUserId.toString() === userId.toString()
     ? conversation.touristUserId.toString()
     : conversation.artistUserId.toString();
+
+const getInitials = (fullName = '') =>
+  fullName
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase() || '')
+    .join('') || 'LC';
+
+const getArtistLocation = (artistProfile) =>
+  [
+    artistProfile?.address?.city,
+    artistProfile?.address?.district,
+    artistProfile?.address?.province,
+  ]
+    .filter(Boolean)
+    .join(', ');
+
+const resolveArtistTarget = async ({ artistUserId, artistProfileId }) => {
+  let artistProfile = null;
+
+  if (artistProfileId) {
+    artistProfile = await Artist.findById(artistProfileId);
+  } else if (artistUserId) {
+    artistProfile = await Artist.findById(artistUserId);
+  }
+
+  if (!artistProfile) {
+    throw new AppError('Artist account not found', 404);
+  }
+
+  return { artistUser: artistProfile, artistProfile };
+};
 
 const serializeMessage = (message, conversation) => ({
   id: message._id.toString(),
@@ -40,10 +80,9 @@ const serializeMessage = (message, conversation) => ({
 });
 
 const buildConversationSummary = async (conversation, currentUserId, onlineUsers) => {
-  const [artistUser, touristUser, artistProfile] = await Promise.all([
-    User.findById(conversation.artistUserId),
-    User.findById(conversation.touristUserId),
-    conversation.artistProfileId ? Artist.findById(conversation.artistProfileId) : null,
+  const [artistUser, touristUser] = await Promise.all([
+    Artist.findById(conversation.artistUserId),
+    Tourist.findById(conversation.touristUserId),
   ]);
 
   const isCurrentArtist = conversation.artistUserId.toString() === currentUserId.toString();
@@ -60,16 +99,16 @@ const buildConversationSummary = async (conversation, currentUserId, onlineUsers
       id: otherUser._id.toString(),
       fullName: otherUser.fullName,
       email: otherUser.email,
-      role: otherUser.role,
-      country: otherUser.country,
+      role: isCurrentArtist ? 'tourist' : 'artist',
+      country: otherUser.country || otherUser.address?.province || '',
     },
-    artistProfile: artistProfile
+    artistProfile: artistUser
       ? {
-          id: artistProfile._id.toString(),
-          username: artistProfile.username,
-          craftType: artistProfile.craftType,
-          region: artistProfile.region,
-        }
+        id: artistUser._id.toString(),
+        username: artistUser.callingName || artistUser.fullName,
+        craftType: artistUser.craftType,
+        region: artistUser.address?.district || '',
+      }
       : null,
     lastMessage: conversation.lastMessage?.text || '',
     lastMessageAt: conversation.lastMessageAt,
@@ -127,6 +166,7 @@ const markConversationReadInternal = async (conversation, userId) => {
     { $set: { readAt: new Date() } }
   );
 
+  ensureUnreadCountsMap(conversation);
   conversation.unreadCounts.set(currentUserId, 0);
   await conversation.save();
 
@@ -137,6 +177,51 @@ const markConversationReadInternal = async (conversation, userId) => {
   };
 };
 
+export const searchArtists = asyncHandler(async (req, res) => {
+  if (req.user.role !== 'tourist') {
+    throw new AppError('Only tourists can search artists for chat', 403);
+  }
+
+  const query = req.query.q?.trim();
+  if (!query) {
+    return res.status(200).json({ success: true, data: [] });
+  }
+
+  const regex = new RegExp(query, 'i');
+  const artistProfiles = await Artist.find({
+    status: { $ne: 'deactivated' },
+    $or: [
+      { fullName: regex },
+      { callingName: regex },
+      { craftType: regex },
+      { 'address.city': regex },
+      { 'address.district': regex },
+      { 'address.province': regex },
+    ],
+  })
+    .sort({ fullName: 1 })
+    .limit(12);
+
+  const results = await Promise.all(
+    artistProfiles.map(async (artistProfile) => {
+      return {
+        artistUserId: artistProfile._id.toString(),
+        artistProfileId: artistProfile._id.toString(),
+        fullName: artistProfile.fullName,
+        callingName: artistProfile.callingName || '',
+        craftType: artistProfile.craftType || '',
+        location: getArtistLocation(artistProfile),
+        initials: getInitials(artistProfile.fullName),
+      };
+    })
+  );
+
+  res.status(200).json({
+    success: true,
+    data: results,
+  });
+});
+
 export const createConversation = asyncHandler(async (req, res) => {
   const currentUserId = req.user.uid;
 
@@ -145,25 +230,7 @@ export const createConversation = asyncHandler(async (req, res) => {
   }
 
   const { artistUserId, artistProfileId, openingMessage } = req.body;
-  let artistUser = null;
-  let artistProfile = null;
-
-  if (artistProfileId) {
-    artistProfile = await Artist.findById(artistProfileId);
-    if (!artistProfile) {
-      throw new AppError('Artist profile not found', 404);
-    }
-    artistUser = await User.findById(artistProfile.userId);
-  } else if (artistUserId) {
-    artistUser = await User.findById(artistUserId);
-    if (artistUser?.role === 'artist') {
-      artistProfile = await Artist.findOne({ firebaseUid: artistUser._id.toString() });
-    }
-  }
-
-  if (!artistUser || artistUser.role !== 'artist') {
-    throw new AppError('Artist account not found', 404);
-  }
+  const { artistUser, artistProfile } = await resolveArtistTarget({ artistUserId, artistProfileId });
 
   let conversation = await Conversation.findOne({
     artistUserId: artistUser._id,
@@ -181,6 +248,9 @@ export const createConversation = asyncHandler(async (req, res) => {
         [artistUser._id.toString()]: 0,
       },
     });
+  } else if (!conversation.artistProfileId && artistProfile?._id) {
+    conversation.artistProfileId = artistProfile._id;
+    await conversation.save();
   }
 
   if (openingMessage?.trim()) {
@@ -268,17 +338,25 @@ export const sendMessage = asyncHandler(async (req, res) => {
   const senderId = req.user.uid;
   const recipientId = getOtherParticipantId(conversation, senderId);
 
+  const isArtist = conversation.artistUserId.toString() === senderId.toString();
+  const senderModel = isArtist ? 'Artist' : 'Tourist';
+  const recipientModel = isArtist ? 'Tourist' : 'Artist';
+
   const message = await Message.create({
     conversationId: conversation._id,
     senderId,
+    senderModel,
     recipientId,
+    recipientModel,
     text,
   });
 
+  ensureUnreadCountsMap(conversation);
   const existingUnread = conversation.unreadCounts?.get(recipientId) || 0;
   conversation.lastMessage = {
     text,
     senderId,
+    senderModel,
     createdAt: message.createdAt,
   };
   conversation.lastMessageAt = message.createdAt;
@@ -330,10 +408,12 @@ export const updateMessage = asyncHandler(async (req, res) => {
   message.editedAt = new Date();
   await message.save();
 
+  const isArtist = conversation.artistUserId.toString() === message.senderId.toString();
   if (conversation.lastMessage?.createdAt?.getTime?.() === message.createdAt.getTime()) {
     conversation.lastMessage = {
       text,
       senderId: message.senderId,
+      senderModel: isArtist ? 'Artist' : 'Tourist',
       createdAt: message.createdAt,
     };
     await conversation.save();

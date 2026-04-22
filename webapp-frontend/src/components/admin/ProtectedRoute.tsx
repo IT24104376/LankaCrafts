@@ -3,7 +3,7 @@ import { Navigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 
 export function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated, loading } = useAuth();
+  const { isAdminAuthenticated, loading } = useAuth();
 
   if (loading) {
     return (
@@ -16,7 +16,8 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
     );
   }
 
-  if (!isAuthenticated) {
+  if (!isAdminAuthenticated) {
+    console.log('ProtectedRoute: Access denied (not an admin), redirecting to /login');
     return <Navigate to="/login" replace />;
   }
 
