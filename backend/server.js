@@ -18,7 +18,11 @@ import paymentRoutes from './routes/payments.js';
 
 import reviewRoutes from './routes/reviews.js';
 import analyticsRoutes from './routes/analytics.js';
-//import activityRoutes from './routes/activity.js';
+import activityRoutes from './routes/activity.js';
+import chatRoutes from './routes/chat.js';
+import adminAuthRoutes from './routes/adminAuth.js';
+import adminRoutes from './routes/admin.js';
+import aiRoutes from './routes/ai.js';
 
 const app = express();
 
@@ -40,18 +44,22 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // ── API routes ────────────────────────────────────────────────────────────────
-app.use('/api/tourist/auth', authRoutes);       
-app.use('/api/tourist', touristRoutes);          
-app.use('/api/tourist/blogs', blogRoutes);        
-app.use('/api/bookings', workshopBookingRoutes);   
-app.use('/api/artist/auth', artistAuthRoutes);    
-app.use('/api/artist', artistProfileRoutes);      
-app.use('/api/artists', artistRoutes);            
-app.use('/api/crafts', craftRoutes);              
-app.use('/api/payments', paymentRoutes);          
+app.use('/api/tourist/auth', authRoutes);
+app.use('/api/tourist', touristRoutes);
+app.use('/api/tourist/blogs', blogRoutes);
+app.use('/api/bookings', workshopBookingRoutes);
+app.use('/api/artist/auth', artistAuthRoutes);
+app.use('/api/artist', artistProfileRoutes);
+app.use('/api/artists', artistRoutes);
+app.use('/api/crafts', craftRoutes);
+app.use('/api/payments', paymentRoutes);
 app.use('/api/reviews', reviewRoutes);
+app.use('/api/ai', aiRoutes);
 app.use('/api/analytics', analyticsRoutes);
-//app.use('/api/activity', activityRoutes);
+app.use('/api/activity', activityRoutes);
+app.use('/api/chat', chatRoutes);
+app.use('/api/auth', adminAuthRoutes);
+app.use('/api/admin', adminRoutes);
 
 // ── Health check ──────────────────────────────────────────────────────────────
 app.get('/health', (_req, res) => {
@@ -93,7 +101,7 @@ app.use((err, _req, res, _next) => {
 
 // ── MongoDB connection + server start ─────────────────────────────────────────
 const PORT = process.env.PORT || 5000;
-const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/lankacrafts';
+const MONGO_URI = process.env.MONGO_URI;
 
 mongoose
   .connect(MONGO_URI)

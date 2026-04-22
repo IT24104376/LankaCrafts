@@ -1,4 +1,5 @@
-import React, { useState, Component } from 'react';
+import React, { useEffect, useState, Component } from 'react';
+import { getWorkshops, updateWorkshopStatus, getBookings } from '../../api/adminApi';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   SearchIcon,
@@ -22,7 +23,7 @@ import {
 // ─── Types ────────────────────────────────────────────────────────────────────
 type WorkshopStatus = 'pending' | 'approved' | 'rejected';
 interface Workshop {
-  id: number;
+  id: string;
   name: string;
   artisan: string;
   artisanInitials: string;
@@ -41,8 +42,8 @@ interface Workshop {
   rating: number;
 }
 interface Booking {
-  id: number;
-  workshopId: number;
+  id: string;
+  workshopId: string;
   workshopName: string;
   craft: string;
   artisan: string;
@@ -59,9 +60,6 @@ interface Booking {
   status: 'confirmed' | 'pending' | 'cancelled';
   region: string;
 }
-// ─── Data (load from backend when available) ─────────────────────────────────
-const WORKSHOPS: Workshop[] = [];
-const BOOKINGS: Booking[] = [];
 
 const STATUS_CONFIG: Record<
   WorkshopStatus,
@@ -119,7 +117,7 @@ function WorkshopModal({
 
 
 
-}: {workshop: Workshop;onClose: () => void;onApprove: (id: number) => void;onReject: (id: number) => void;}) {
+}: {workshop: Workshop;onClose: () => void;onApprove: (id: string) => void;onReject: (id: string) => void;}) {
   const statusCfg = STATUS_CONFIG[workshop.status];
   return (
     <>
@@ -302,44 +300,75 @@ function WorkshopModal({
 }
 // ─── Main Component ───────────────────────────────────────────────────────────
 export function WorkshopVerification() {
-  const [workshops, setWorkshops] = useState<Workshop[]>(WORKSHOPS);
+  const [workshops, setWorkshops] = useState<Workshop[]>([]);
+  const [bookings, setBookings] = useState<Booking[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState<WorkshopStatus | 'all'>(
-    'all'
-  );
-  const [selectedWorkshop, setSelectedWorkshop] = useState<Workshop | null>(
-    null
-  );
-  const [activeTab, setActiveTab] = useState<'verification' | 'bookings'>(
-    'verification'
-  );
+  const [statusFilter, setStatusFilter] = useState<WorkshopStatus | 'all'>('all');
+  const [selectedWorkshop, setSelectedWorkshop] = useState<Workshop | null>(null);
+  const [activeTab, setActiveTab] = useState<'verification' | 'bookings'>('verification');
   const [bookingSearch, setBookingSearch] = useState('');
   const [craftFilter, setCraftFilter] = useState('all');
   const [showCraftDropdown, setShowCraftDropdown] = useState(false);
-  const crafts = ['all', ...Array.from(new Set(BOOKINGS.map((b) => b.craft)))];
-  const handleApprove = (id: number) => {
-    setWorkshops((prev) =>
-    prev.map((w) =>
-    w.id === id ?
-    {
-      ...w,
-      status: 'approved' as WorkshopStatus
-    } :
-    w
-    )
-    );
+
+  useEffect(() => {
+    getWorkshops().then(res => {
+      const list = (res.data.data || res.data.workshops || []).map((w: any) => ({
+        id: w._id,
+        name: w.name || w.title || '',
+        artisan: w.artisan || w.artisanName || w.fullName || '',
+        artisanInitials: (w.artisan || w.artisanName || 'A').split(' ').map((n: string) => n[0]).join('').slice(0, 2),
+        artisanColor: w.artisanColor || '#2F5D50',
+        craft: w.craft || w.craftType || '',
+        region: w.region || (typeof w.location === 'object' ? w.location?.formattedAddress : w.location) || '',
+        location: (typeof w.location === 'object' ? w.location?.formattedAddress : w.location) || '',
+        capacity: w.capacity || 0,
+        duration: w.duration || '',
+        price: w.price || 0,
+        submittedDate: w.submittedDate || w.createdAt || '',
+        status: (w.status === 'active' ? 'approved' : w.status === 'deactivated' ? 'rejected' : (w.status || 'pending')) as WorkshopStatus,
+        description: w.description || '',
+        schedule: w.schedule || '',
+        totalBookings: w.totalBookings || 0,
+        rating: w.rating || 0,
+      }));
+      setWorkshops(list);
+    }).catch(() => {});
+    getBookings().then(res => {
+      const list = (res.data.data || res.data.bookings || res.data || []).map((b: any) => ({
+        id: b._id,
+        workshopId: b.workshopId || b.craftId || '',
+        workshopName: b.workshopName || b.craftName || b.craftId || '',
+        tourist: b.customerName || '',
+        touristInitials: (b.customerName || 'T').split(' ').map((n: string) => n[0]).join('').slice(0, 2),
+        touristColor: '#2F5D50',
+        country: '',
+        email: b.customerEmail || '',
+        phone: b.customerPhone || '',
+        artisan: b.artisanName || '',
+        artisanColor: '#C9A227',
+        craft: b.craftName || b.craftId || b.craft || '',
+        date: b.bookingDate || b.date || '',
+        time: b.bookingTime || b.time || '',
+        groupSize: b.groupSize || 1,
+        status: b.status || 'pending',
+        region: (typeof b.location === 'object' ? b.location?.formattedAddress : b.location) || '',
+      }));
+      setBookings(list);
+    }).catch(() => {});
+  }, []);
+
+  const crafts = ['all', ...Array.from(new Set(bookings.map((b) => b.craft)))];
+  const handleApprove = async (id: string) => {
+    try {
+      await updateWorkshopStatus(id, 'approved');
+      setWorkshops(prev => prev.map(w => w.id === id ? { ...w, status: 'approved' as WorkshopStatus } : w));
+    } catch {}
   };
-  const handleReject = (id: number) => {
-    setWorkshops((prev) =>
-    prev.map((w) =>
-    w.id === id ?
-    {
-      ...w,
-      status: 'rejected' as WorkshopStatus
-    } :
-    w
-    )
-    );
+  const handleReject = async (id: string) => {
+    try {
+      await updateWorkshopStatus(id, 'rejected');
+      setWorkshops(prev => prev.map(w => w.id === id ? { ...w, status: 'rejected' as WorkshopStatus } : w));
+    } catch {}
   };
   const filteredWorkshops = workshops.filter((w) => {
     const matchSearch =
@@ -349,7 +378,7 @@ export function WorkshopVerification() {
     const matchStatus = statusFilter === 'all' || w.status === statusFilter;
     return matchSearch && matchStatus;
   });
-  const filteredBookings = BOOKINGS.filter((b) => {
+  const filteredBookings = bookings.filter((b) => {
     const matchSearch =
     b.tourist.toLowerCase().includes(bookingSearch.toLowerCase()) ||
     b.workshopName.toLowerCase().includes(bookingSearch.toLowerCase()) ||
@@ -409,7 +438,7 @@ export function WorkshopVerification() {
           </div>
           <div>
             <p className="text-xl font-black text-gray-900">
-              {BOOKINGS.length}
+              {bookings.length}
             </p>
             <p className="text-xs text-gray-500">Total Bookings</p>
           </div>
@@ -500,7 +529,7 @@ export function WorkshopVerification() {
             {/* Workshop Cards Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
               {filteredWorkshops.map((workshop, i) => {
-              const statusCfg = STATUS_CONFIG[workshop.status];
+              const statusCfg = STATUS_CONFIG[workshop.status] || STATUS_CONFIG.pending;
               return (
                 <motion.div
                   key={workshop.id}

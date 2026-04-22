@@ -12,7 +12,7 @@ const bookingSchema = new mongoose.Schema({
   customerPhone: { type: String, required: true },
   bookingDate: { type: String, required: true },
   bookingTime: { type: String, required: true },
-  groupSize: { type: Number, default: 1 },
+  groupSize: { type: Number, default: 1, min: 1 },
   status: { type: String, default: 'pending' },
   createdAt: { type: Date, default: Date.now }
 });

@@ -7,8 +7,9 @@ import {
   Flag,
   MapPin,
   ShieldAlert,
-  ChevronLeft } from
-'lucide-react';
+  ChevronLeft
+} from
+  'lucide-react';
 import { ChatInput } from './ChatInput';
 import { ChatSidebar } from './ChatSidebar';
 interface Message {
@@ -20,23 +21,23 @@ interface Message {
   meta?: any;
 }
 const INITIAL_MESSAGES: Message[] = [
-{
-  id: '1',
-  role: 'bot',
-  content:
-  "Hello! 👋 I'm your Travel Assistant for Lanka Craft. I can help you discover handmade shops, find workshops, and plan your craft journey across Sri Lanka. What would you like to explore?",
-  timestamp: new Date().toLocaleTimeString([], {
-    hour: '2-digit',
-    minute: '2-digit'
-  }),
-  type: 'text'
-}];
+  {
+    id: '1',
+    role: 'bot',
+    content:
+      "Hello! 👋 I'm your Travel Assistant for Lanka Craft. I can help you discover handmade shops, find workshops, and plan your craft journey across Sri Lanka. What would you like to explore?",
+    timestamp: new Date().toLocaleTimeString([], {
+      hour: '2-digit',
+      minute: '2-digit'
+    }),
+    type: 'text'
+  }];
 
 const SUGGESTED_REPLIES = [
-'Best pottery in Kandy',
-'Batik workshops near me',
-'How to book a visit',
-'Show me the map'];
+  'Best pottery in Kandy',
+  'Batik workshops near me',
+  'How to book a visit',
+  'Show me the map'];
 
 export function ChatWidget() {
   const [isOpen, setIsOpen] = useState(false);
@@ -72,7 +73,7 @@ export function ChatWidget() {
         id: (Date.now() + 1).toString(),
         role: 'bot',
         content:
-        'Great choice! Kandy is famous for its traditional pottery. Here are some top workshops:',
+          'Great choice! Kandy is famous for its traditional pottery. Here are some top workshops:',
         timestamp: new Date().toLocaleTimeString([], {
           hour: '2-digit',
           minute: '2-digit'
@@ -127,38 +128,38 @@ export function ChatWidget() {
 
         <AnimatePresence mode="wait">
           {isOpen ?
-          <motion.div
-            key="close"
-            initial={{
-              rotate: -90,
-              opacity: 0
-            }}
-            animate={{
-              rotate: 0,
-              opacity: 1
-            }}
-            exit={{
-              rotate: 90,
-              opacity: 0
-            }}>
+            <motion.div
+              key="close"
+              initial={{
+                rotate: -90,
+                opacity: 0
+              }}
+              animate={{
+                rotate: 0,
+                opacity: 1
+              }}
+              exit={{
+                rotate: 90,
+                opacity: 0
+              }}>
 
               <X className="w-6 h-6" />
             </motion.div> :
 
-          <motion.div
-            key="chat"
-            initial={{
-              scale: 0.5,
-              opacity: 0
-            }}
-            animate={{
-              scale: 1,
-              opacity: 1
-            }}
-            exit={{
-              scale: 0.5,
-              opacity: 0
-            }}>
+            <motion.div
+              key="chat"
+              initial={{
+                scale: 0.5,
+                opacity: 0
+              }}
+              animate={{
+                scale: 1,
+                opacity: 1
+              }}
+              exit={{
+                scale: 0.5,
+                opacity: 0
+              }}>
 
               <MessageCircle className="w-7 h-7" />
               <span className="absolute -top-1 -right-1 w-3 h-3 bg-mustard rounded-full animate-pulse" />
@@ -170,26 +171,26 @@ export function ChatWidget() {
       {/* Chat Window */}
       <AnimatePresence>
         {isOpen &&
-        <motion.div
-          initial={{
-            opacity: 0,
-            y: 20,
-            scale: 0.95
-          }}
-          animate={{
-            opacity: 1,
-            y: 0,
-            scale: 1
-          }}
-          exit={{
-            opacity: 0,
-            y: 20,
-            scale: 0.95
-          }}
-          transition={{
-            duration: 0.2
-          }}
-          className="fixed bottom-24 right-6 z-40 w-[calc(100vw-3rem)] md:w-[360px] h-[50vh] md:h-[420px] max-h-[450px] bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col border border-gray-100">
+          <motion.div
+            initial={{
+              opacity: 0,
+              y: 20,
+              scale: 0.95
+            }}
+            animate={{
+              opacity: 1,
+              y: 0,
+              scale: 1
+            }}
+            exit={{
+              opacity: 0,
+              y: 20,
+              scale: 0.95
+            }}
+            transition={{
+              duration: 0.2
+            }}
+            className="fixed bottom-24 right-6 z-40 w-[calc(100vw-3rem)] md:w-[360px] h-[50vh] md:h-[420px] max-h-[450px] bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col border border-gray-100">
 
             {/* Header */}
             <div className="bg-forest p-4 flex items-center justify-between shrink-0">
@@ -211,16 +212,16 @@ export function ChatWidget() {
               </div>
               <div className="flex items-center gap-2">
                 <button
-                onClick={() => setShowSidebar(!showSidebar)}
-                className="p-2 text-white/70 hover:text-white hover:bg-white/10 rounded-full transition-colors md:block hidden">
+                  onClick={() => setShowSidebar(!showSidebar)}
+                  className="p-2 text-white/70 hover:text-white hover:bg-white/10 rounded-full transition-colors md:block hidden">
 
                   <ChevronLeft
-                  className={`w-5 h-5 transition-transform ${showSidebar ? 'rotate-180' : ''}`} />
+                    className={`w-5 h-5 transition-transform ${showSidebar ? 'rotate-180' : ''}`} />
 
                 </button>
                 <button
-                onClick={() => setIsOpen(false)}
-                className="p-2 text-white/70 hover:text-white hover:bg-white/10 rounded-full transition-colors">
+                  onClick={() => setIsOpen(false)}
+                  className="p-2 text-white/70 hover:text-white hover:bg-white/10 rounded-full transition-colors">
 
                   <X className="w-5 h-5" />
                 </button>
@@ -231,24 +232,24 @@ export function ChatWidget() {
               {/* Sidebar (Desktop only) */}
               <AnimatePresence>
                 {showSidebar &&
-              <motion.div
-                initial={{
-                  width: 0,
-                  opacity: 0
-                }}
-                animate={{
-                  width: 240,
-                  opacity: 1
-                }}
-                exit={{
-                  width: 0,
-                  opacity: 0
-                }}
-                className="border-r border-gray-200 hidden md:block">
+                  <motion.div
+                    initial={{
+                      width: 0,
+                      opacity: 0
+                    }}
+                    animate={{
+                      width: 240,
+                      opacity: 1
+                    }}
+                    exit={{
+                      width: 0,
+                      opacity: 0
+                    }}
+                    className="border-r border-gray-200 hidden md:block">
 
                     <ChatSidebar />
                   </motion.div>
-              }
+                }
               </AnimatePresence>
 
               {/* Main Chat Area */}
@@ -256,40 +257,40 @@ export function ChatWidget() {
                 {/* Messages */}
                 <div className="flex-1 overflow-y-auto overflow-x-hidden p-3 space-y-3 bg-[#F9FAFB]">
                   {messages.map((msg) =>
-                <motion.div
-                  key={msg.id}
-                  initial={{
-                    opacity: 0,
-                    y: 10
-                  }}
-                  animate={{
-                    opacity: 1,
-                    y: 0
-                  }}
-                  className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                    <motion.div
+                      key={msg.id}
+                      initial={{
+                        opacity: 0,
+                        y: 10
+                      }}
+                      animate={{
+                        opacity: 1,
+                        y: 0
+                      }}
+                      className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
 
                       <div
-                    className={`max-w-[90%] group relative ${msg.role === 'user' ? 'items-end' : 'items-start'} flex flex-col min-w-0`}>
+                        className={`max-w-[90%] group relative ${msg.role === 'user' ? 'items-end' : 'items-start'} flex flex-col min-w-0`}>
 
                         {/* Report Button (Bot only) */}
                         {msg.role === 'bot' &&
-                    <button className="absolute right-0 -top-5 opacity-0 group-hover:opacity-100 transition-opacity text-gray-300 hover:text-red-400 p-1">
+                          <button className="absolute right-0 -top-5 opacity-0 group-hover:opacity-100 transition-opacity text-gray-300 hover:text-red-400 p-1">
                             <Flag className="w-3 h-3" />
                           </button>
-                    }
+                        }
 
                         {/* Message Bubble */}
                         <div
-                      className={`p-3 shadow-sm break-words ${msg.role === 'user' ? 'bg-gradient-to-br from-forest to-[#1E3D35] text-white rounded-2xl rounded-tr-sm' : 'bg-white border border-gray-100 text-gray-800 rounded-2xl rounded-tl-sm'}`}>
+                          className={`p-3 shadow-sm break-words ${msg.role === 'user' ? 'bg-gradient-to-br from-forest to-[#1E3D35] text-white rounded-2xl rounded-tr-sm' : 'bg-white border border-gray-100 text-gray-800 rounded-2xl rounded-tl-sm'}`}>
 
                           {msg.type === 'text' &&
-                      <p className="text-sm leading-relaxed whitespace-pre-wrap break-words">
+                            <p className="text-sm leading-relaxed whitespace-pre-wrap break-words">
                               {msg.content}
                             </p>
-                      }
+                          }
 
                           {msg.type === 'map-card' &&
-                      <div className="w-full">
+                            <div className="w-full">
                               <div className="flex items-center gap-2 mb-2">
                                 <MapPin className="w-4 h-4 text-terracotta" />
                                 <span className="font-bold text-sm">
@@ -298,14 +299,14 @@ export function ChatWidget() {
                               </div>
                               <div className="h-24 bg-gray-100 rounded-lg mb-2 relative overflow-hidden">
                                 <svg
-                            viewBox="0 0 100 50"
-                            className="w-full h-full opacity-50">
+                                  viewBox="0 0 100 50"
+                                  className="w-full h-full opacity-50">
 
                                   <path
-                              d="M0 25 Q25 10 50 25 T100 25"
-                              fill="none"
-                              stroke="#ccc"
-                              strokeWidth="2" />
+                                    d="M0 25 Q25 10 50 25 T100 25"
+                                    fill="none"
+                                    stroke="#ccc"
+                                    strokeWidth="2" />
 
                                 </svg>
                                 <div className="absolute inset-0 flex items-center justify-center">
@@ -315,10 +316,10 @@ export function ChatWidget() {
                                 </div>
                               </div>
                             </div>
-                      }
+                          }
 
                           {msg.type === 'image-card' &&
-                      <div className="w-full">
+                            <div className="w-full">
                               <div className="h-32 bg-gradient-to-br from-terracotta to-mustard rounded-lg mb-2 relative overflow-hidden">
                                 <div className="absolute inset-0 bg-black/10" />
                               </div>
@@ -326,7 +327,7 @@ export function ChatWidget() {
                                 {msg.content}
                               </p>
                             </div>
-                      }
+                          }
                         </div>
 
                         {/* Timestamp */}
@@ -335,76 +336,76 @@ export function ChatWidget() {
                         </span>
                       </div>
                     </motion.div>
-                )}
+                  )}
 
                   {/* Typing Indicator */}
                   {isTyping &&
-                <motion.div
-                  initial={{
-                    opacity: 0,
-                    y: 10
-                  }}
-                  animate={{
-                    opacity: 1,
-                    y: 0
-                  }}
-                  className="flex justify-start">
+                    <motion.div
+                      initial={{
+                        opacity: 0,
+                        y: 10
+                      }}
+                      animate={{
+                        opacity: 1,
+                        y: 0
+                      }}
+                      className="flex justify-start">
 
                       <div className="bg-white border border-gray-100 p-4 rounded-2xl rounded-tl-sm shadow-sm flex gap-1">
                         <motion.div
-                      animate={{
-                        scale: [1, 1.2, 1]
-                      }}
-                      transition={{
-                        repeat: Infinity,
-                        duration: 0.6
-                      }}
-                      className="w-2 h-2 bg-gray-400 rounded-full" />
+                          animate={{
+                            scale: [1, 1.2, 1]
+                          }}
+                          transition={{
+                            repeat: Infinity,
+                            duration: 0.6
+                          }}
+                          className="w-2 h-2 bg-gray-400 rounded-full" />
 
                         <motion.div
-                      animate={{
-                        scale: [1, 1.2, 1]
-                      }}
-                      transition={{
-                        repeat: Infinity,
-                        duration: 0.6,
-                        delay: 0.2
-                      }}
-                      className="w-2 h-2 bg-gray-400 rounded-full" />
+                          animate={{
+                            scale: [1, 1.2, 1]
+                          }}
+                          transition={{
+                            repeat: Infinity,
+                            duration: 0.6,
+                            delay: 0.2
+                          }}
+                          className="w-2 h-2 bg-gray-400 rounded-full" />
 
                         <motion.div
-                      animate={{
-                        scale: [1, 1.2, 1]
-                      }}
-                      transition={{
-                        repeat: Infinity,
-                        duration: 0.6,
-                        delay: 0.4
-                      }}
-                      className="w-2 h-2 bg-gray-400 rounded-full" />
+                          animate={{
+                            scale: [1, 1.2, 1]
+                          }}
+                          transition={{
+                            repeat: Infinity,
+                            duration: 0.6,
+                            delay: 0.4
+                          }}
+                          className="w-2 h-2 bg-gray-400 rounded-full" />
 
                       </div>
                     </motion.div>
-                }
+                  }
                   <div ref={messagesEndRef} />
                 </div>
 
                 {/* Suggested Replies */}
                 {messages.length === 1 && !isTyping &&
-              <div className="px-4 py-2 bg-white border-t border-gray-50 overflow-x-auto">
+                  <div className="px-4 py-2 bg-white border-t border-gray-50 overflow-x-auto">
                     <div className="flex gap-2 pb-2">
                       {SUGGESTED_REPLIES.map((reply) =>
-                  <button
-                    key={reply}
-                    onClick={() => handleSend(reply)}
-                    className="whitespace-nowrap px-3 py-1.5 rounded-full border border-forest/20 text-forest text-xs font-medium hover:bg-forest/5 transition-colors">
+                        <button
+                          key={reply}
+                          onClick={() => handleSend(reply)}
+                          className="whitespace-nowrap px-3 py-1.5 rounded-full border border-forest/20 text-forest text-xs font-medium hover:bg-forest/5 transition-colors">
 
                           {reply}
                         </button>
-                  )}
+                      )}
                     </div>
                   </div>
-              }
+                }
 
                 {/* Input Area */}
                 <ChatInput onSend={handleSend} />

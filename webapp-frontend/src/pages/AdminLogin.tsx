@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { EyeIcon, EyeOffIcon, ShieldIcon, AlertCircleIcon } from 'lucide-react';
 
 export function AdminLogin() {
-  const { login, isAuthenticated, loading } = useAuth();
+  const { adminLogin, isAdminAuthenticated, loading } = useAuth();
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -12,7 +12,7 @@ export function AdminLogin() {
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
-  if (!loading && isAuthenticated) return <Navigate to="/admin" replace />;
+  if (!loading && isAdminAuthenticated) return <Navigate to="/admin" replace />;
 
   const validate = () => {
     if (!email.trim()) return 'Email is required.';
@@ -29,7 +29,7 @@ export function AdminLogin() {
     setError('');
     setSubmitting(true);
     try {
-      await login(email.trim().toLowerCase(), password);
+      await adminLogin(email.trim().toLowerCase(), password);
       navigate('/admin', { replace: true });
     } catch (err: any) {
       const msg = err.response?.data?.message || err.response?.data?.errors?.[0]?.msg || 'Login failed. Please try again.';

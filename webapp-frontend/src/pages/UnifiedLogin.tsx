@@ -36,7 +36,7 @@ const ROLE_CONFIG = {
     icon: PaletteIcon,
     color: '#2F5D50',
     bg: '#EBF4F1',
-    redirect: '/dashboard',
+    redirect: '/artist/login',
     description: 'Manage your artisan profile'
   },
   admin: {
@@ -57,7 +57,7 @@ export function UnifiedLogin() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const config = ROLE_CONFIG[selectedRole];
-  const { loginArtist, login } = useAuth();
+  const { loginArtist, login, adminLogin } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -71,7 +71,7 @@ export function UnifiedLogin() {
 
     try {
       if (selectedRole === 'admin') {
-        await login(email, password);
+        await adminLogin(email, password);
       } else if (selectedRole === 'artist') {
         await loginArtist(email, password);
       } else {

@@ -33,6 +33,7 @@ import {
 } from '../services/api';
 import { Navbar } from '../components/Navbar';
 import { Footer } from '../components/Footer';
+import { ReviewSection } from '../components/ReviewSection';
 
 interface Craft {
   _id: string;
@@ -54,7 +55,7 @@ const CRAFT_CATEGORIES = [
   'Handloom',
   'Brasswork',
   'Wood Carving',
-  'Jewelry',
+  'Jewellery',
   'Other',
 ];
 
@@ -90,7 +91,7 @@ function SidebarItem({
 export function ArtistDashboard() {
   const navigate = useNavigate();
   const { firebaseUser, logoutArtist, refreshArtist } = useAuth();
-  const [activeTab, setActiveTab] = useState<'view' | 'edit' | 'crafts' | 'settings'>('view');
+  const [activeTab, setActiveTab] = useState<'view' | 'edit' | 'crafts' | 'reviews' | 'settings'>('view');
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
@@ -302,6 +303,7 @@ export function ArtistDashboard() {
                   <SidebarItem icon={<EyeIcon className="w-4 h-4" />} label="View Profile" active={activeTab === 'view'} onClick={() => setActiveTab('view')} />
                   <SidebarItem icon={<Edit2 className="w-4 h-4" />} label="Edit Profile" active={activeTab === 'edit'} onClick={() => setActiveTab('edit')} />
                   <SidebarItem icon={<BuildingIcon className="w-4 h-4" />} label="My Crafts" active={activeTab === 'crafts'} onClick={() => setActiveTab('crafts')} badge={crafts.length} />
+                  <SidebarItem icon={<MessageCircle className="w-4 h-4" />} label="Reviews" active={activeTab === 'reviews'} onClick={() => setActiveTab('reviews')} />
                   <SidebarItem icon={<Settings className="w-4 h-4" />} label="Settings" active={activeTab === 'settings'} onClick={() => setActiveTab('settings')} />
                 </div>
               </div>
@@ -602,6 +604,17 @@ export function ArtistDashboard() {
                         ))}
                       </div>
                     )}
+                  </motion.div>
+                )}
+
+                {activeTab === 'reviews' && (
+                  <motion.div
+                    key="reviews"
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -20 }}
+                    className="bg-white rounded-3xl shadow-sm border border-gray-100 p-8">
+                    <ReviewSection context="artisan" artisanName={artistData?.businessName || artistData?.fullName} />
                   </motion.div>
                 )}
 

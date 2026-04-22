@@ -6,8 +6,6 @@ import { Home } from './pages/Home';
 import { CraftShop } from './pages/CraftShop';
 import { BrowseArtists } from './pages/BrowseArtists';
 import { ArtistProfile } from './pages/ArtistProfile';
-import { ArtistRegistration } from './pages/ArtistRegistration';
-import { FullMap } from './pages/FullMap';
 import { BookWorkshop } from './pages/BookWorkshop';
 import { UnifiedLogin } from './pages/UnifiedLogin';
 import { RegisterSelect } from './pages/RegisterSelect';
@@ -68,7 +66,6 @@ export function App() {
           <Route path="/browse" element={<BrowseArtists />} />
           <Route path="/artist/:id" element={<ArtistProfile />} />
           <Route path="/book" element={<BookWorkshop />} />
-          <Route path="/map" element={<FullMap />} />
 
           {/* Auth routes */}
           <Route path="/login" element={<UnifiedLogin />} />
