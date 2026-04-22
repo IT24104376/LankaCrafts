@@ -10,8 +10,8 @@ export const createBooking = async (req, res) => {
       craftId,
       craftName,
       artisanName,
+      customerId,
       location,
-      touristId,
       name,
       email,
       phone,
@@ -26,7 +26,7 @@ export const createBooking = async (req, res) => {
       craftName,
       artisanName,
       location,
-      customerId: touristId,
+      customerId,
       customerName: name,
       customerEmail: email,
       customerPhone: phone,
@@ -65,22 +65,34 @@ export const getAllBookings = async (req, res) => {
 };
 
 // --------------------
-// GET BOOKINGS BY UID
+// GET BOOKINGS BY EMAIL
 // --------------------
-export const getBookingsByUid = async (req, res) => {
+export const getBookingsByEmail = async (req, res) => {
   try {
     const bookings = await Booking.find({
-      customerId: req.params.uid
+      customerEmail: req.params.email
     }).sort({ bookingDate: 1 });
 
-    const formattedBookings = bookings.map(booking => ({
-      ...booking._doc, // Spread the original document data
-      id: booking._id,  // Add a clean 'id' field
-    }));
-
-    res.json(formattedBookings);
+    res.json(bookings);
   } catch (err) {
     res.status(500).json({ error: "Could not fetch user bookings" });
+  }
+};
+
+// --------------------
+// GET BOOKING BY ID
+// --------------------
+export const getBookingById = async (req, res) => {
+  try {
+    const booking = await Booking.findById(req.params.id);
+    
+    if (!booking) {
+      return res.status(404).json({ error: "Booking not found" });
+    }
+
+    res.json(booking);
+  } catch (err) {
+    res.status(500).json({ error: "Could not fetch booking" });
   }
 };
 

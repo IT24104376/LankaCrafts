@@ -69,7 +69,7 @@ export function TouristProfile() {
       try {
         const [blogsRes, bookingsRes, reviewsRes] = await Promise.all([
           getMyBlogs(),
-          bookingApi.getBookingsByUid(tourist.id),
+          bookingApi.getBookingsByEmail(tourist.id),
           getReviews({ mine: true }).catch(() => ({ data: { reviews: [] } }))
         ]);
 
@@ -139,7 +139,7 @@ export function TouristProfile() {
 
       if (tourist?.id) {
         try {
-          const data = await bookingApi.getBookingsByUid(tourist.id);
+          const data = await bookingApi.getBookingsByEmail(tourist.email);
           setBookings(data || []);
         } catch (err) {
           console.error("API Error:", err);
@@ -372,11 +372,14 @@ export function TouristProfile() {
                             }`}>
                             {b.status}
                           </span>
-                          <Link to="/my-bookings">
-                            <button className="p-2 hover:bg-gray-200 rounded-lg transition-colors text-gray-400 hover:text-gray-600">
-                              <ChevronRightIcon className="w-5 h-5" />
-                            </button>
+                          <Link
+                            to="/my-bookings"
+                            className="p-2 border border-amber-200 text-amber-600 rounded-lg hover:bg-amber-50 transition-all shrink-0">
+                            <EditIcon className="w-4 h-4" />
                           </Link>
+                          <button className="p-2 hover:bg-gray-200 rounded-lg transition-colors text-gray-400 hover:text-gray-600">
+                            <ChevronRightIcon className="w-5 h-5" />
+                          </button>
                         </div>
                       </div>
                     ))}
