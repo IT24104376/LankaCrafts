@@ -11,13 +11,16 @@ import { checkDoubleBooking } from '../middleware/checkDoubleBooking.js';
 // --------------------
 
 // 1️ Create booking - validation, then check double booking
-router.post('/', verifyFirebaseToken, validateBookingBody, checkDoubleBooking, bookingController.createBooking);
+router.post('/', validateBookingBody, checkDoubleBooking, bookingController.createBooking);
 
 // 2️ Get all bookings
 router.get('/', verifyFirebaseToken, bookingController.getAllBookings);
 
-// 3️ Get bookings by uid - protected by auth
-router.get('/user/:uid', verifyFirebaseToken, bookingController.getBookingsByUid);
+// 3️ Get bookings by email - protected by auth
+router.get('/user/:email', verifyFirebaseToken, bookingController.getBookingsByEmail);
+
+// 3.5️ Get booking by ID - protected by auth
+router.get('/:id', verifyFirebaseToken, bookingController.getBookingById);
 
 // 4️ Update booking - protected by auth
 router.put('/:id', verifyFirebaseToken, validateBookingBody, checkDoubleBooking, bookingController.updateBooking);
