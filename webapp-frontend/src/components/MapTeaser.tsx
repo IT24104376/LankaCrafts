@@ -2,6 +2,28 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { MapPin } from 'lucide-react';
+import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import 'leaflet/dist/leaflet.css';
+import L from 'leaflet';
+import icon from 'leaflet/dist/images/marker-icon.png';
+import iconShadow from 'leaflet/dist/images/marker-shadow.png';
+
+let DefaultIcon = L.icon({
+  iconUrl: icon,
+  shadowUrl: iconShadow,
+  iconSize: [25, 41],
+  iconAnchor: [12, 41]
+});
+L.Marker.prototype.options.icon = DefaultIcon;
+
+const samplePinpoints = [
+  { id: 1, position: [6.9271, 79.8612], label: "Colombo - Cooking Workshop" },
+  { id: 2, position: [7.2906, 80.6337], label: "Kandy - Batik Workshop" },
+  { id: 3, position: [6.0535, 80.2210], label: "Galle - Mask Carving" },
+  { id: 4, position: [9.6615, 80.0255], label: "Jaffna - Weaving Class" },
+  { id: 5, position: [7.9403, 81.0188], label: "Polonnaruwa - Pottery Class" }
+];
+
 export function MapTeaser() {
   return (
     <section
@@ -72,71 +94,26 @@ export function MapTeaser() {
             }}
             className="flex-1 relative">
 
-            <div className="relative w-full max-w-md mx-auto aspect-[4/5] bg-blue-50/50 rounded-3xl border-4 border-white shadow-2xl overflow-hidden p-8">
-              {/* Simplified Map SVG */}
-              <svg
-                viewBox="0 0 180 280"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-                className="w-full h-full drop-shadow-lg">
-
-                <path
-                  d="M85 8 C100 8 118 18 125 35 C132 52 130 70 128 88 C126 106 130 120 128 138 C126 156 120 172 115 188 C110 204 105 218 98 230 C91 242 82 250 75 248 C68 246 62 236 58 222 C54 208 52 192 50 176 C48 160 44 144 44 128 C44 112 46 96 50 82 C54 68 60 56 68 44 C76 32 80 8 85 8Z"
-                  fill="#E5E7EB"
-                  stroke="white"
-                  strokeWidth="2" />
-
-                {/* Decorative Pins */}
-                {[
-                {
-                  x: 95,
-                  y: 130,
-                  c: '#C65D3B'
-                },
-                {
-                  x: 80,
-                  y: 230,
-                  c: '#2F5D50'
-                },
-                {
-                  x: 65,
-                  y: 155,
-                  c: '#C9A227'
-                },
-                {
-                  x: 85,
-                  y: 40,
-                  c: '#2F5D50'
-                },
-                {
-                  x: 85,
-                  y: 185,
-                  c: '#C65D3B'
-                }].
-                map((pin, i) =>
-                <g key={i}>
-                    <circle
-                    cx={pin.x}
-                    cy={pin.y}
-                    r="6"
-                    fill={pin.c}
-                    stroke="white"
-                    strokeWidth="2" />
-
-                    <circle
-                    cx={pin.x}
-                    cy={pin.y}
-                    r="12"
-                    fill={pin.c}
-                    opacity="0.2"
-                    className="animate-pulse" />
-
-                  </g>
-                )}
-              </svg>
+            <div className="relative w-full max-w-md mx-auto aspect-[4/5] bg-blue-50/50 rounded-3xl border-4 border-white shadow-2xl overflow-hidden z-20">
+              <MapContainer
+                center={[7.8731, 80.7718]}
+                zoom={7}
+                scrollWheelZoom={false}
+                style={{ height: '100%', width: '100%', position: 'absolute', top: 0, left: 0, zIndex: 1 }}
+              >
+                <TileLayer
+                  attribution='&copy; OpenStreetMap'
+                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                />
+                {samplePinpoints.map((pin) => (
+                  <Marker key={pin.id} position={pin.position as [number, number]}>
+                    <Popup>{pin.label}</Popup>
+                  </Marker>
+                ))}
+              </MapContainer>
 
               {/* Floating Card Overlay */}
-              <div className="absolute bottom-6 left-6 right-6 bg-white/90 backdrop-blur-sm p-4 rounded-xl shadow-lg border border-white">
+              <div className="absolute bottom-6 left-6 right-6 bg-white/90 backdrop-blur-sm p-4 rounded-xl shadow-lg border border-white z-[1000] pointer-events-none">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-full bg-forest text-white flex items-center justify-center font-bold">
                     9

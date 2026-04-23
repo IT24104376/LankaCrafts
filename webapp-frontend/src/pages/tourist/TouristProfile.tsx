@@ -4,15 +4,21 @@ import { TouristNavbar } from './TouristNavbar';
 import { BatikBackground } from '../../components/BatikBackground';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { getMyBlogs, getBookings, getMockUpcomingWorkshops, MockWorkshop } from '../../services/api';
+import { getMyBlogs, getReviews, getSavedWorkshops, getArtistById } from '../../services/api';
+import { bookingApi } from '../../api/index';
 import { INTEREST_MAP, REGIONS_MAP, COUNTRY_CODES } from '../../constants/touristConstants';
 import ReactCountryFlag from 'react-country-flag';
+
 import {
   CalendarIcon,
   HeartIcon,
   BookOpenIcon,
   StarIcon,
-  EditIcon
+  EditIcon,
+  ChevronRightIcon,
+  MapPinIcon,
+  ClockIcon,
+  UserIcon,
 } from 'lucide-react';
 
 const containerVariants = {
@@ -35,12 +41,25 @@ function SkeletonBlock({ className }: { className?: string }) {
   return <div className={`animate-pulse bg-gray-200 rounded-xl ${className}`} />;
 }
 
+interface UpcomingWorkshop {
+  id: string | number;
+  img?: string;
+  artisanName: string;
+  craftName: string;
+  bookingDate: string;
+  bookingTime: string;
+  location: string;
+  status: 'Confirmed' | 'Pending' | string;
+}
+
 export function TouristProfile() {
   const { tourist, loading: authLoading } = useAuth();
   const [blogs, setBlogs] = useState<any[]>([]);
-  const [bookings, setBookings] = useState<any[]>([]);
-  const [wishlist, setWishlist] = useState<MockWorkshop[]>([]);
+  const [bookings, setBookings] = useState<UpcomingWorkshop[]>([]);
+  const [wishlist, setWishlist] = useState<{ id: string; img: string; name: string; artisan: string; craftType: string; location: string }[]>([]);
+  const [reviews, setReviews] = useState<any[]>([]);
   const [dataLoading, setDataLoading] = useState(true);
+
 
   useEffect(() => {
     if (!tourist) return;
@@ -48,20 +67,44 @@ export function TouristProfile() {
 
     const fetchData = async () => {
       try {
-        const [blogsRes, bookingsRes, mockWorkshops] = await Promise.all([
+        const [blogsRes, bookingsRes, reviewsRes] = await Promise.all([
           getMyBlogs(),
-          getBookings().catch(() => ({ data: { bookings: [] } })),
-          getMockUpcomingWorkshops()
+          bookingApi.getBookingsByEmail(tourist.id),
+          getReviews({ mine: true }).catch(() => ({ data: { reviews: [] } }))
         ]);
 
         setBlogs(blogsRes.data.blogs || []);
 
-        setBookings(bookingsRes.data.bookings || []);
+        setBookings(bookingsRes.data || []);
 
-        // Mock wishlist using savedWorkshops IDs to pick from mock data
-        const savedIds = tourist.savedWorkshops?.map(Number) || [];
-        const myWishlist = mockWorkshops.filter(w => savedIds.includes(w.id));
-        setWishlist(myWishlist);
+        setReviews(reviewsRes.data.reviews || tourist.reviews || []);
+
+        // Fetch wishlist: savedWorkshops stores artist IDs
+        try {
+          const savedRes = await getSavedWorkshops();
+          const savedIds: string[] = savedRes.data.savedWorkshops || [];
+          if (savedIds.length > 0) {
+            const artistPromises = savedIds.map(id =>
+              getArtistById(id).then(res => res.data?.artist).catch(() => null)
+            );
+            const artists = await Promise.all(artistPromises);
+            const wishlistItems = artists
+              .filter(Boolean)
+              .map((a: any) => ({
+                id: a._id || a.id,
+                img: a.profilePicUrl || 'https://images.unsplash.com/photo-1513364776144-60967b0f800f?w=400&auto=format&fit=crop',
+                name: `${(a.craftType || 'Art').charAt(0).toUpperCase() + (a.craftType || 'Art').slice(1)} Workshop`,
+                artisan: a.fullName || 'Artisan',
+                craftType: a.craftType || '',
+                location: a.address?.city || a.address?.district || 'Sri Lanka',
+              }));
+            setWishlist(wishlistItems);
+          } else {
+            setWishlist([]);
+          }
+        } catch {
+          setWishlist([]);
+        }
       } catch (err) {
         console.error('Failed to load profile data', err);
       } finally {
@@ -71,6 +114,7 @@ export function TouristProfile() {
 
     fetchData();
   }, [tourist]);
+
 
   const isLoading = authLoading || dataLoading;
 
@@ -88,6 +132,59 @@ export function TouristProfile() {
   });
   const userProfilePic = tourist?.profilePicUrl ?? '';
   const userInitials = tourist?.initials ?? 'LC';
+
+  useEffect(() => {
+    const fetchUpcoming = async () => {
+      if (authLoading) return;
+
+      if (tourist?.id) {
+        try {
+          const data = await bookingApi.getBookingsByEmail(tourist.email);
+          setBookings(data || []);
+        } catch (err) {
+          console.error("API Error:", err);
+        }
+      }
+    };
+
+    fetchUpcoming();
+  }, [tourist?.id, authLoading]);
+
+
+  if (!tourist) {
+    return (
+      <div className="min-h-screen bg-white font-body flex flex-col relative overflow-hidden">
+        <div className="relative z-20">
+          <TouristNavbar />
+        </div>
+
+        <div className="absolute inset-0 z-0 pointer-events-none">
+          <BatikBackground />
+        </div>
+
+        <main className="flex-1 flex flex-col items-center justify-center px-6 py-24 relative z-10">
+          <div className="w-20 h-20 bg-[#FDF0EB] rounded-full flex items-center justify-center mb-6 text-[#C1440E]">
+            <UserIcon className="w-10 h-10" />
+          </div>
+
+          <h2 className="text-3xl font-black text-[#1E1E1E] mb-4 font-display text-center">
+            Tourist Login Required
+          </h2>
+
+          <p className="text-gray-600 mb-8 max-w-md text-center">
+            You need to be logged in with a tourist account to access your profile and manage your blogs, bookings and wishlist.
+          </p>
+
+          <Link
+            to="/tourist/login"
+            className="px-8 py-3 bg-[#C1440E] text-white rounded-full font-bold shadow-lg hover:shadow-xl transition-all hover:-translate-y-1"
+          >
+            Go to Login
+          </Link>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen font-body relative">
@@ -220,31 +317,80 @@ export function TouristProfile() {
               </div>
             </motion.div>
 
-            {/* My Bookings Section */}
+            {/* My Bookings */}
             <motion.section variants={itemVariants} id="myBookings">
               <div className="flex items-center gap-2 mb-4">
                 <CalendarIcon className="w-5 h-5" style={{ color: '#1A6B6B' }} />
                 <h2 className="text-xl font-display font-bold text-[#1E1E1E]">My Bookings</h2>
               </div>
-              <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm min-h-[120px] flex items-center justify-center">
+
+              <div className="bg-white rounded-2xl p-2 md:p-4 border border-gray-100 shadow-sm min-h-[120px]">
                 {isLoading ? (
-                  <SkeletonBlock className="h-10 w-full" />
+                  <div className="p-4 space-y-3">
+                    <SkeletonBlock className="h-16 w-full rounded-xl" />
+                    <SkeletonBlock className="h-16 w-full rounded-xl" />
+                  </div>
                 ) : bookings.length > 0 ? (
-                  <div className="w-full space-y-4">
+                  <div className="w-full space-y-2">
                     {bookings.map((b: any) => (
-                      <div key={b._id} className="flex justify-between items-center p-4 border rounded-xl hover:shadow-sm transition-shadow">
-                        <div>
-                          <p className="font-bold text-[#1E1E1E]">{b.workshop?.title || 'Workshop'}</p>
-                          <p className="text-sm text-gray-500">Scheduled on: {new Date(b.date).toLocaleDateString()}</p>
+                      <div
+                        key={b._id || b.id}
+                        className="flex flex-col md:flex-row md:items-center justify-between p-4 rounded-xl hover:bg-gray-50 border border-transparent hover:border-gray-100 transition-all group"
+                      >
+                        {/* Left: Workshop & Artisan Info */}
+                        <div className="flex items-center gap-4">
+                          <div className="w-10 h-10 rounded-full bg-[#fdf8f6] flex items-center justify-center text-[#C1440E]">
+                            <ClockIcon className="w-5 h-5" />
+                          </div>
+                          <div>
+                            <p className="font-bold text-[#1E1E1E] leading-tight">
+                              {b.craftName || 'Traditional Workshop'}
+                            </p>
+                            <p className="text-sm text-[#1A6B6B] font-medium">
+                              with {b.artisanName || 'Master Artisan'}
+                            </p>
+                          </div>
                         </div>
-                        <span className="px-3 py-1 text-xs font-bold rounded-full bg-blue-100 text-blue-700">
-                          {b.status}
-                        </span>
+
+                        {/* Middle: Date & Time Details */}
+                        <div className="flex items-center gap-6 mt-3 md:mt-0 text-sm text-gray-500">
+                          <div className="flex items-center gap-1.5">
+                            <CalendarIcon className="w-4 h-4 text-gray-400" />
+                            <span>{b.bookingDate}</span>
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            <MapPinIcon className="w-4 h-4 text-gray-400" />
+                            <span>{b.location}</span>
+                          </div>
+                        </div>
+
+                        {/* Right: Status & Action */}
+                        <div className="flex items-center justify-between md:justify-end gap-4 mt-3 md:mt-0">
+                          <span className={`px-3 py-1 text-xs font-bold rounded-full ${b.status === 'Confirmed'
+                            ? 'bg-green-100 text-green-700'
+                            : 'bg-amber-100 text-amber-700'
+                            }`}>
+                            {b.status}
+                          </span>
+                          <Link
+                            to="/my-bookings"
+                            className="p-2 border border-amber-200 text-amber-600 rounded-lg hover:bg-amber-50 transition-all shrink-0">
+                            <EditIcon className="w-4 h-4" />
+                          </Link>
+                          <button className="p-2 hover:bg-gray-200 rounded-lg transition-colors text-gray-400 hover:text-gray-600">
+                            <ChevronRightIcon className="w-5 h-5" />
+                          </button>
+                        </div>
                       </div>
                     ))}
                   </div>
                 ) : (
-                  <p className="text-gray-400 text-sm">No bookings yet. <Link to="/book" className="text-[#C1440E] font-bold">Find a workshop</Link></p>
+                  <div className="flex flex-col items-center justify-center py-10">
+                    <p className="text-gray-400 text-sm mb-2">No bookings yet.</p>
+                    <Link to="/book" className="text-[#C1440E] font-bold hover:underline flex items-center gap-1">
+                      Find a workshop <ChevronRightIcon className="w-4 h-4" />
+                    </Link>
+                  </div>
                 )}
               </div>
             </motion.section>
@@ -260,17 +406,19 @@ export function TouristProfile() {
                   [1, 2, 3].map(i => <SkeletonBlock key={i} className="h-40 w-full" />)
                 ) : wishlist.length > 0 ? (
                   wishlist.map(w => (
-                    <div key={w.id} className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-100 flex flex-col">
+                    <Link key={w.id} to={`/artist/${w.id}`} className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-100 flex flex-col hover:shadow-md transition-shadow">
                       <img src={w.img} alt={w.name} className="h-28 w-full object-cover" />
                       <div className="p-3">
                         <p className="font-bold text-sm text-[#1E1E1E] truncate">{w.name}</p>
                         <p className="text-xs text-gray-500">{w.artisan}</p>
+                        <p className="text-[10px] text-[#1A6B6B] font-semibold mt-1">{w.location}</p>
                       </div>
-                    </div>
+                    </Link>
                   ))
                 ) : (
-                  <div className="col-span-3 bg-white rounded-2xl p-6 border border-gray-100 shadow-sm flex items-center justify-center min-h-[120px]">
-                    <p className="text-gray-400 text-sm">Your wishlist is empty.</p>
+                  <div className="col-span-3 bg-white rounded-2xl p-6 border border-gray-100 shadow-sm flex flex-col items-center justify-center min-h-[120px]">
+                    <p className="text-gray-400 text-sm mb-2">Your wishlist is empty.</p>
+                    <Link to="/tourist/dashboard" className="text-[#C1440E] font-bold text-sm hover:underline">Browse workshops to save some ❤️</Link>
                   </div>
                 )}
               </div>
@@ -347,14 +495,45 @@ export function TouristProfile() {
               </div>
             </motion.section>
 
-            {/* My Reviews Section (Placeholder) */}
+            {/* My Reviews Section */}
             <motion.section variants={itemVariants} id="myReviews">
               <div className="flex items-center gap-2 mb-4">
                 <StarIcon className="w-5 h-5 text-amber-500" />
                 <h2 className="text-xl font-display font-bold text-[#1E1E1E]">My Reviews</h2>
               </div>
-              <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm min-h-[120px] flex items-center justify-center">
-                <p className="text-gray-400 text-sm">You haven't written any reviews yet.</p>
+              <div className="space-y-4">
+                {isLoading ? (
+                  [1, 2].map(i => <SkeletonBlock key={i} className="h-24 w-full" />)
+                ) : reviews && reviews.length > 0 ? (
+                  reviews.map((r: any) => (
+                    <div key={r._id || r.id} className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-1 text-amber-500">
+                          {[...Array(5)].map((_, i) => (
+                            <StarIcon key={i} className={`w-4 h-4 ${i < (r.rating || 5) ? 'fill-current' : 'text-gray-300'}`} />
+                          ))}
+                        </div>
+                        <span className="text-xs text-gray-400 font-body">
+                          {new Date(r.createdAt || Date.now()).toLocaleDateString()}
+                        </span>
+                      </div>
+                      <p className="text-sm font-bold text-[#1E1E1E] mb-1">
+                        {r.artisanName ? `${r.artisanName} Review` : 'Workshop Review'}
+                      </p>
+                      <p className="text-sm text-gray-600 line-clamp-3">{r.text || 'No text content provided.'}</p>
+                      {r.artisanReply && (
+                        <div className="mt-3 p-3 bg-[#F6F3EE] rounded-lg border-l-4 border-[#C1440E]">
+                          <p className="text-[10px] font-bold text-[#C1440E] uppercase mb-1">Artisan Reply</p>
+                          <p className="text-xs text-gray-600 italic">"{r.artisanReply.text}"</p>
+                        </div>
+                      )}
+                    </div>
+                  ))
+                ) : (
+                  <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm flex items-center justify-center min-h-[120px]">
+                    <p className="text-gray-400 text-sm">You haven't written any reviews yet.</p>
+                  </div>
+                )}
               </div>
             </motion.section>
 

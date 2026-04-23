@@ -1,4 +1,5 @@
-import React, { useState, Component } from 'react';
+import React, { useEffect, useState, Component } from 'react';
+import { getWorkshops, updateWorkshopStatus, getBookings } from '../../api/adminApi';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   SearchIcon,
@@ -22,7 +23,7 @@ import {
 // ─── Types ────────────────────────────────────────────────────────────────────
 type WorkshopStatus = 'pending' | 'approved' | 'rejected';
 interface Workshop {
-  id: number;
+  id: string;
   name: string;
   artisan: string;
   artisanInitials: string;
@@ -41,8 +42,8 @@ interface Workshop {
   rating: number;
 }
 interface Booking {
-  id: number;
-  workshopId: number;
+  id: string;
+  workshopId: string;
   workshopName: string;
   craft: string;
   artisan: string;
@@ -59,244 +60,6 @@ interface Booking {
   status: 'confirmed' | 'pending' | 'cancelled';
   region: string;
 }
-// ─── Mock Data ────────────────────────────────────────────────────────────────
-const WORKSHOPS: Workshop[] = [
-{
-  id: 1,
-  name: 'Traditional Batik Textiles Workshop',
-  artisan: 'Kamala Wijesinghe',
-  artisanInitials: 'KW',
-  artisanColor: '#2F5D50',
-  craft: 'Batik Textiles',
-  region: 'Kandy',
-  location: '45 Peradeniya Road, Kandy',
-  capacity: 8,
-  duration: '3 hours',
-  price: 3500,
-  submittedDate: '2024-01-18',
-  status: 'pending',
-  description:
-  'Learn the ancient art of batik wax-resist dyeing on silk and cotton fabrics.',
-  schedule: 'Mon, Wed, Fri – 9:00 AM & 2:00 PM',
-  totalBookings: 0,
-  rating: 0
-},
-{
-  id: 2,
-  name: 'Kandyan Lacquerwork Masterclass',
-  artisan: 'Nimal Perera',
-  artisanInitials: 'NP',
-  artisanColor: '#C65D3B',
-  craft: 'Lacquerwork',
-  region: 'Kandy',
-  location: '12 Katugastota Lane, Kandy',
-  capacity: 6,
-  duration: '2.5 hours',
-  price: 4200,
-  submittedDate: '2024-01-20',
-  status: 'approved',
-  description:
-  'Master the traditional Kandyan lacquerwork technique using natural lacquer on turned wood.',
-  schedule: 'Tue, Thu, Sat – 10:00 AM',
-  totalBookings: 47,
-  rating: 4.9
-},
-{
-  id: 3,
-  name: 'Ambalangoda Mask Carving Experience',
-  artisan: 'Suresh Fernando',
-  artisanInitials: 'SF',
-  artisanColor: '#C9A227',
-  craft: 'Mask Carving',
-  region: 'Ambalangoda',
-  location: '8 Mask Museum Road, Ambalangoda',
-  capacity: 5,
-  duration: '4 hours',
-  price: 5000,
-  submittedDate: '2024-01-22',
-  status: 'pending',
-  description:
-  'Carve and paint your own traditional kolam or sanni mask under expert guidance.',
-  schedule: 'Daily – 9:00 AM & 1:00 PM',
-  totalBookings: 0,
-  rating: 0
-},
-{
-  id: 4,
-  name: 'Jaffna Palmyra Weaving Workshop',
-  artisan: 'Priya Rajapaksa',
-  artisanInitials: 'PR',
-  artisanColor: '#C65D3B',
-  craft: 'Palmyra Weaving',
-  region: 'Jaffna',
-  location: '23 Nallur Street, Jaffna',
-  capacity: 10,
-  duration: '2 hours',
-  price: 2800,
-  submittedDate: '2024-01-25',
-  status: 'approved',
-  description:
-  'Weave traditional palmyra leaf products including baskets, fans, and decorative items.',
-  schedule: 'Mon–Sat – 8:00 AM & 3:00 PM',
-  totalBookings: 31,
-  rating: 4.8
-},
-{
-  id: 5,
-  name: 'Ratnapura Gem Polishing Session',
-  artisan: 'Nilmini Senanayake',
-  artisanInitials: 'NS',
-  artisanColor: '#2F5D50',
-  craft: 'Gem Polishing',
-  region: 'Ratnapura',
-  location: '5 Gem Bazaar, Ratnapura',
-  capacity: 4,
-  duration: '3 hours',
-  price: 6500,
-  submittedDate: '2024-01-28',
-  status: 'rejected',
-  description:
-  'Polish and identify precious and semi-precious gems from the City of Gems.',
-  schedule: 'Weekdays – 10:00 AM',
-  totalBookings: 0,
-  rating: 0
-},
-{
-  id: 6,
-  name: 'Kelaniya Pottery & Earthenware',
-  artisan: 'Rohan De Silva',
-  artisanInitials: 'RD',
-  artisanColor: '#C65D3B',
-  craft: 'Pottery',
-  region: 'Kelaniya',
-  location: '17 Temple Road, Kelaniya',
-  capacity: 8,
-  duration: '3 hours',
-  price: 3200,
-  submittedDate: '2024-02-01',
-  status: 'pending',
-  description:
-  'Shape clay on ancient wheels and fire traditional unglazed earthenware.',
-  schedule: 'Tue, Thu, Sat – 9:00 AM & 2:00 PM',
-  totalBookings: 0,
-  rating: 0
-}];
-
-const BOOKINGS: Booking[] = [
-{
-  id: 1,
-  workshopId: 2,
-  workshopName: 'Kandyan Lacquerwork Masterclass',
-  craft: 'Lacquerwork',
-  artisan: 'Nimal Perera',
-  artisanColor: '#C65D3B',
-  tourist: 'Sarah Mitchell',
-  touristInitials: 'SM',
-  touristColor: '#2F5D50',
-  country: '🇬🇧 United Kingdom',
-  email: 'sarah.m@gmail.com',
-  phone: '+1 555 234 5678',
-  date: '2024-02-05',
-  time: '10:00 AM',
-  groupSize: 2,
-  status: 'confirmed',
-  region: 'Kandy'
-},
-{
-  id: 2,
-  workshopId: 4,
-  workshopName: 'Jaffna Palmyra Weaving Workshop',
-  craft: 'Palmyra Weaving',
-  artisan: 'Priya Rajapaksa',
-  artisanColor: '#C65D3B',
-  tourist: 'Marie Dubois',
-  touristInitials: 'MD',
-  touristColor: '#C9A227',
-  country: '🇫🇷 France',
-  email: 'marie.d@gmail.com',
-  phone: '+33 6 12 34 56 78',
-  date: '2024-02-06',
-  time: '08:00 AM',
-  groupSize: 3,
-  status: 'confirmed',
-  region: 'Jaffna'
-},
-{
-  id: 3,
-  workshopId: 2,
-  workshopName: 'Kandyan Lacquerwork Masterclass',
-  craft: 'Lacquerwork',
-  artisan: 'Nimal Perera',
-  artisanColor: '#C65D3B',
-  tourist: 'David Chen',
-  touristInitials: 'DC',
-  touristColor: '#2F5D50',
-  country: '🇸🇬 Singapore',
-  email: 'david.chen@gmail.com',
-  phone: '+65 9123 4567',
-  date: '2024-02-07',
-  time: '10:00 AM',
-  groupSize: 1,
-  status: 'confirmed',
-  region: 'Kandy'
-},
-{
-  id: 4,
-  workshopId: 4,
-  workshopName: 'Jaffna Palmyra Weaving Workshop',
-  craft: 'Palmyra Weaving',
-  artisan: 'Priya Rajapaksa',
-  artisanColor: '#C65D3B',
-  tourist: 'James Thornton',
-  touristInitials: 'JT',
-  touristColor: '#C65D3B',
-  country: '🇬🇧 United Kingdom',
-  email: 'j.thornton@outlook.com',
-  phone: '+44 7911 123456',
-  date: '2024-02-08',
-  time: '03:00 PM',
-  groupSize: 2,
-  status: 'pending',
-  region: 'Jaffna'
-},
-{
-  id: 5,
-  workshopId: 2,
-  workshopName: 'Kandyan Lacquerwork Masterclass',
-  craft: 'Lacquerwork',
-  artisan: 'Nimal Perera',
-  artisanColor: '#C65D3B',
-  tourist: 'Carlos Rivera',
-  touristInitials: 'CR',
-  touristColor: '#C65D3B',
-  country: '🇪🇸 Spain',
-  email: 'c.rivera@hotmail.com',
-  phone: '+34 612 345 678',
-  date: '2024-02-09',
-  time: '10:00 AM',
-  groupSize: 4,
-  status: 'confirmed',
-  region: 'Kandy'
-},
-{
-  id: 6,
-  workshopId: 4,
-  workshopName: 'Jaffna Palmyra Weaving Workshop',
-  craft: 'Palmyra Weaving',
-  artisan: 'Priya Rajapaksa',
-  artisanColor: '#C65D3B',
-  tourist: 'Yuki Tanaka',
-  touristInitials: 'YT',
-  touristColor: '#C9A227',
-  country: '🇯🇵 Japan',
-  email: 'yuki.t@yahoo.co.jp',
-  phone: '+81 90 1234 5678',
-  date: '2024-02-10',
-  time: '08:00 AM',
-  groupSize: 2,
-  status: 'cancelled',
-  region: 'Jaffna'
-}];
 
 const STATUS_CONFIG: Record<
   WorkshopStatus,
@@ -354,7 +117,7 @@ function WorkshopModal({
 
 
 
-}: {workshop: Workshop;onClose: () => void;onApprove: (id: number) => void;onReject: (id: number) => void;}) {
+}: {workshop: Workshop;onClose: () => void;onApprove: (id: string) => void;onReject: (id: string) => void;}) {
   const statusCfg = STATUS_CONFIG[workshop.status];
   return (
     <>
@@ -537,44 +300,75 @@ function WorkshopModal({
 }
 // ─── Main Component ───────────────────────────────────────────────────────────
 export function WorkshopVerification() {
-  const [workshops, setWorkshops] = useState<Workshop[]>(WORKSHOPS);
+  const [workshops, setWorkshops] = useState<Workshop[]>([]);
+  const [bookings, setBookings] = useState<Booking[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState<WorkshopStatus | 'all'>(
-    'all'
-  );
-  const [selectedWorkshop, setSelectedWorkshop] = useState<Workshop | null>(
-    null
-  );
-  const [activeTab, setActiveTab] = useState<'verification' | 'bookings'>(
-    'verification'
-  );
+  const [statusFilter, setStatusFilter] = useState<WorkshopStatus | 'all'>('all');
+  const [selectedWorkshop, setSelectedWorkshop] = useState<Workshop | null>(null);
+  const [activeTab, setActiveTab] = useState<'verification' | 'bookings'>('verification');
   const [bookingSearch, setBookingSearch] = useState('');
   const [craftFilter, setCraftFilter] = useState('all');
   const [showCraftDropdown, setShowCraftDropdown] = useState(false);
-  const crafts = ['all', ...Array.from(new Set(BOOKINGS.map((b) => b.craft)))];
-  const handleApprove = (id: number) => {
-    setWorkshops((prev) =>
-    prev.map((w) =>
-    w.id === id ?
-    {
-      ...w,
-      status: 'approved' as WorkshopStatus
-    } :
-    w
-    )
-    );
+
+  useEffect(() => {
+    getWorkshops().then(res => {
+      const list = (res.data.data || res.data.workshops || []).map((w: any) => ({
+        id: w._id,
+        name: w.name || w.title || '',
+        artisan: w.artisan || w.artisanName || w.fullName || '',
+        artisanInitials: (w.artisan || w.artisanName || 'A').split(' ').map((n: string) => n[0]).join('').slice(0, 2),
+        artisanColor: w.artisanColor || '#2F5D50',
+        craft: w.craft || w.craftType || '',
+        region: w.region || (typeof w.location === 'object' ? w.location?.formattedAddress : w.location) || '',
+        location: (typeof w.location === 'object' ? w.location?.formattedAddress : w.location) || '',
+        capacity: w.capacity || 0,
+        duration: w.duration || '',
+        price: w.price || 0,
+        submittedDate: w.submittedDate || w.createdAt || '',
+        status: (w.status === 'active' ? 'approved' : w.status === 'deactivated' ? 'rejected' : (w.status || 'pending')) as WorkshopStatus,
+        description: w.description || '',
+        schedule: w.schedule || '',
+        totalBookings: w.totalBookings || 0,
+        rating: w.rating || 0,
+      }));
+      setWorkshops(list);
+    }).catch(() => {});
+    getBookings().then(res => {
+      const list = (res.data.data || res.data.bookings || res.data || []).map((b: any) => ({
+        id: b._id,
+        workshopId: b.workshopId || b.craftId || '',
+        workshopName: b.workshopName || b.craftName || b.craftId || '',
+        tourist: b.customerName || '',
+        touristInitials: (b.customerName || 'T').split(' ').map((n: string) => n[0]).join('').slice(0, 2),
+        touristColor: '#2F5D50',
+        country: '',
+        email: b.customerEmail || '',
+        phone: b.customerPhone || '',
+        artisan: b.artisanName || '',
+        artisanColor: '#C9A227',
+        craft: b.craftName || b.craftId || b.craft || '',
+        date: b.bookingDate || b.date || '',
+        time: b.bookingTime || b.time || '',
+        groupSize: b.groupSize || 1,
+        status: b.status || 'pending',
+        region: (typeof b.location === 'object' ? b.location?.formattedAddress : b.location) || '',
+      }));
+      setBookings(list);
+    }).catch(() => {});
+  }, []);
+
+  const crafts = ['all', ...Array.from(new Set(bookings.map((b) => b.craft)))];
+  const handleApprove = async (id: string) => {
+    try {
+      await updateWorkshopStatus(id, 'approved');
+      setWorkshops(prev => prev.map(w => w.id === id ? { ...w, status: 'approved' as WorkshopStatus } : w));
+    } catch {}
   };
-  const handleReject = (id: number) => {
-    setWorkshops((prev) =>
-    prev.map((w) =>
-    w.id === id ?
-    {
-      ...w,
-      status: 'rejected' as WorkshopStatus
-    } :
-    w
-    )
-    );
+  const handleReject = async (id: string) => {
+    try {
+      await updateWorkshopStatus(id, 'rejected');
+      setWorkshops(prev => prev.map(w => w.id === id ? { ...w, status: 'rejected' as WorkshopStatus } : w));
+    } catch {}
   };
   const filteredWorkshops = workshops.filter((w) => {
     const matchSearch =
@@ -584,7 +378,7 @@ export function WorkshopVerification() {
     const matchStatus = statusFilter === 'all' || w.status === statusFilter;
     return matchSearch && matchStatus;
   });
-  const filteredBookings = BOOKINGS.filter((b) => {
+  const filteredBookings = bookings.filter((b) => {
     const matchSearch =
     b.tourist.toLowerCase().includes(bookingSearch.toLowerCase()) ||
     b.workshopName.toLowerCase().includes(bookingSearch.toLowerCase()) ||
@@ -644,7 +438,7 @@ export function WorkshopVerification() {
           </div>
           <div>
             <p className="text-xl font-black text-gray-900">
-              {BOOKINGS.length}
+              {bookings.length}
             </p>
             <p className="text-xs text-gray-500">Total Bookings</p>
           </div>
@@ -735,7 +529,7 @@ export function WorkshopVerification() {
             {/* Workshop Cards Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
               {filteredWorkshops.map((workshop, i) => {
-              const statusCfg = STATUS_CONFIG[workshop.status];
+              const statusCfg = STATUS_CONFIG[workshop.status] || STATUS_CONFIG.pending;
               return (
                 <motion.div
                   key={workshop.id}

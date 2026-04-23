@@ -1,4 +1,4 @@
-import axiosInstance from './axios';
+import api from './axiosInstance';
 
 export interface BookingData {
   email?: string;
@@ -13,32 +13,32 @@ export interface BookingData {
 
 export const bookingApi = {
   createBooking: async (data: BookingData) => {
-    const response = await axiosInstance.post('/bookings', data);
+    const response = await api.post('/bookings', data);
     return response.data;
   },
 
   getAllBookings: async () => {
-    const response = await axiosInstance.get('/bookings');
+    const response = await api.get('/bookings');
     return response.data;
   },
 
   getBookingsByEmail: async (email: string) => {
-    const response = await axiosInstance.get(`/bookings/user/${email}`);
+    const response = await api.get(`/bookings/user/${email}`);
     return response.data;
   },
 
   getBookingById: async (id: string) => {
-    const response = await axiosInstance.get(`/bookings/${id}`);
+    const response = await api.get(`/bookings/${id}`);
     return response.data;
   },
 
   updateBooking: async (id: string, data: Partial<BookingData>) => {
-    const response = await axiosInstance.put(`/bookings/${id}`, data);
+    const response = await api.put(`/bookings/${id}`, data);
     return response.data;
   },
 
   deleteBooking: async (id: string) => {
-    const response = await axiosInstance.delete(`/bookings/${id}`);
+    const response = await api.delete(`/bookings/${id}`);
     return response.data;
   }
 };

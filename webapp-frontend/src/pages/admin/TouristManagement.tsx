@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { getTourists, toggleTouristStatus } from '../../api/adminApi';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   SearchIcon,
@@ -25,7 +26,7 @@ interface WorkshopAttendance {
   craft: string;
 }
 interface Tourist {
-  id: number;
+  id: string;
   name: string;
   email: string;
   phone: string;
@@ -38,195 +39,6 @@ interface Tourist {
   totalBookings: number;
   lastActive: string;
 }
-const TOURISTS: Tourist[] = [
-{
-  id: 1,
-  name: 'Sarah Mitchell',
-  email: 'sarah.m@gmail.com',
-  phone: '+1 555 234 5678',
-  country: 'United States',
-  joinedDate: '2024-01-10',
-  status: 'active',
-  initials: 'SM',
-  color: '#2F5D50',
-  totalBookings: 4,
-  lastActive: '2 hours ago',
-  workshopsAttended: [
-  {
-    id: 1,
-    workshop: 'Kandyan Lacquerwork',
-    artisan: 'Nimal Perera',
-    date: '2024-01-15',
-    craft: 'Lacquerwork'
-  },
-  {
-    id: 2,
-    workshop: 'Batik Textiles',
-    artisan: 'Kamala Wijesinghe',
-    date: '2024-01-20',
-    craft: 'Batik'
-  }]
-
-},
-{
-  id: 2,
-  name: 'James Thornton',
-  email: 'j.thornton@outlook.com',
-  phone: '+44 7911 123456',
-  country: 'United Kingdom',
-  joinedDate: '2024-01-12',
-  status: 'active',
-  initials: 'JT',
-  color: '#C65D3B',
-  totalBookings: 2,
-  lastActive: '1 day ago',
-  workshopsAttended: [
-  {
-    id: 1,
-    workshop: 'Mask Carving',
-    artisan: 'Suresh Fernando',
-    date: '2024-01-22',
-    craft: 'Mask Carving'
-  }]
-
-},
-{
-  id: 3,
-  name: 'Yuki Tanaka',
-  email: 'yuki.t@yahoo.co.jp',
-  phone: '+81 90 1234 5678',
-  country: 'Japan',
-  joinedDate: '2024-01-14',
-  status: 'suspended',
-  initials: 'YT',
-  color: '#C9A227',
-  totalBookings: 1,
-  lastActive: '5 days ago',
-  workshopsAttended: [
-  {
-    id: 1,
-    workshop: 'Pottery',
-    artisan: 'Rohan De Silva',
-    date: '2024-01-18',
-    craft: 'Pottery'
-  }]
-
-},
-{
-  id: 4,
-  name: 'Marie Dubois',
-  email: 'marie.d@gmail.com',
-  phone: '+33 6 12 34 56 78',
-  country: 'France',
-  joinedDate: '2024-01-16',
-  status: 'active',
-  initials: 'MD',
-  color: '#2F5D50',
-  totalBookings: 6,
-  lastActive: '3 hours ago',
-  workshopsAttended: [
-  {
-    id: 1,
-    workshop: 'Batik Textiles',
-    artisan: 'Kamala Wijesinghe',
-    date: '2024-01-19',
-    craft: 'Batik'
-  },
-  {
-    id: 2,
-    workshop: 'Palmyra Weaving',
-    artisan: 'Priya Rajapaksa',
-    date: '2024-01-25',
-    craft: 'Weaving'
-  },
-  {
-    id: 3,
-    workshop: 'Brasswork',
-    artisan: 'Anura Dissanayake',
-    date: '2024-02-01',
-    craft: 'Brasswork'
-  }]
-
-},
-{
-  id: 5,
-  name: 'Carlos Rivera',
-  email: 'c.rivera@hotmail.com',
-  phone: '+34 612 345 678',
-  country: 'Spain',
-  joinedDate: '2024-01-18',
-  status: 'active',
-  initials: 'CR',
-  color: '#C65D3B',
-  totalBookings: 3,
-  lastActive: '12 hours ago',
-  workshopsAttended: [
-  {
-    id: 1,
-    workshop: 'Gem Polishing',
-    artisan: 'Nilmini Senanayake',
-    date: '2024-01-28',
-    craft: 'Gems'
-  },
-  {
-    id: 2,
-    workshop: 'Mask Carving',
-    artisan: 'Suresh Fernando',
-    date: '2024-02-03',
-    craft: 'Mask Carving'
-  }]
-
-},
-{
-  id: 6,
-  name: 'Anna Kowalski',
-  email: 'anna.k@wp.pl',
-  phone: '+48 512 345 678',
-  country: 'Poland',
-  joinedDate: '2024-01-20',
-  status: 'suspended',
-  initials: 'AK',
-  color: '#C9A227',
-  totalBookings: 0,
-  lastActive: '10 days ago',
-  workshopsAttended: []
-},
-{
-  id: 7,
-  name: 'David Chen',
-  email: 'david.chen@gmail.com',
-  phone: '+65 9123 4567',
-  country: 'Singapore',
-  joinedDate: '2024-01-22',
-  status: 'active',
-  initials: 'DC',
-  color: '#2F5D50',
-  totalBookings: 5,
-  lastActive: '30 minutes ago',
-  workshopsAttended: [
-  {
-    id: 1,
-    workshop: 'Kandyan Lacquerwork',
-    artisan: 'Nimal Perera',
-    date: '2024-01-26',
-    craft: 'Lacquerwork'
-  },
-  {
-    id: 2,
-    workshop: 'Pottery',
-    artisan: 'Rohan De Silva',
-    date: '2024-02-02',
-    craft: 'Pottery'
-  },
-  {
-    id: 3,
-    workshop: 'Batik Textiles',
-    artisan: 'Kamala Wijesinghe',
-    date: '2024-02-08',
-    craft: 'Batik'
-  }]
-
-}];
 
 const CRAFT_COLORS: Record<string, string> = {
   Lacquerwork: '#C65D3B',
@@ -238,7 +50,27 @@ const CRAFT_COLORS: Record<string, string> = {
   Gems: '#C65D3B'
 };
 export function TouristManagement() {
-  const [tourists, setTourists] = useState<Tourist[]>(TOURISTS);
+  const [tourists, setTourists] = useState<Tourist[]>([]);
+
+  useEffect(() => {
+    getTourists().then(res => {
+      const list = (res.data.data || res.data.tourists || []).map((t: any) => ({
+        id: t._id,
+        name: t.fullName || t.name || '',
+        email: t.email || '',
+        phone: t.phone || '',
+        country: t.country || '',
+        joinedDate: t.createdAt || t.joinedDate || '',
+        status: t.status || 'active',
+        initials: t.initials || (t.fullName || t.name || 'T').split(' ').map((n: string) => n[0]).join('').slice(0, 2),
+        color: t.color || '#2F5D50',
+        workshopsAttended: [],
+        totalBookings: t.totalBookings || 0,
+        lastActive: t.lastActive || t.updatedAt || '',
+      }));
+      setTourists(list);
+    }).catch(() => {});
+  }, []);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<AccountStatus | 'all'>('all');
   const [selectedTourist, setSelectedTourist] = useState<Tourist | null>(null);
@@ -251,27 +83,14 @@ export function TouristManagement() {
     const matchStatus = statusFilter === 'all' || t.status === statusFilter;
     return matchSearch && matchStatus;
   });
-  const handleToggleStatus = (id: number) => {
-    setTourists((prev) =>
-    prev.map((t) =>
-    t.id === id ?
-    {
-      ...t,
-      status: t.status === 'active' ? 'suspended' : 'active'
-    } :
-    t
-    )
-    );
-    if (selectedTourist?.id === id) {
-      setSelectedTourist((prev) =>
-      prev ?
-      {
-        ...prev,
-        status: prev.status === 'active' ? 'suspended' : 'active'
-      } :
-      null
-      );
-    }
+  const handleToggleStatus = async (id: string) => {
+    try {
+      await toggleTouristStatus(id);
+      setTourists(prev => prev.map(t => t.id === id ? { ...t, status: t.status === 'active' ? 'suspended' : 'active' } : t));
+      if (selectedTourist?.id === id) {
+        setSelectedTourist(prev => prev ? { ...prev, status: prev.status === 'active' ? 'suspended' : 'active' } : null);
+      }
+    } catch {}
   };
   const counts = {
     all: tourists.length,

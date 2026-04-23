@@ -15,12 +15,12 @@ import { Navbar } from '../components/Navbar';
 import { Footer } from '../components/Footer';
 type Role = 'tourist' | 'artist' | 'admin';
 
-// Mock credentials for demo (no backend)
-const MOCK_CREDENTIALS: Record<Role, { email: string; password: string }> = {
-  tourist: { email: 'tourist@lankacrafts.lk', password: 'tourist123' },
-  artist: { email: 'artist@lankacrafts.lk', password: 'artist123' },
-  admin: { email: 'admin@lankacrafts.lk', password: 'admin123' },
-};
+import { useAuth } from '../context/AuthContext';
+// const MOCK_CREDENTIALS: Record<Role, { email: string; password: string }> = {
+//   tourist: { email: 'tourist@lankacrafts.lk', password: 'tourist123' },
+//   artist: { email: 'artist@lankacrafts.lk', password: 'artist123' },
+//   admin: { email: 'admin@lankacrafts.lk', password: 'admin123' },
+// };
 
 const ROLE_CONFIG = {
   tourist: {
@@ -36,7 +36,7 @@ const ROLE_CONFIG = {
     icon: PaletteIcon,
     color: '#2F5D50',
     bg: '#EBF4F1',
-    redirect: '/dashboard',
+    redirect: '/artist/login',
     description: 'Manage your artisan profile'
   },
   admin: {
@@ -57,24 +57,33 @@ export function UnifiedLogin() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const config = ROLE_CONFIG[selectedRole];
-  const handleSubmit = (e: React.FormEvent) => {
+  const { loginArtist, login, adminLogin } = useAuth();
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password) {
       setError('Please enter both email and password.');
       return;
     }
-    const creds = MOCK_CREDENTIALS[selectedRole];
-    if (email !== creds.email || password !== creds.password) {
-      setError('Invalid credentials. Check the demo hints below.');
-      return;
-    }
+
     setError('');
     setIsLoading(true);
-    setTimeout(() => {
-      setIsLoading(false);
+
+    try {
+      if (selectedRole === 'admin') {
+        await adminLogin(email, password);
+      } else if (selectedRole === 'artist') {
+        await loginArtist(email, password);
+      } else {
+        await login(email, password);
+      }
       navigate(config.redirect);
-    }, 1200);
-  };
+    } catch (err: any) {
+      setError(err.message || 'Invalid credentials');
+    } finally {
+      setIsLoading(false);
+    }
+  }
   return (
     <div
       className="min-h-screen flex flex-col font-body"
@@ -228,7 +237,7 @@ export function UnifiedLogin() {
                       whileTap={{ scale: 0.98 }}
                       className="w-full py-3.5 rounded-xl text-white font-bold text-sm transition-all flex items-center justify-center gap-2"
                       style={{ backgroundColor: config.color }}>
-                      Go to Tourist Portal
+                      Go to Tourist Login Portal
                     </motion.button>
                   </div>
                 ) : selectedRole === 'artist' ? (
@@ -378,50 +387,20 @@ export function UnifiedLogin() {
                   </form>
                 )}
 
-                {selectedRole !== 'tourist' && (
-                  <p className="text-center text-sm text-gray-400 mt-5">
-                    Don't have an account?{' '}
-                    <Link
-                      to="/register"
-                      className="font-bold hover:underline"
-                      style={{ color: config.color }}>
-                      Register here
-                    </Link>
-                  </p>
-                )}
+                <p className="text-center text-sm text-gray-400 mt-5">
+                  Don't have an account?{' '}
+                  <Link
+                    to="/register"
+                    className="font-bold hover:underline"
+                    style={{ color: config.color }}>
+                    Register here
+                  </Link>
+                </p>
               </motion.div>
             </AnimatePresence>
           </motion.div>
         </div>
       </main>
-
-      {/* ── Demo Credentials Hint (remove before production) ── */}
-      <div className="fixed bottom-4 right-4 z-50 bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden w-72">
-        <div className="px-4 py-2.5 border-b border-gray-100" style={{ backgroundColor: '#2F5D50' }}>
-          <p className="text-xs font-bold text-white uppercase tracking-widest">🔐 Demo Credentials</p>
-        </div>
-        <div className="p-3 space-y-2">
-          {((Object.entries(MOCK_CREDENTIALS) as [Role, { email: string; password: string }][]).filter(([role]) => role !== 'tourist')).map(([role, creds]) => {
-            const cfg = ROLE_CONFIG[role];
-            return (
-              <div
-                key={role}
-                className="rounded-xl p-2.5 border cursor-pointer transition-all"
-                style={{
-                  backgroundColor: selectedRole === role ? cfg.bg : '#F9FAFB',
-                  borderColor: selectedRole === role ? cfg.color : '#E5E7EB',
-                }}
-                onClick={() => { setSelectedRole(role); setEmail(creds.email); setPassword(creds.password); setError(''); }}
-              >
-                <p className="text-xs font-bold" style={{ color: cfg.color }}>{cfg.label}</p>
-                <p className="text-[11px] text-gray-500 mt-0.5 font-mono">{creds.email}</p>
-                <p className="text-[11px] text-gray-400 font-mono">{creds.password}</p>
-              </div>
-            );
-          })}
-          <p className="text-[10px] text-gray-400 text-center pt-1">Click a card to auto-fill credentials</p>
-        </div>
-      </div>
 
       <Footer />
     </div>);

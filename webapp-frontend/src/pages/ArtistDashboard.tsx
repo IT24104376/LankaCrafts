@@ -25,6 +25,7 @@ import {
   getArtistProfile,
   updateArtistProfile,
   deleteArtistProfile,
+  uploadArtistProfilePic,
   getMyCrafts,
   createCraft,
   updateCraft,
@@ -32,6 +33,7 @@ import {
 } from '../services/api';
 import { Navbar } from '../components/Navbar';
 import { Footer } from '../components/Footer';
+import { ReviewSection } from '../components/ReviewSection';
 
 interface Craft {
   _id: string;
@@ -53,7 +55,7 @@ const CRAFT_CATEGORIES = [
   'Handloom',
   'Brasswork',
   'Wood Carving',
-  'Jewelry',
+  'Jewellery',
   'Other',
 ];
 
@@ -89,7 +91,7 @@ function SidebarItem({
 export function ArtistDashboard() {
   const navigate = useNavigate();
   const { firebaseUser, logoutArtist, refreshArtist } = useAuth();
-  const [activeTab, setActiveTab] = useState<'view' | 'edit' | 'crafts' | 'settings'>('view');
+  const [activeTab, setActiveTab] = useState<'view' | 'edit' | 'crafts' | 'reviews' | 'settings'>('view');
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
@@ -107,6 +109,7 @@ export function ArtistDashboard() {
     stock: 1,
   });
   const [showAddCraft, setShowAddCraft] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
 
   useEffect(() => {
     if (!firebaseUser) {
@@ -176,6 +179,26 @@ export function ArtistDashboard() {
       setSubmitting(false);
     }
   };
+
+  const handleUploadProfilePic = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadingImage(true);
+    setError('');
+    setSuccess('');
+    try {
+      const formData = new FormData();
+      formData.append('profilePic', file);
+      const response = await uploadArtistProfilePic(formData);
+      setEditForm({ ...editForm, profilePicUrl: response.data.profilePicUrl });
+      setSuccess('Profile picture updated successfully!');
+    } catch (err: any) {
+      setError(err.response?.data?.error || 'Failed to upload image');
+    } finally {
+      setUploadingImage(false);
+    }
+  }
 
   const handleAddCraft = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -263,7 +286,15 @@ export function ArtistDashboard() {
               <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden sticky top-32">
                 <div className="p-6 border-b border-gray-100 bg-[#2F5D50] text-white text-center">
                   <div className="w-20 h-20 bg-[#C9A227] rounded-full mx-auto mb-3 flex items-center justify-center text-2xl font-bold text-[#2F5D50] border-4 border-white/20">
-                    {artistData?.initials || 'LC'}
+                    {artistData?.profilePicUrl ? (
+                      <img
+                        src={artistData.profilePicUrl}
+                        alt="Profile"
+                        className="w-full h-full object-cover rounded-full"
+                      />
+                    ) : (
+                      artistData?.initials
+                    )}
                   </div>
                   <h3 className="font-bold text-lg">{artistData?.fullName || 'Artist'}</h3>
                   <p className="text-white/70 text-sm">{artistData?.craftType || 'Craftsman'}</p>
@@ -272,6 +303,7 @@ export function ArtistDashboard() {
                   <SidebarItem icon={<EyeIcon className="w-4 h-4" />} label="View Profile" active={activeTab === 'view'} onClick={() => setActiveTab('view')} />
                   <SidebarItem icon={<Edit2 className="w-4 h-4" />} label="Edit Profile" active={activeTab === 'edit'} onClick={() => setActiveTab('edit')} />
                   <SidebarItem icon={<BuildingIcon className="w-4 h-4" />} label="My Crafts" active={activeTab === 'crafts'} onClick={() => setActiveTab('crafts')} badge={crafts.length} />
+                  <SidebarItem icon={<MessageCircle className="w-4 h-4" />} label="Reviews" active={activeTab === 'reviews'} onClick={() => setActiveTab('reviews')} />
                   <SidebarItem icon={<Settings className="w-4 h-4" />} label="Settings" active={activeTab === 'settings'} onClick={() => setActiveTab('settings')} />
                 </div>
               </div>
@@ -305,7 +337,15 @@ export function ArtistDashboard() {
                       <div className="absolute bottom-0 left-0 right-0 p-8">
                         <div className="flex flex-col md:flex-row md:items-end gap-6">
                           <div className="w-24 h-24 rounded-full border-4 border-white bg-[#C1440E] shadow-xl flex items-center justify-center text-white text-2xl font-bold">
-                            {artistData?.initials || 'LC'}
+                            {artistData?.profilePicUrl ? (
+                              <img
+                                src={artistData.profilePicUrl}
+                                alt="Profile"
+                                className="w-full h-full object-cover rounded-full"
+                              />
+                            ) : (
+                              artistData?.initials
+                            )}
                           </div>
                           <div className="flex-1 text-white">
                             <div className="flex items-center gap-2 mb-2 text-[#C9A227] font-bold uppercase tracking-wider text-xs">
@@ -415,6 +455,20 @@ export function ArtistDashboard() {
                             onChange={(e) => setEditForm({ ...editForm, bio: e.target.value })}
                             className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-[#2F5D50] outline-none text-sm resize-none"
                           />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-bold text-gray-700 mb-2">Profile Picture</label>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={handleUploadProfilePic}
+                            disabled={uploadingImage}
+                            className="w-full px-4 py-3 rounded-xl border border-gray-200"
+                          />
+                          {uploadingImage && <p className="text-sm text-gray-500">Uploading...</p>}
+                          {editForm.profilePicUrl && (
+                            <img src={editForm.profilePicUrl} alt="Profile" className="w-20 h-20 rounded-full mt-2" />
+                          )}
                         </div>
                       </div>
                     </form>
@@ -550,6 +604,17 @@ export function ArtistDashboard() {
                         ))}
                       </div>
                     )}
+                  </motion.div>
+                )}
+
+                {activeTab === 'reviews' && (
+                  <motion.div
+                    key="reviews"
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -20 }}
+                    className="bg-white rounded-3xl shadow-sm border border-gray-100 p-8">
+                    <ReviewSection context="artisan" artisanName={artistData?.businessName || artistData?.fullName} />
                   </motion.div>
                 )}
 

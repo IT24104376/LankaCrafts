@@ -34,8 +34,10 @@ router.post('/register', async (req, res) => {
       dateOfBirth: tourist.dateOfBirth,
       address: tourist.address,
       savedWorkshops: tourist.savedWorkshops,
+      savedCrafts: tourist.savedCrafts,
       initials: tourist.initials,
       profilePicUrl: tourist.profilePicUrl,
+      reviews: tourist.reviews
     },
   });
 });
@@ -71,8 +73,10 @@ router.post('/login', async (req, res) => {
       dateOfBirth: tourist.dateOfBirth,
       address: tourist.address,
       savedWorkshops: tourist.savedWorkshops,
+      savedCrafts: tourist.savedCrafts,
       initials: tourist.initials,
       profilePicUrl: tourist.profilePicUrl,
+      reviews: tourist.reviews
     },
   });
 });

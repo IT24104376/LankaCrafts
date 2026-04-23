@@ -1,8 +1,10 @@
+
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { bookingApi } from '../api';
 import { Calendar, Clock, Tag, Loader2, RefreshCw, Trash2, Pencil, Check, X } from 'lucide-react';
 import { useNavigate } from "react-router-dom";
+import { useAuth } from '../context/AuthContext';
 // Define the Interface for TypeScript
 interface Booking {
   _id: string;
@@ -26,8 +28,12 @@ interface Props {
 
 const MyBookings: React.FC = () => {
   const navigate = useNavigate();
+  // Using useAuth to get Firebase tied email or fallbacks intelligently
+  const { tourist, firebaseUser, loading: isAuthLoading } = useAuth();
+
   const storedUser = localStorage.getItem("tourist");
-  const email = storedUser ? JSON.parse(storedUser).email : null;
+  const localEmail = storedUser ? JSON.parse(storedUser).email : null;
+  const email = tourist?.email || firebaseUser?.email || localEmail;
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -38,7 +44,7 @@ const MyBookings: React.FC = () => {
     setLoading(true);
     try {
       const data = await bookingApi.getBookingsByEmail(email);
-      setBookings(data);
+      setBookings(data.bookings ? data.bookings : (Array.isArray(data) ? data : []));
     } catch (error: any) {
       console.error("Error fetching bookings:", error.response?.data || error.message);
     } finally {
@@ -85,9 +91,11 @@ const MyBookings: React.FC = () => {
     if (email) {
       fetchBookings();
     } else {
-      setLoading(false);
+      if (!isAuthLoading) {
+        setLoading(false);
+      }
     }
-  }, []);
+  }, [email, isAuthLoading]);
 
   // Loading State UI
   if (loading) return (
@@ -185,3 +193,6 @@ const MyBookings: React.FC = () => {
 };
 
 export default MyBookings;
+
+
+

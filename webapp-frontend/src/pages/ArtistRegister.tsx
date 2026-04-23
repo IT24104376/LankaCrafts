@@ -12,17 +12,16 @@ import {
   BuildingIcon,
   MapIcon,
   PhoneIcon,
-  Upload,
   Plus,
   Trash2,
-  Edit2,
-  Save,
+  ArrowRight,
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import {
   registerArtist as registerArtistApi,
   updateArtistProfile,
+  uploadArtistProfilePic,
   createCraft,
   getMyCrafts,
   updateCraft,
@@ -36,7 +35,7 @@ const CRAFT_TYPES = [
   'Pottery',
   'Mask Making',
   'Brasswork',
-  'Jewelry Making',
+  'Jewellery Making',
   'Textile Weaving',
   'Handloom',
   'Other',
@@ -102,6 +101,8 @@ export function ArtistRegister() {
     formattedAddress: string;
   } | null>(null);
 
+  const [profilePic, setProfilePic] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
   const [mapLoaded, setMapLoaded] = useState(false);
   const mapRef = useRef<L.Map | null>(null);
   const markerRef = useRef<L.Marker | null>(null);
@@ -122,7 +123,7 @@ export function ArtistRegister() {
     specialtys: [] as string[],
   });
 
-  const { registerArtist } = useAuth();
+  const { registerArtist, refreshArtist } = useAuth();
   const navigate = useNavigate();
 
   const districts = step2.province ? DISTRICTS[step2.province] || [] : [];
@@ -141,12 +142,13 @@ export function ArtistRegister() {
       const data = await response.json();
       if (data && data.length > 0) {
         const result = data[0];
-        setLocation({
+        const geocoded = {
           lat: parseFloat(result.lat),
           lng: parseFloat(result.lon),
           formattedAddress: result.display_name,
-        });
-        return { lat: parseFloat(result.lat), lng: parseFloat(result.lon) };
+        };
+        setLocation(geocoded);
+        return geocoded;
       }
     } catch (err) {
       console.error('Geocoding error:', err);
@@ -162,6 +164,7 @@ export function ArtistRegister() {
       await import('leaflet/dist/leaflet.css');
 
       if (mapRef.current) return;
+      if (!mapContainerRef.current) return;
 
       mapRef.current = L.map(mapContainerRef.current).setView([7.8731, 80.7718], 10);
 
@@ -227,6 +230,7 @@ export function ArtistRegister() {
         phone: step1.phone,
         craftType: step1.craftType,
         bio: step3.bio,
+        profilePicUrl: '',
         address: {
           number: step2.number,
           street: step2.street,
@@ -240,12 +244,26 @@ export function ArtistRegister() {
           ? {
             type: 'Point',
             coordinates: [coords.lng, coords.lat],
-            formattedAddress: location?.formattedAddress || '',
+            formattedAddress: coords.formattedAddress,
           }
           : undefined,
         specialties,
         availability,
       });
+
+      // Upload profile picture if provided
+      if (profilePic) {
+        setUploading(true);
+        const formData = new FormData();
+        formData.append('profilePic', profilePic);
+        await uploadArtistProfilePic(formData);
+        setUploading(false);
+      }
+
+      // Refresh artist state after registration
+      await refreshArtist();
+
+
 
       navigate('/dashboard');
     } catch (err: unknown) {
@@ -405,7 +423,7 @@ export function ArtistRegister() {
                     <label className="block text-sm font-semibold text-[#1E1E1E] mb-1.5 font-body">Phone Number</label>
                     <div className="relative">
                       <PhoneIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                      <input type="tel" required value={step1.phone} onChange={(e) => setStep1({ ...step1, phone: e.target.value })} placeholder="+94 77 123 4567" className="w-full pl-12 pr-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-[#2F5D50] focus:border-transparent outline-none text-sm font-body" />
+                      <input type="tel" required value={step1.phone} onChange={(e) => setStep1({ ...step1, phone: e.target.value })} placeholder="0 771234567" className="w-full pl-12 pr-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-[#2F5D50] focus:border-transparent outline-none text-sm font-body" />
                     </div>
                   </div>
 
@@ -421,8 +439,18 @@ export function ArtistRegister() {
                     </div>
                   </div>
 
+                  <div>
+                    <label className="block text-sm font-semibold text-[#1E1E1E] mb-1.5 font-body">Profile Picture</label>
+                    <input
+                      type='file'
+                      accept="image/*"
+                      onChange={(e) => setProfilePic(e.target.files?.[0] || null)}
+                      className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-[#2F5D50] outline-none text-sm font-body"
+                    />
+                  </div>
+
                   <motion.button type="button" onClick={() => setStep(2)} disabled={!step1.fullName || !step1.email || !step1.password || !step1.confirmPassword || !step1.phone || !step1.craftType || step1.password !== step1.confirmPassword} whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.98 }} className="w-full py-3.5 rounded-xl text-white font-semibold text-sm font-body transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed" style={{ backgroundColor: '#2F5D50' }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#1A4D45'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#2F5D50'}>
-                    Continue <ArrowRightIcon className="w-4 h-4" />
+                    Continue <ArrowRight className="w-4 h-4" />
                   </motion.button>
                 </div>
               </motion.div>
@@ -438,14 +466,14 @@ export function ArtistRegister() {
                       <label className="block text-sm font-semibold text-[#1E1E1E] mb-1.5 font-body">House Number</label>
                       <div className="relative">
                         <HomeIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                        <input type="text" required value={step2.number} onChange={(e) => setStep2({ ...step2, number: e.target.value })} placeholder="No. 123" className="w-full pl-12 pr-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-[#2F5D50] focus:border-transparent outline-none text-sm font-body" />
+                        <input type="text" required value={step2.number} onChange={(e) => setStep2({ ...step2, number: e.target.value })} className="w-full pl-12 pr-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-[#2F5D50] focus:border-transparent outline-none text-sm font-body" />
                       </div>
                     </div>
                     <div>
                       <label className="block text-sm font-semibold text-[#1E1E1E] mb-1.5 font-body">Street</label>
                       <div className="relative">
                         <MapIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                        <input type="text" required value={step2.street} onChange={(e) => setStep2({ ...step2, street: e.target.value })} placeholder="Main Street" className="w-full pl-12 pr-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-[#2F5D50] focus:border-transparent outline-none text-sm font-body" />
+                        <input type="text" required value={step2.street} onChange={(e) => setStep2({ ...step2, street: e.target.value })} className="w-full pl-12 pr-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-[#2F5D50] focus:border-transparent outline-none text-sm font-body" />
                       </div>
                     </div>
                   </div>
@@ -454,7 +482,7 @@ export function ArtistRegister() {
                     <label className="block text-sm font-semibold text-[#1E1E1E] mb-1.5 font-body">Village (Optional)</label>
                     <div className="relative">
                       <MapPinIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                      <input type="text" value={step2.village} onChange={(e) => setStep2({ ...step2, village: e.target.value })} placeholder="Kandy" className="w-full pl-12 pr-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-[#2F5D50] focus:border-transparent outline-none text-sm font-body" />
+                      <input type="text" value={step2.village} onChange={(e) => setStep2({ ...step2, village: e.target.value })} className="w-full pl-12 pr-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-[#2F5D50] focus:border-transparent outline-none text-sm font-body" />
                     </div>
                   </div>
 
@@ -463,39 +491,41 @@ export function ArtistRegister() {
                       <label className="block text-sm font-semibold text-[#1E1E1E] mb-1.5 font-body">City</label>
                       <div className="relative">
                         <MapIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                        <input type="text" required value={step2.city} onChange={(e) => setStep2({ ...step2, city: e.target.value })} placeholder="Kandy" className="w-full pl-12 pr-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-[#2F5D50] focus:border-transparent outline-none text-sm font-body" />
+                        <input type="text" required value={step2.city} onChange={(e) => setStep2({ ...step2, city: e.target.value })} className="w-full pl-12 pr-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-[#2F5D50] focus:border-transparent outline-none text-sm font-body" />
                       </div>
                     </div>
                     <div>
                       <label className="block text-sm font-semibold text-[#1E1E1E] mb-1.5 font-body">Postal Code</label>
-                      <input type="text" value={step2.postalCode} onChange={(e) => setStep2({ ...step2, postalCode: e.target.value })} placeholder="20000" className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-[#2F5D50] focus:border-transparent outline-none text-sm font-body" />
+                      <input type="text" value={step2.postalCode} onChange={(e) => setStep2({ ...step2, postalCode: e.target.value })} className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-[#2F5D50] focus:border-transparent outline-none text-sm font-body" />
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-semibold text-[#1E1E1E] mb-1.5 font-body">District</label>
-                      <div className="relative">
-                        <BuildingIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                        <select required value={step2.district} onChange={(e) => setStep2({ ...step2, district: e.target.value })} className="w-full pl-12 pr-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-[#2F5D50] focus:border-transparent outline-none text-sm font-body bg-white appearance-none">
-                          <option value="">Select district...</option>
-                          {districts.map((d) => <option key={d} value={d}>{d}</option>)}
-                        </select>
-                        <ChevronRightIcon className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 rotate-90 pointer-events-none" />
-                      </div>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-semibold text-[#1E1E1E] mb-1.5 font-body">Province</label>
-                      <div className="relative">
-                        <BuildingIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                        <select required value={step2.province} onChange={(e) => setStep2({ ...step2, province: e.target.value, district: '' })} className="w-full pl-12 pr-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-[#2F5D50] focus:border-transparent outline-none text-sm font-body bg-white appearance-none">
-                          <option value="">Select province...</option>
-                          {PROVINCES.map((p) => <option key={p} value={p}>{p}</option>)}
-                        </select>
-                        <ChevronRightIcon className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 rotate-90 pointer-events-none" />
-                      </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-[#1E1E1E] mb-1.5 font-body">Province</label>
+                    <div className="relative">
+                      <BuildingIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                      <select required value={step2.province} onChange={(e) => setStep2({ ...step2, province: e.target.value, district: '' })} className="w-full pl-12 pr-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-[#2F5D50] focus:border-transparent outline-none text-sm font-body bg-white appearance-none">
+                        <option value="">Select province...</option>
+                        {PROVINCES.map((p) => <option key={p} value={p}>{p}</option>)}
+                      </select>
+                      <ChevronRightIcon className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 rotate-90 pointer-events-none" />
                     </div>
                   </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-semibold text-[#1E1E1E] mb-1.5 font-body">District</label>
+                    <div className="relative">
+                      <BuildingIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                      <select required value={step2.district} onChange={(e) => setStep2({ ...step2, district: e.target.value })} className="w-full pl-12 pr-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-[#2F5D50] focus:border-transparent outline-none text-sm font-body bg-white appearance-none">
+                        <option value="">Select district...</option>
+                        {districts.map((d) => <option key={d} value={d}>{d}</option>)}
+                      </select>
+                      <ChevronRightIcon className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 rotate-90 pointer-events-none" />
+                    </div>
+                  </div>
+
 
                   <div>
                     <label className="block text-sm font-semibold text-[#1E1E1E] mb-1.5 font-body">Map Location</label>
@@ -593,6 +623,8 @@ export function ArtistRegister() {
           <p className="text-center text-sm text-gray-400 mt-8 font-body">
             Already have an account?{' '}
             <Link to="/login" className="font-bold" style={{ color: '#2F5D50' }}>Sign in</Link>
+            <br />
+            <Link to="/" className="font-bold" style={{ color: '#2F5D50' }}>Back to Home</Link>
           </p>
         </div>
       </div>

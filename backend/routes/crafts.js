@@ -48,19 +48,6 @@ router.post('/crafts', authenticate, async (req, res) => {
   }
 });
 
-router.get('/crafts/my', authenticate, async (req, res) => {
-  try {
-    const artist = await Artist.findOne({ firebaseUid: req.uid });
-    if (!artist) {
-      return res.status(404).json({ error: 'Artist profile not found.' });
-    }
-
-    const crafts = await getCraftsByArtist(artist._id);
-    res.json({ crafts });
-  } catch (err) {
-    res.status(err.status || 500).json({ error: err.message });
-  }
-});
 
 router.patch('/crafts/:id', authenticate, async (req, res) => {
   try {
@@ -95,15 +82,17 @@ router.delete('/crafts/:id', authenticate, async (req, res) => {
 
 router.get('/public/crafts', async (req, res) => {
   try {
-    const { page = 1, limit = 20, category, search } = req.query;
+    const { page = 1, limit = 20, category, search, artistId } = req.query;
 
     let result;
     if (search) {
       result = await searchCrafts(search, parseInt(page), parseInt(limit));
-    } else if (category) {
-      result = await getCraftsByCategory(category, parseInt(page), parseInt(limit));
     } else {
-      result = await getAllCrafts({}, { createdAt: -1 }, parseInt(page), parseInt(limit));
+      const filters = {};
+      if (category) filters.category = category;
+      if (artistId) filters.artistId = artistId;
+      
+      result = await getAllCrafts(filters, { createdAt: -1 }, parseInt(page), parseInt(limit));
     }
 
     res.json(result);

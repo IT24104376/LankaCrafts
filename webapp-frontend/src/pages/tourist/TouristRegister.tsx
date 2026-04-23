@@ -367,6 +367,10 @@ export function TouristRegister() {
           <p className="text-center text-sm text-gray-400 mt-8 font-body">
             Already have an account?{' '}
             <Link to="/tourist/login" className="font-bold" style={{ color: '#C1440E' }}>Sign in</Link>
+            <br />
+            <Link to="/" className="font-bold" style={{ color: '#C1440E' }}>
+              Back to Home
+            </Link>
           </p>
         </div>
       </div>

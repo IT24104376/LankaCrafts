@@ -78,6 +78,12 @@ const touristSchema = new mongoose.Schema(
       default: [],
     },
 
+     // ── Saved Crafts ──────────────────────────────────────────────────────
+    savedCrafts: {
+      type: [String], // store craft IDs
+      default: [],
+    },
+
     // --- Profile Picture ---------------------------------------------
     profilePicUrl: {
       type: String,

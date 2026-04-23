@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { getArtisans, updateArtisanStatus } from '../../api/adminApi';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   SearchIcon,
@@ -18,7 +19,7 @@ import {
 'lucide-react';
 type ArtisanStatus = 'pending' | 'verified' | 'rejected';
 interface Artisan {
-  id: number;
+  id: string;
   name: string;
   craft: string;
   region: string;
@@ -34,126 +35,6 @@ interface Artisan {
   certifications: string[];
   workshops: number;
 }
-const ARTISANS: Artisan[] = [
-{
-  id: 1,
-  name: 'Nimal Perera',
-  craft: 'Kandyan Lacquerwork',
-  region: 'Kandy',
-  email: 'nimal.perera@example.com',
-  phone: '+94 77 123 4567',
-  submittedDate: '2024-01-15',
-  status: 'pending',
-  rating: 4.9,
-  experience: '40 years',
-  bio: 'Master craftsman specializing in traditional Kandyan lacquerwork. UNESCO recognized Living Heritage Practitioner.',
-  initials: 'NP',
-  color: '#C65D3B',
-  certifications: ['UNESCO Heritage', 'National Crafts Council'],
-  workshops: 12
-},
-{
-  id: 2,
-  name: 'Kamala Wijesinghe',
-  craft: 'Batik Textiles',
-  region: 'Kandy',
-  email: 'kamala.w@example.com',
-  phone: '+94 71 234 5678',
-  submittedDate: '2024-01-18',
-  status: 'verified',
-  rating: 4.8,
-  experience: '28 years',
-  bio: 'Expert batik artist creating intricate wax-resist patterns on silk and cotton.',
-  initials: 'KW',
-  color: '#2F5D50',
-  certifications: ['National Crafts Council'],
-  workshops: 8
-},
-{
-  id: 3,
-  name: 'Suresh Fernando',
-  craft: 'Mask Carving',
-  region: 'Ambalangoda',
-  email: 'suresh.f@example.com',
-  phone: '+94 76 345 6789',
-  submittedDate: '2024-01-20',
-  status: 'pending',
-  rating: 4.7,
-  experience: '35 years',
-  bio: 'Third-generation mask carver from Ambalangoda, specializing in kolam and sanni masks.',
-  initials: 'SF',
-  color: '#C9A227',
-  certifications: ['Heritage Artisan Certificate'],
-  workshops: 15
-},
-{
-  id: 4,
-  name: 'Priya Rajapaksa',
-  craft: 'Palmyra Weaving',
-  region: 'Jaffna',
-  email: 'priya.r@example.com',
-  phone: '+94 75 456 7890',
-  submittedDate: '2024-01-22',
-  status: 'verified',
-  rating: 4.9,
-  experience: '22 years',
-  bio: 'Carries forward the Jaffna tradition of palmyra weaving, transforming palm leaves into beautiful crafts.',
-  initials: 'PR',
-  color: '#C65D3B',
-  certifications: ['Northern Province Arts Board'],
-  workshops: 6
-},
-{
-  id: 5,
-  name: 'Anura Dissanayake',
-  craft: 'Brasswork',
-  region: 'Colombo',
-  email: 'anura.d@example.com',
-  phone: '+94 77 567 8901',
-  submittedDate: '2024-01-25',
-  status: 'rejected',
-  rating: 4.6,
-  experience: '31 years',
-  bio: 'Master metalsmith specializing in traditional brass vessels, lamps, and temple artifacts.',
-  initials: 'AD',
-  color: '#2F5D50',
-  certifications: [],
-  workshops: 4
-},
-{
-  id: 6,
-  name: 'Nilmini Senanayake',
-  craft: 'Gem Polishing',
-  region: 'Ratnapura',
-  email: 'nilmini.s@example.com',
-  phone: '+94 71 678 9012',
-  submittedDate: '2024-01-28',
-  status: 'pending',
-  rating: 4.5,
-  experience: '18 years',
-  bio: 'Expert gem polisher from Ratnapura, the City of Gems, specializing in sapphires and rubies.',
-  initials: 'NS',
-  color: '#C9A227',
-  certifications: ['Gem & Jewellery Authority'],
-  workshops: 3
-},
-{
-  id: 7,
-  name: 'Rohan De Silva',
-  craft: 'Pottery',
-  region: 'Kelaniya',
-  email: 'rohan.ds@example.com',
-  phone: '+94 76 789 0123',
-  submittedDate: '2024-02-01',
-  status: 'verified',
-  rating: 4.8,
-  experience: '25 years',
-  bio: 'Shapes unglazed earthenware on ancient wheels in his Kelaniya workshop.',
-  initials: 'RD',
-  color: '#C65D3B',
-  certifications: ['National Crafts Council', 'Heritage Artisan Certificate'],
-  workshops: 10
-}];
 
 const STATUS_CONFIG: Record<
   ArtisanStatus,
@@ -187,13 +68,37 @@ interface ArtisanVerificationProps {
   onNavigate?: (section: string) => void;
 }
 export function ArtisanVerification({ onNavigate }: ArtisanVerificationProps) {
-  const [artisans, setArtisans] = useState<Artisan[]>(ARTISANS);
+  const [artisans, setArtisans] = useState<Artisan[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<ArtisanStatus | 'all'>('all');
   const [regionFilter, setRegionFilter] = useState('all');
   const [selectedArtisan, setSelectedArtisan] = useState<Artisan | null>(null);
   const [showFilterDropdown, setShowFilterDropdown] = useState(false);
-  const regions = ['all', ...Array.from(new Set(ARTISANS.map((a) => a.region)))];
+
+  useEffect(() => {
+    getArtisans().then(res => {
+      const list = (res.data.data || []).map((a: any) => ({
+        id: a._id,
+        name: a.name || a.fullName || '',
+        craft: a.craft || a.craftType || '',
+        region: a.region || a.location?.formattedAddress || '',
+        email: a.email || '',
+        phone: a.phone || '',
+        submittedDate: a.submittedDate || a.createdAt || '',
+        status: a.status || 'pending',
+        rating: a.rating || 0,
+        experience: a.experience || '',
+        bio: a.bio || '',
+        initials: a.initials || (a.name || a.fullName || 'A').split(' ').map((n: string) => n[0]).join('').slice(0, 2),
+        color: a.color || '#2F5D50',
+        certifications: a.certifications || [],
+        workshops: a.workshops || 0,
+      }));
+      setArtisans(list);
+    }).catch(() => {});
+  }, []);
+
+  const regions = ['all', ...Array.from(new Set(artisans.map((a) => a.region)))];
   const filtered = artisans.filter((a) => {
     const matchSearch =
     a.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -203,47 +108,19 @@ export function ArtisanVerification({ onNavigate }: ArtisanVerificationProps) {
     const matchRegion = regionFilter === 'all' || a.region === regionFilter;
     return matchSearch && matchStatus && matchRegion;
   });
-  const handleApprove = (id: number) => {
-    setArtisans((prev) =>
-    prev.map((a) =>
-    a.id === id ?
-    {
-      ...a,
-      status: 'verified' as ArtisanStatus
-    } :
-    a
-    )
-    );
-    if (selectedArtisan?.id === id)
-    setSelectedArtisan((prev) =>
-    prev ?
-    {
-      ...prev,
-      status: 'verified'
-    } :
-    null
-    );
+  const handleApprove = async (id: string) => {
+    try {
+      await updateArtisanStatus(id, 'verified');
+      setArtisans(prev => prev.map(a => a.id === id ? { ...a, status: 'verified' as ArtisanStatus } : a));
+      if (selectedArtisan?.id === id) setSelectedArtisan(prev => prev ? { ...prev, status: 'verified' } : null);
+    } catch {}
   };
-  const handleReject = (id: number) => {
-    setArtisans((prev) =>
-    prev.map((a) =>
-    a.id === id ?
-    {
-      ...a,
-      status: 'rejected' as ArtisanStatus
-    } :
-    a
-    )
-    );
-    if (selectedArtisan?.id === id)
-    setSelectedArtisan((prev) =>
-    prev ?
-    {
-      ...prev,
-      status: 'rejected'
-    } :
-    null
-    );
+  const handleReject = async (id: string) => {
+    try {
+      await updateArtisanStatus(id, 'rejected');
+      setArtisans(prev => prev.map(a => a.id === id ? { ...a, status: 'rejected' as ArtisanStatus } : a));
+      if (selectedArtisan?.id === id) setSelectedArtisan(prev => prev ? { ...prev, status: 'rejected' } : null);
+    } catch {}
   };
   const counts = {
     all: artisans.length,

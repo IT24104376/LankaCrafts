@@ -139,6 +139,37 @@ export async function removeSavedWorkshop(touristId, workshopId) {
 }
 
 /**
+ * Return saved crafts list.
+ */
+export function getSavedCrafts(tourist) {
+  return tourist.savedCrafts || [];
+}
+
+/**
+ * Add a craft ID to the saved-crafts list.
+ */
+export async function addSavedCraft(touristId, craftId) {
+  const updated = await Tourist.findByIdAndUpdate(
+    touristId,
+    { $addToSet: { savedCrafts: craftId.toString() } },
+    { new: true }
+  );
+  return updated.savedCrafts;
+}
+
+/**
+ * Remove a craft ID from the saved-crafts list.
+ */
+export async function removeSavedCraft(touristId, craftId) {
+  const updated = await Tourist.findByIdAndUpdate(
+    touristId,
+    { $pull: { savedCrafts: craftId.toString() } },
+    { new: true }
+  );
+  return updated.savedCrafts;
+}
+
+/**
  * Return the tourist's reviews array.
  */
 export function getReviews(tourist) {

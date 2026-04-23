@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     ShoppingCartIcon,
@@ -6,61 +6,33 @@ import {
     StarIcon,
     MapPinIcon,
     SearchIcon,
-    ChevronRightIcon,
     XIcon,
     CheckIcon,
-    TruckIcon,
-    ShieldCheckIcon,
-    RefreshCwIcon,
-    AwardIcon,
 } from 'lucide-react';
 import { Navbar } from '../components/Navbar';
 import { Footer } from '../components/Footer';
 import { Link } from 'react-router-dom';
-import { getCrafts } from '../services/api';
+import { getCrafts, getSavedCrafts, addSavedCraft, removeSavedCraft, getCraftById } from '../services/api';
 
 // ── Types ──────────────────────────────────────────────────────
 interface Product {
-    id: string;
     _id: string;
     name: string;
-    artisan?: {
+    description: string;
+    price: number;
+    currency: string;
+    category: string;
+    images: string[];
+    stock: number;
+    isAvailable: boolean;
+    artistId?: {
         fullName: string;
         _id: string;
+        craftType?: string;
     };
-    artisanId?: string;
-    region?: string;
-    category: string;
-    price: number;
-    originalPrice?: number;
-    rating: number;
-    reviews: number;
-    image: string;
-    badge?: string;
-    description: string;
-    materials?: string[];
-    stock: number;
 }
 
-// ── Product Data ───────────────────────────────────────────────
-// Dynamic data will be fetched from API
-let PRODUCTS: Product[] = [];
-
-const CATEGORIES = ['All', 'Lacquerwork', 'Batik', 'Mask Carving', 'Pottery', 'Handloom', 'Brasswork'];
-const REGIONS = ['All', 'Kandy', 'Ambalangoda', 'Kelaniya', 'Dumbara Valley', 'Colombo'];
-const SORT_OPTIONS = ['Featured', 'Price: Low to High', 'Price: High to Low', 'Top Rated', 'Most Reviews'];
-
-// Badge color map
-const BADGE_STYLES: Record<string, { bg: string; text: string }> = {
-    'Best Seller': { bg: '#FEF3C7', text: '#92400E' },
-    'Handmade': { bg: '#D1FAE5', text: '#065F46' },
-    'Heritage Piece': { bg: '#FDE8D8', text: '#9A3412' },
-    'Eco-Friendly': { bg: '#DCFCE7', text: '#166534' },
-    'GI Tagged': { bg: '#EDE9FE', text: '#5B21B6' },
-    'Artisan Pick': { bg: '#FDF8E7', text: '#78400F' },
-    'New Arrival': { bg: '#DBEAFE', text: '#1E40AF' },
-    'Tourist Favourite': { bg: '#FCE7F3', text: '#9D174D' },
-};
+const CATEGORIES = ['All', 'Lacquerwork', 'Batik', 'Mask Carving', 'Pottery', 'Handloom', 'Brasswork', 'Wood Carving', 'Jewelry', 'Other'];
 
 // ── Cart Toast ──────────────────────────────────────────────────
 function CartToast({ show, name }: { show: boolean; name: string }) {
@@ -95,11 +67,11 @@ function ProductCard({
     product: Product;
     onAddToCart: (p: Product) => void;
     isWished: boolean;
-    onToggleWish: (id: number) => void;
+    onToggleWish: (id: string) => void;
 }) {
-    const discount = product.originalPrice
-        ? Math.round((1 - product.price / product.originalPrice) * 100)
-        : null;
+    const imageUrl = product.images && product.images.length > 0 
+        ? product.images[0] 
+        : 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&auto=format&fit=crop';
 
     return (
         <motion.div
@@ -114,36 +86,16 @@ function ProductCard({
             {/* Image */}
             <div className="relative overflow-hidden" style={{ height: 240 }}>
                 <img
-                    src={product.image}
+                    src={imageUrl}
                     alt={product.name}
                     className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                 />
                 {/* Overlays */}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 
-                {/* Badges */}
-                <div className="absolute top-3 left-3 flex flex-col gap-1.5">
-                    {product.badge && (
-                        <span
-                            className="text-[10px] font-bold px-2.5 py-1 rounded-full backdrop-blur-sm"
-                            style={{
-                                backgroundColor: BADGE_STYLES[product.badge]?.bg ?? '#FDF8E7',
-                                color: BADGE_STYLES[product.badge]?.text ?? '#78400F',
-                            }}
-                        >
-                            {product.badge}
-                        </span>
-                    )}
-                    {discount && (
-                        <span className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-[#C65D3B] text-white">
-                            -{discount}%
-                        </span>
-                    )}
-                </div>
-
                 {/* Wishlist button */}
                 <button
-                    onClick={() => onToggleWish(product._id || product.id)}
+                    onClick={() => onToggleWish(product._id)}
                     className="absolute top-3 right-3 w-9 h-9 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center shadow-md hover:scale-110 transition-transform"
                 >
                     <HeartIcon
@@ -167,14 +119,11 @@ function ProductCard({
 
             {/* Info */}
             <div className="p-5 flex flex-col flex-1">
-                {/* Region tag */}
+                {/* Category tag */}
                 <div className="flex items-center gap-1 mb-2">
-                    <MapPinIcon className="w-3 h-3" style={{ color: '#C9A227' }} />
                     <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: '#C9A227' }}>
-                        {product.region}
+                        {product.category}
                     </span>
-                    <span className="text-[10px] text-gray-300 mx-1">·</span>
-                    <span className="text-[10px] text-gray-400 font-body">{product.category}</span>
                 </div>
 
                 <h3
@@ -184,47 +133,31 @@ function ProductCard({
                     {product.name}
                 </h3>
 
-                <Link
-                    to={`/artist/${product.artisanId || product.artisan?._id}`}
-                    className="text-xs font-body mb-3 hover:underline transition-colors"
-                    style={{ color: '#2F5D50' }}
-                >
-                    by {product.artisan?.fullName || product.artisan || 'Artisan'}
-                </Link>
-
-                {/* Rating */}
-                <div className="flex items-center gap-1.5 mb-4">
-                    <div className="flex items-center gap-0.5">
-                        {[1, 2, 3, 4, 5].map((s) => (
-                            <StarIcon
-                                key={s}
-                                className="w-3.5 h-3.5"
-                                style={{
-                                    color: s <= Math.round(product.rating) ? '#C9A227' : '#E5E7EB',
-                                    fill: s <= Math.round(product.rating) ? '#C9A227' : 'none',
-                                }}
-                            />
-                        ))}
-                    </div>
-                    <span className="text-xs font-bold text-[#1E1E1E]">{product.rating}</span>
-                    <span className="text-xs text-gray-400">({product.reviews})</span>
-                </div>
+                {product.artistId && (
+                    <Link
+                        to={`/artist/${product.artistId._id}`}
+                        className="text-xs font-body mb-3 hover:underline transition-colors"
+                        style={{ color: '#2F5D50' }}
+                    >
+                        by {product.artistId.fullName}
+                    </Link>
+                )}
 
                 {/* Price row */}
                 <div className="mt-auto flex items-center justify-between">
                     <div>
                         <span className="text-lg font-black text-[#2F5D50]" style={{ fontFamily: 'Fraunces, serif' }}>
-                            LKR {product.price.toLocaleString()}
+                            {product.currency === 'USD' ? '$' : 'LKR '}{product.price.toLocaleString()}
                         </span>
-                        {product.originalPrice && (
-                            <span className="text-xs text-gray-400 line-through ml-2">
-                                LKR {product.originalPrice.toLocaleString()}
-                            </span>
-                        )}
                     </div>
-                    {product.stock <= 5 && (
+                    {product.stock <= 5 && product.stock > 0 && (
                         <span className="text-[10px] font-bold text-[#C65D3B] bg-[#FEF0EB] px-2 py-1 rounded-full">
                             Only {product.stock} left
+                        </span>
+                    )}
+                    {!product.isAvailable && (
+                        <span className="text-[10px] font-bold text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
+                            Unavailable
                         </span>
                     )}
                 </div>
@@ -237,26 +170,52 @@ function ProductCard({
 export function CraftShop() {
     const [search, setSearch] = useState('');
     const [activeCategory, setActiveCategory] = useState('All');
-    const [activeRegion, setActiveRegion] = useState('All');
-    const [sortBy, setSortBy] = useState('Featured');
     const [wishlist, setWishlist] = useState<string[]>([]);
     const [cart, setCart] = useState<string[]>([]);
     const [toastProduct, setToastProduct] = useState<string | null>(null);
     const [products, setProducts] = useState<Product[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
+    const [isLoggedIn, setIsLoggedIn] = useState(false);
 
     useEffect(() => {
         loadCrafts();
-    }, [activeCategory, search]);
+        loadSavedCrafts();
+        checkAuth();
+    }, [activeCategory]);
+
+    const checkAuth = () => {
+        // Simple check for auth - will be replaced with proper auth context
+        const token = localStorage.getItem('firebaseToken');
+        setIsLoggedIn(!!token);
+    };
+
+    const loadSavedCrafts = async () => {
+        if (!isLoggedIn) return;
+        try {
+            const response = await getSavedCrafts();
+            setWishlist(response.data.savedCrafts || []);
+        } catch (err) {
+            console.error('Failed to load saved crafts:', err);
+        }
+    };
 
     const loadCrafts = async () => {
         try {
             setLoading(true);
             const category = activeCategory !== 'All' ? activeCategory : undefined;
-            const searchTerm = search || undefined;
-            const response = await getCrafts(1, 50, category, searchTerm);
-            setProducts(response.data.crafts || []);
+            const response = await getCrafts(1, 50, category);
+            
+            // Filter by search if provided
+            let crafts = response.data.crafts || [];
+            if (search.trim()) {
+                const q = search.toLowerCase();
+                crafts = crafts.filter(
+                    (p: Product) => p.name.toLowerCase().includes(q) || p.category.toLowerCase().includes(q)
+                );
+            }
+            
+            setProducts(crafts);
         } catch (err: any) {
             console.error('Failed to load crafts:', err);
             setError('Failed to load crafts. Please try again.');
@@ -265,47 +224,50 @@ export function CraftShop() {
         }
     };
 
-    const toggleWish = (id: string) =>
-        setWishlist((prev) => (prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]));
+    const toggleWish = async (id: string) => {
+        if (!isLoggedIn) {
+            alert('Please log in to save crafts to your wishlist');
+            return;
+        }
+
+        const isWished = wishlist.includes(id);
+        
+        try {
+            if (isWished) {
+                await removeSavedCraft(id);
+                setWishlist((prev) => prev.filter((i) => i !== id));
+            } else {
+                await addSavedCraft(id);
+                setWishlist((prev) => [...prev, id]);
+            }
+        } catch (err) {
+            console.error('Failed to update wishlist:', err);
+        }
+    };
 
     const addToCart = (product: Product) => {
-        setCart((prev) => [...prev, product._id || product.id]);
+        setCart((prev) => [...prev, product._id]);
         setToastProduct(product.name);
         setTimeout(() => setToastProduct(null), 2500);
     };
 
-    const filtered = useMemo(() => {
-        let list = [...products];
-        if (search.trim()) {
-            const q = search.toLowerCase();
-            list = list.filter(
-                (p) => p.name.toLowerCase().includes(q) || p.category.toLowerCase().includes(q)
-            );
-        }
-        if (activeCategory !== 'All') list = list.filter((p) => p.category === activeCategory);
-        switch (sortBy) {
-            case 'Price: Low to High': list.sort((a, b) => a.price - b.price); break;
-            case 'Price: High to Low': list.sort((a, b) => b.price - a.price); break;
-            case 'Top Rated': list.sort((a, b) => b.rating - a.rating); break;
-            case 'Most Reviews': list.sort((a, b) => b.reviews - a.reviews); break;
-        }
-        return list;
-    }, [search, activeCategory, activeRegion, sortBy, products]);
+    const handleSearch = (e: React.FormEvent) => {
+        e.preventDefault();
+        loadCrafts();
+    };
 
     return (
         <div className="min-h-screen" style={{ fontFamily: 'Inter, sans-serif', backgroundColor: '#F6F3EE' }}>
             <Navbar />
 
             {/* ── HERO BANNER ──────────────────────────────────────── */}
-            <div className="relative overflow-hidden pt-20" style={{ minHeight: 440 }}>
-                {/* BG gradient */}
+            <div className="relative overflow-hidden pt-20" style={{ minHeight: 300 }}>
                 <div
                     className="absolute inset-0"
                     style={{
                         background: 'linear-gradient(135deg, #2F5D50 0%, #1A3D33 50%, #0F2822 100%)',
                     }}
                 />
-                {/* Batik-style SVG pattern overlay */}
                 <div className="absolute inset-0 opacity-10">
                     <svg width="100%" height="100%">
                         <defs>
@@ -313,110 +275,33 @@ export function CraftShop() {
                                 <polygon points="40,4 76,40 40,76 4,40" fill="none" stroke="white" strokeWidth="1.5" />
                                 <circle cx="40" cy="40" r="8" fill="none" stroke="white" strokeWidth="1" />
                                 <circle cx="40" cy="40" r="2" fill="white" />
-                                <polygon points="40,20 56,40 40,60 24,40" fill="none" stroke="white" strokeWidth="0.8" opacity="0.5" />
                             </pattern>
                         </defs>
                         <rect width="100%" height="100%" fill="url(#batik-hero)" />
                     </svg>
                 </div>
 
-                {/* Floating decorative orbs */}
-                <div className="absolute top-10 right-20 w-64 h-64 rounded-full opacity-10" style={{ backgroundColor: '#C9A227', filter: 'blur(60px)' }} />
-                <div className="absolute bottom-0 left-10 w-80 h-40 rounded-full opacity-10" style={{ backgroundColor: '#C65D3B', filter: 'blur(80px)' }} />
-
-                <div className="relative z-10 max-w-7xl mx-auto px-6 py-20 flex flex-col md:flex-row items-center justify-between gap-10">
+                <div className="relative z-10 max-w-7xl mx-auto px-6 py-16 flex flex-col md:flex-row items-center justify-between gap-10">
                     <div className="text-white max-w-xl">
-                        <motion.span
-                            initial={{ opacity: 0, y: 12 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            className="inline-flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.2em] mb-5 px-4 py-1.5 rounded-full"
-                            style={{ backgroundColor: 'rgba(201,162,39,0.2)', color: '#C9A227' }}
-                        >
-                            <AwardIcon className="w-3.5 h-3.5" /> Authentic Sri Lankan Crafts
-                        </motion.span>
                         <motion.h1
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: 0.08 }}
                             className="text-5xl md:text-6xl font-black mb-4 leading-tight"
                             style={{ fontFamily: 'Fraunces, serif' }}
                         >
-                            Shop the
+                            Shop
                             <br />
-                            <span style={{ color: '#C9A227' }}>Soul</span> of Lanka
+                            <span style={{ color: '#C9A227' }}>Crafts</span>
                         </motion.h1>
                         <motion.p
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: 0.16 }}
-                            className="text-white/70 text-base leading-relaxed mb-8"
+                            className="text-white/70 text-base leading-relaxed"
                         >
-                            Every piece you purchase directly supports a master artisan and keeps
-                            a 2000-year-old tradition alive. Take home a story.
+                            Discover authentic Sri Lankan crafts directly from master artisans.
                         </motion.p>
-                        <motion.div
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: 0.24 }}
-                            className="flex flex-wrap items-center gap-6"
-                        >
-                            {[
-                                { icon: ShieldCheckIcon, label: 'Authenticity Certified' },
-                                { icon: TruckIcon, label: 'Worldwide Shipping' },
-                                { icon: RefreshCwIcon, label: '14-Day Returns' },
-                            ].map(({ icon: Icon, label }) => (
-                                <div key={label} className="flex items-center gap-2 text-sm text-white/80">
-                                    <Icon className="w-4 h-4" style={{ color: '#C9A227' }} />
-                                    {label}
-                                </div>
-                            ))}
-                        </motion.div>
                     </div>
-
-                    {/* Stats block */}
-                    <motion.div
-                        initial={{ opacity: 0, x: 30 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: 0.2 }}
-                        className="hidden md:grid grid-cols-2 gap-4 shrink-0"
-                    >
-                        {[
-                            { value: '120+', label: 'Artisans' },
-                            { value: '6', label: 'Craft Types' },
-                            { value: '9 Prov.', label: 'Coverage' },
-                            { value: '4.9★', label: 'Avg Rating' },
-                        ].map(({ value, label }) => (
-                            <div
-                                key={label}
-                                className="rounded-2xl px-6 py-5 text-center"
-                                style={{ backgroundColor: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.12)' }}
-                            >
-                                <p className="text-2xl font-black text-white" style={{ fontFamily: 'Fraunces, serif' }}>{value}</p>
-                                <p className="text-xs text-white/50 mt-0.5">{label}</p>
-                            </div>
-                        ))}
-                    </motion.div>
-                </div>
-            </div>
-
-            {/* ── CULTURE STRIP ─────────────────────────────────────── */}
-            <div
-                className="border-y border-[#C9A227]/20 overflow-hidden"
-                style={{ backgroundColor: '#FDF8E7' }}
-            >
-                <div className="max-w-7xl mx-auto px-6 py-5 flex flex-wrap justify-center md:justify-between items-center gap-4">
-                    {[
-                        { emoji: '🎨', text: 'Batik – Wax-resist dyeing from Kandy' },
-                        { emoji: '⚱️', text: 'Pottery – Ancient wheels of Kelaniya' },
-                        { emoji: '🪵', text: 'Masks – Ritual carvings from Ambalangoda' },
-                        { emoji: '🧶', text: 'Handloom – Dumbara valley traditions' },
-                        { emoji: '🔱', text: 'Lacquerwork – 2000 years of artistry' },
-                    ].map(({ emoji, text }) => (
-                        <div key={text} className="flex items-center gap-2 text-sm text-[#2F5D50] font-body">
-                            <span className="text-lg">{emoji}</span>
-                            <span className="font-medium">{text}</span>
-                        </div>
-                    ))}
                 </div>
             </div>
 
@@ -424,26 +309,24 @@ export function CraftShop() {
             <div className="sticky top-16 z-40 bg-white/95 backdrop-blur-md border-b border-gray-100 shadow-sm">
                 <div className="max-w-7xl mx-auto px-6 py-4 flex flex-col md:flex-row items-center gap-4">
                     {/* Search */}
-                    <div className="relative flex-1 min-w-0 w-full md:max-w-sm">
+                    <form onSubmit={handleSearch} className="relative flex-1 min-w-0 w-full md:max-w-sm">
                         <SearchIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                         <input
                             type="text"
-                            placeholder="Search crafts, artisans…"
+                            placeholder="Search crafts..."
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
                             className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 text-sm outline-none transition-all"
                             style={{ fontFamily: 'Inter, sans-serif' }}
-                            onFocus={(e) => { e.currentTarget.style.borderColor = '#2F5D50'; e.currentTarget.style.boxShadow = '0 0 0 3px rgba(47,93,80,0.12)'; }}
-                            onBlur={(e) => { e.currentTarget.style.borderColor = '#E5E7EB'; e.currentTarget.style.boxShadow = 'none'; }}
                         />
                         {search && (
-                            <button onClick={() => setSearch('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                            <button type="button" onClick={() => setSearch('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
                                 <XIcon className="w-4 h-4" />
                             </button>
                         )}
-                    </div>
+                    </form>
 
-                    {/* Category tabs (scroll on mobile) */}
+                    {/* Category tabs */}
                     <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide flex-1">
                         {CATEGORIES.map((cat) => (
                             <button
@@ -460,35 +343,16 @@ export function CraftShop() {
                         ))}
                     </div>
 
-                    {/* Region + Sort */}
-                    <div className="flex items-center gap-2 shrink-0">
-                        <select
-                            value={activeRegion}
-                            onChange={(e) => setActiveRegion(e.target.value)}
-                            className="text-xs font-semibold px-3 py-2.5 rounded-xl border border-gray-200 outline-none bg-white cursor-pointer"
-                            style={{ color: '#2F5D50' }}
-                        >
-                            {REGIONS.map((r) => <option key={r}>{r}</option>)}
-                        </select>
-                        <select
-                            value={sortBy}
-                            onChange={(e) => setSortBy(e.target.value)}
-                            className="text-xs font-semibold px-3 py-2.5 rounded-xl border border-gray-200 outline-none bg-white cursor-pointer"
-                            style={{ color: '#2F5D50' }}
-                        >
-                            {SORT_OPTIONS.map((s) => <option key={s}>{s}</option>)}
-                        </select>
-                        {/* Cart indicator */}
-                        <div className="relative">
-                            <div className="w-10 h-10 rounded-xl flex items-center justify-center border border-gray-200 bg-white cursor-pointer hover:bg-gray-50 transition-colors">
-                                <ShoppingCartIcon className="w-4 h-4" style={{ color: '#2F5D50' }} />
-                            </div>
-                            {cart.length > 0 && (
-                                <span className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full text-white text-[10px] font-bold flex items-center justify-center" style={{ backgroundColor: '#C65D3B' }}>
-                                    {cart.length}
-                                </span>
-                            )}
+                    {/* Cart indicator */}
+                    <div className="relative shrink-0">
+                        <div className="w-10 h-10 rounded-xl flex items-center justify-center border border-gray-200 bg-white cursor-pointer hover:bg-gray-50 transition-colors">
+                            <ShoppingCartIcon className="w-4 h-4" style={{ color: '#2F5D50' }} />
                         </div>
+                        {cart.length > 0 && (
+                            <span className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full text-white text-[10px] font-bold flex items-center justify-center" style={{ backgroundColor: '#C65D3B' }}>
+                                {cart.length}
+                            </span>
+                        )}
                     </div>
                 </div>
             </div>
@@ -505,8 +369,7 @@ export function CraftShop() {
                             {activeCategory === 'All' ? 'All Crafts' : activeCategory}
                         </h2>
                         <p className="text-sm text-gray-400 mt-0.5 font-body">
-                            {filtered.length} {filtered.length === 1 ? 'product' : 'products'} found
-                            {activeRegion !== 'All' && ` in ${activeRegion}`}
+                            {products.length} {products.length === 1 ? 'product' : 'products'} found
                         </p>
                     </div>
                     {wishlist.length > 0 && (
@@ -536,19 +399,19 @@ export function CraftShop() {
                                 </div>
                             ))}
                         </motion.div>
-                    ) : filtered.length > 0 ? (
+                    ) : products.length > 0 ? (
                         <motion.div
-                            key={`${activeCategory}-${activeRegion}-${sortBy}`}
+                            key={activeCategory}
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
                             className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
                         >
-                            {filtered.map((product) => (
+                            {products.map((product) => (
                                 <ProductCard
-                                    key={product._id || product.id}
+                                    key={product._id}
                                     product={product}
                                     onAddToCart={addToCart}
-                                    isWished={wishlist.includes(product._id || product.id)}
+                                    isWished={wishlist.includes(product._id)}
                                     onToggleWish={toggleWish}
                                 />
                             ))}
@@ -565,7 +428,7 @@ export function CraftShop() {
                             </h3>
                             <p className="text-gray-400 font-body text-sm">Try changing your filters or search term</p>
                             <button
-                                onClick={() => { setSearch(''); setActiveCategory('All'); setActiveRegion('All'); }}
+                                onClick={() => { setSearch(''); setActiveCategory('All'); }}
                                 className="mt-5 px-6 py-2.5 rounded-xl text-sm font-bold text-white"
                                 style={{ backgroundColor: '#2F5D50' }}
                             >
@@ -574,135 +437,6 @@ export function CraftShop() {
                         </motion.div>
                     )}
                 </AnimatePresence>
-
-                {/* ── EXPERIENCE STRIP ────────────────────────────────── */}
-                <motion.section
-                    initial={{ opacity: 0, y: 30 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true }}
-                    transition={{ duration: 0.7 }}
-                    className="mt-24 rounded-3xl overflow-hidden"
-                    style={{ background: 'linear-gradient(135deg, #2F5D50 0%, #1A3D33 100%)' }}
-                >
-                    <div className="relative p-10 md:p-14">
-                        {/* pattern */}
-                        <div className="absolute inset-0 opacity-10">
-                            <svg width="100%" height="100%">
-                                <defs>
-                                    <pattern id="exp-pattern" width="60" height="60" patternUnits="userSpaceOnUse">
-                                        <polygon points="30,3 57,30 30,57 3,30" fill="none" stroke="white" strokeWidth="1" />
-                                        <circle cx="30" cy="30" r="4" fill="none" stroke="white" strokeWidth="0.8" />
-                                    </pattern>
-                                </defs>
-                                <rect width="100%" height="100%" fill="url(#exp-pattern)" />
-                            </svg>
-                        </div>
-
-                        <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-10">
-                            <div className="text-white max-w-lg">
-                                <span
-                                    className="inline-block text-[11px] font-bold uppercase tracking-[0.2em] mb-4 px-3 py-1.5 rounded-full"
-                                    style={{ backgroundColor: 'rgba(201,162,39,0.2)', color: '#C9A227' }}
-                                >
-                                    ✦ Beyond Shopping
-                                </span>
-                                <h2
-                                    className="text-3xl md:text-4xl font-black mb-4 leading-tight"
-                                    style={{ fontFamily: 'Fraunces, serif' }}
-                                >
-                                    Experience the Craft,
-                                    <br />
-                                    Don't Just Own It
-                                </h2>
-                                <p className="text-white/70 text-base leading-relaxed mb-6">
-                                    Our artisans open their workshops to you. Join hands-on sessions,
-                                    learn ancient techniques, and create your own masterpiece to take home.
-                                </p>
-                                <Link
-                                    to="/book"
-                                    className="inline-flex items-center gap-2 px-6 py-3 rounded-full text-sm font-bold transition-all hover:scale-105"
-                                    style={{ backgroundColor: '#C9A227', color: '#2F5D50' }}
-                                >
-                                    Book a Workshop <ChevronRightIcon className="w-4 h-4" />
-                                </Link>
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-4 shrink-0">
-                                {[
-                                    { emoji: '🎨', title: 'Batik Dyeing', time: '3 hrs', price: 'LKR 2,500' },
-                                    { emoji: '⚱️', title: 'Pottery', time: '2 hrs', price: 'LKR 2,000' },
-                                    { emoji: '🪵', title: 'Mask Carving', time: '4 hrs', price: 'LKR 3,500' },
-                                    { emoji: '🔱', title: 'Lacquerwork', time: '3 hrs', price: 'LKR 3,000' },
-                                ].map(({ emoji, title, time, price }) => (
-                                    <div
-                                        key={title}
-                                        className="rounded-2xl p-4 text-white"
-                                        style={{ backgroundColor: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)' }}
-                                    >
-                                        <span className="text-2xl">{emoji}</span>
-                                        <p className="font-bold text-sm mt-2 font-body">{title}</p>
-                                        <p className="text-[11px] text-white/50 mt-0.5">{time} · {price}</p>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    </div>
-                </motion.section>
-
-                {/* ── ARTISAN STORY STRIP ──────────────────────────────── */}
-                <motion.section
-                    initial={{ opacity: 0, y: 30 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true }}
-                    transition={{ duration: 0.7 }}
-                    className="mt-16 text-center"
-                >
-                    <span
-                        className="inline-block text-xs font-bold tracking-[0.2em] uppercase mb-4 px-4 py-1.5 rounded-full"
-                        style={{ backgroundColor: 'rgba(201,162,39,0.15)', color: '#C9A227' }}
-                    >
-                        Why Buy Here?
-                    </span>
-                    <h2
-                        className="text-3xl md:text-4xl font-black text-[#1E1E1E] mb-6"
-                        style={{ fontFamily: 'Fraunces, serif' }}
-                    >
-                        Every Purchase, a Promise
-                    </h2>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        {[
-                            {
-                                icon: '🤝',
-                                title: 'Direct to Artisan',
-                                desc: '100% of the product price goes directly to the artisan — no middlemen, maximum impact.',
-                            },
-                            {
-                                icon: '🌿',
-                                title: 'Sustainably Made',
-                                desc: 'All crafts use natural, locally-sourced materials with zero industrial processing.',
-                            },
-                            {
-                                icon: '📜',
-                                title: 'Certificate of Authenticity',
-                                desc: 'Every product ships with a handwritten certificate and the artisan\'s workshop story.',
-                            },
-                        ].map(({ icon, title, desc }) => (
-                            <div
-                                key={title}
-                                className="bg-white rounded-2xl p-7 border border-gray-100 shadow-sm hover:shadow-md transition-shadow duration-200"
-                            >
-                                <span className="text-4xl">{icon}</span>
-                                <h3
-                                    className="text-lg font-bold text-[#1E1E1E] mt-4 mb-2"
-                                    style={{ fontFamily: 'Fraunces, serif' }}
-                                >
-                                    {title}
-                                </h3>
-                                <p className="text-sm text-gray-500 leading-relaxed font-body">{desc}</p>
-                            </div>
-                        ))}
-                    </div>
-                </motion.section>
             </main>
 
             {/* Cart Toast */}

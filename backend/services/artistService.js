@@ -1,5 +1,27 @@
 import admin from '../config/firebase.js';
 import Artist from '../models/Artist.js';
+import { uploadBufferToCloudinary, deleteByUrl } from '../utils/cloudinaryHelper.js';
+
+export async function uploadProfilePicture(artist, fileBuffer) {
+  // Delete old image from Cloudinary if present
+  if (artist.profilePicUrl) {
+    try {
+      await deleteByUrl(artist.profilePicUrl);
+    } catch (delErr) {
+      console.error('Failed to delete old image from Cloudinary:', delErr);
+    }
+  }
+
+  const result = await uploadBufferToCloudinary(fileBuffer, 'lankacrafts/artists', 'image');
+
+  const updated = await Artist.findByIdAndUpdate(
+    artist._id,
+    { $set: { profilePicUrl: result.secure_url } },
+    { new: true }
+  );
+
+  return { profilePicUrl: result.secure_url, artist: updated };
+}
 
 export async function verifyToken(idToken) {
   try {

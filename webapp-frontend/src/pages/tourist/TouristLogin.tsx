@@ -186,6 +186,10 @@ export function TouristLogin() {
             <Link to="/tourist/register" className="font-bold" style={{ color: '#C1440E' }}>
               Register here
             </Link>
+            <br />
+            <Link to="/" className="font-bold" style={{ color: '#C1440E' }}>
+              Back to Home
+            </Link>
           </p>
         </motion.div>
       </div>
