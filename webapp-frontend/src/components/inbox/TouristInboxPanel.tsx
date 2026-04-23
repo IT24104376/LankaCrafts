@@ -72,7 +72,7 @@ const pickAvatarColor = (seed: string) => {
 };
 
 export function TouristInboxPanel() {
-  const { firebaseUser, loading: authLoading } = useAuth();
+  const { firebaseUser, loading: authLoading, tourist } = useAuth();
   const [conversations, setConversations] = useState<ChatConversation[]>([]);
   const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -92,6 +92,8 @@ export function TouristInboxPanel() {
     () => conversations.find((conversation) => conversation.id === activeConversationId) || null,
     [activeConversationId, conversations]
   );
+
+  const currentUserId = tourist?.id || '';
 
   const filteredConversations = useMemo(() => {
     const normalized = searchQuery.trim().toLowerCase();
@@ -478,7 +480,7 @@ export function TouristInboxPanel() {
                 <div className="text-sm text-gray-400">Loading messages...</div>
               ) : messages.length > 0 ? (
                 messages.map((message, index) => {
-                  const isMe = message.sender.role === 'tourist';
+                  const isMe = message.sender.id === currentUserId;
                   const showDate =
                     index === 0 ||
                     new Date(messages[index - 1].createdAt).toDateString() !==

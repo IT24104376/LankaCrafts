@@ -1,43 +1,38 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import {
-  MessageCircle,
-  X,
-  Compass,
-  Flag,
-  MapPin,
-  ShieldAlert,
-  ChevronLeft
-} from
-  'lucide-react';
+import { ChevronLeft, Compass, Flag, MessageCircle, X } from 'lucide-react';
 import { ChatInput } from './ChatInput';
 import { ChatSidebar } from './ChatSidebar';
+import { findFaqAnswer, getFallbackAnswer, SUGGESTED_QUESTIONS } from './chatFaq';
+
 interface Message {
   id: string;
   role: 'user' | 'bot';
   content: string;
   timestamp: string;
-  type?: 'text' | 'map-card' | 'image-card';
-  meta?: any;
 }
+
 const INITIAL_MESSAGES: Message[] = [
   {
     id: '1',
     role: 'bot',
     content:
-      "Hello! 👋 I'm your Travel Assistant for Lanka Craft. I can help you discover handmade shops, find workshops, and plan your craft journey across Sri Lanka. What would you like to explore?",
+      "Hello! I'm the LankaCrafts assistant. I can help with bookings, artists, workshops, reviews, payments, and general site questions. What would you like to know?",
     timestamp: new Date().toLocaleTimeString([], {
       hour: '2-digit',
-      minute: '2-digit'
+      minute: '2-digit',
     }),
-    type: 'text'
-  }];
+  },
+];
 
-const SUGGESTED_REPLIES = [
-  'Best pottery in Kandy',
-  'Batik workshops near me',
-  'How to book a visit',
-  'Show me the map'];
+const getTimeLabel = () =>
+  new Date().toLocaleTimeString([], {
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+
+const getFollowUpQuestions = (currentQuestion: string) =>
+  SUGGESTED_QUESTIONS.filter((question) => question !== currentQuestion);
 
 export function ChatWidget() {
   const [isOpen, setIsOpen] = useState(false);
@@ -45,375 +40,225 @@ export function ChatWidget() {
   const [isTyping, setIsTyping] = useState(false);
   const [showSidebar, setShowSidebar] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({
-      behavior: 'smooth'
-    });
-  };
+
   useEffect(() => {
-    scrollToBottom();
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isTyping]);
-  const handleSend = async (text: string) => {
-    // Add user message
+
+  const handleSend = (text: string) => {
     const userMsg: Message = {
       id: Date.now().toString(),
       role: 'user',
       content: text,
-      timestamp: new Date().toLocaleTimeString([], {
-        hour: '2-digit',
-        minute: '2-digit'
-      })
+      timestamp: getTimeLabel(),
     };
+
     setMessages((prev) => [...prev, userMsg]);
     setIsTyping(true);
-    // Simulate bot response
-    setTimeout(() => {
-      setIsTyping(false);
+
+    window.setTimeout(() => {
+      const matchedFaq = findFaqAnswer(text);
       const botMsg: Message = {
         id: (Date.now() + 1).toString(),
         role: 'bot',
-        content:
-          'Great choice! Kandy is famous for its traditional pottery. Here are some top workshops:',
-        timestamp: new Date().toLocaleTimeString([], {
-          hour: '2-digit',
-          minute: '2-digit'
-        }),
-        type: 'text'
+        content: matchedFaq?.answer || getFallbackAnswer(),
+        timestamp: getTimeLabel(),
       };
-      const mapCardMsg: Message = {
-        id: (Date.now() + 2).toString(),
-        role: 'bot',
-        content: 'Kandy Pottery Workshop',
-        timestamp: new Date().toLocaleTimeString([], {
-          hour: '2-digit',
-          minute: '2-digit'
-        }),
-        type: 'map-card',
-        meta: {
-          location: 'Kandy',
-          distance: '2.4 km'
-        }
-      };
-      const imageCardMsg: Message = {
-        id: (Date.now() + 3).toString(),
-        role: 'bot',
-        content: 'Traditional Kandy earthenware',
-        timestamp: new Date().toLocaleTimeString([], {
-          hour: '2-digit',
-          minute: '2-digit'
-        }),
-        type: 'image-card'
-      };
-      setMessages((prev) => [...prev, botMsg, mapCardMsg, imageCardMsg]);
-    }, 2000);
+
+      setIsTyping(false);
+      setMessages((prev) => [...prev, botMsg]);
+    }, 900);
   };
+
   return (
     <>
-      {/* Floating Toggle Button */}
       <motion.button
-        initial={{
-          scale: 0
-        }}
-        animate={{
-          scale: 1
-        }}
-        whileHover={{
-          scale: 1.1
-        }}
-        whileTap={{
-          scale: 0.9
-        }}
+        initial={{ scale: 0 }}
+        animate={{ scale: 1 }}
+        whileHover={{ scale: 1.1 }}
+        whileTap={{ scale: 0.9 }}
         onClick={() => setIsOpen(!isOpen)}
-        className={`fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full shadow-xl flex items-center justify-center transition-colors duration-300 ${isOpen ? 'bg-gray-800 text-white' : 'bg-forest text-white'}`}>
-
+        className={`fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full shadow-xl transition-colors duration-300 ${isOpen ? 'bg-gray-800 text-white' : 'bg-forest text-white'}`}
+      >
         <AnimatePresence mode="wait">
-          {isOpen ?
+          {isOpen ? (
             <motion.div
               key="close"
-              initial={{
-                rotate: -90,
-                opacity: 0
-              }}
-              animate={{
-                rotate: 0,
-                opacity: 1
-              }}
-              exit={{
-                rotate: 90,
-                opacity: 0
-              }}>
-
-              <X className="w-6 h-6" />
-            </motion.div> :
-
+              initial={{ rotate: -90, opacity: 0 }}
+              animate={{ rotate: 0, opacity: 1 }}
+              exit={{ rotate: 90, opacity: 0 }}
+            >
+              <X className="h-6 w-6" />
+            </motion.div>
+          ) : (
             <motion.div
               key="chat"
-              initial={{
-                scale: 0.5,
-                opacity: 0
-              }}
-              animate={{
-                scale: 1,
-                opacity: 1
-              }}
-              exit={{
-                scale: 0.5,
-                opacity: 0
-              }}>
-
-              <MessageCircle className="w-7 h-7" />
-              <span className="absolute -top-1 -right-1 w-3 h-3 bg-mustard rounded-full animate-pulse" />
+              initial={{ scale: 0.5, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.5, opacity: 0 }}
+            >
+              <MessageCircle className="h-7 w-7" />
+              <span className="absolute -right-1 -top-1 h-3 w-3 animate-pulse rounded-full bg-mustard" />
             </motion.div>
-          }
+          )}
         </AnimatePresence>
       </motion.button>
 
-      {/* Chat Window */}
       <AnimatePresence>
-        {isOpen &&
+        {isOpen && (
           <motion.div
-            initial={{
-              opacity: 0,
-              y: 20,
-              scale: 0.95
-            }}
-            animate={{
-              opacity: 1,
-              y: 0,
-              scale: 1
-            }}
-            exit={{
-              opacity: 0,
-              y: 20,
-              scale: 0.95
-            }}
-            transition={{
-              duration: 0.2
-            }}
-            className="fixed bottom-24 right-6 z-40 w-[calc(100vw-3rem)] md:w-[360px] h-[50vh] md:h-[420px] max-h-[450px] bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col border border-gray-100">
-
-            {/* Header */}
-            <div className="bg-forest p-4 flex items-center justify-between shrink-0">
+            initial={{ opacity: 0, y: 20, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 20, scale: 0.95 }}
+            transition={{ duration: 0.2 }}
+            className="fixed bottom-24 right-6 z-40 flex h-[50vh] max-h-[450px] w-[calc(100vw-3rem)] flex-col overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-2xl md:h-[420px] md:w-[360px]"
+          >
+            <div className="flex items-center justify-between bg-forest p-4">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center backdrop-blur-sm">
-                  <Compass className="w-6 h-6 text-mustard" />
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 backdrop-blur-sm">
+                  <Compass className="h-6 w-6 text-mustard" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-white font-body">
-                    Travel Assistant
-                  </h3>
+                  <h3 className="font-body font-bold text-white">LankaCrafts AI Guide</h3>
                   <div className="flex items-center gap-1.5">
-                    <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
-                    <span className="text-xs text-white/80">
-                      AI Guide · Online
-                    </span>
+                    <span className="h-2 w-2 animate-pulse rounded-full bg-green-400" />
+                    <span className="text-xs text-white/80">FAQ Assistant · Online</span>
                   </div>
                 </div>
               </div>
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => setShowSidebar(!showSidebar)}
-                  className="p-2 text-white/70 hover:text-white hover:bg-white/10 rounded-full transition-colors md:block hidden">
-
-                  <ChevronLeft
-                    className={`w-5 h-5 transition-transform ${showSidebar ? 'rotate-180' : ''}`} />
-
+                  className="hidden rounded-full p-2 text-white/70 transition-colors hover:bg-white/10 hover:text-white md:block"
+                >
+                  <ChevronLeft className={`h-5 w-5 transition-transform ${showSidebar ? 'rotate-180' : ''}`} />
                 </button>
                 <button
                   onClick={() => setIsOpen(false)}
-                  className="p-2 text-white/70 hover:text-white hover:bg-white/10 rounded-full transition-colors">
-
-                  <X className="w-5 h-5" />
+                  className="rounded-full p-2 text-white/70 transition-colors hover:bg-white/10 hover:text-white"
+                >
+                  <X className="h-5 w-5" />
                 </button>
               </div>
             </div>
 
             <div className="flex flex-1 overflow-hidden">
-              {/* Sidebar (Desktop only) */}
               <AnimatePresence>
-                {showSidebar &&
+                {showSidebar && (
                   <motion.div
-                    initial={{
-                      width: 0,
-                      opacity: 0
-                    }}
-                    animate={{
-                      width: 240,
-                      opacity: 1
-                    }}
-                    exit={{
-                      width: 0,
-                      opacity: 0
-                    }}
-                    className="border-r border-gray-200 hidden md:block">
-
+                    initial={{ width: 0, opacity: 0 }}
+                    animate={{ width: 240, opacity: 1 }}
+                    exit={{ width: 0, opacity: 0 }}
+                    className="hidden border-r border-gray-200 md:block"
+                  >
                     <ChatSidebar />
                   </motion.div>
-                }
+                )}
               </AnimatePresence>
 
-              {/* Main Chat Area */}
-              <div className="flex-1 flex flex-col bg-white relative min-w-0">
-                {/* Messages */}
-                <div className="flex-1 overflow-y-auto overflow-x-hidden p-3 space-y-3 bg-[#F9FAFB]">
-                  {messages.map((msg) =>
-                    <motion.div
-                      key={msg.id}
-                      initial={{
-                        opacity: 0,
-                        y: 10
-                      }}
-                      animate={{
-                        opacity: 1,
-                        y: 0
-                      }}
-                      className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-
-                      <div
-                        className={`max-w-[90%] group relative ${msg.role === 'user' ? 'items-end' : 'items-start'} flex flex-col min-w-0`}>
-
-                        {/* Report Button (Bot only) */}
-                        {msg.role === 'bot' &&
-                          <button className="absolute right-0 -top-5 opacity-0 group-hover:opacity-100 transition-opacity text-gray-300 hover:text-red-400 p-1">
-                            <Flag className="w-3 h-3" />
-                          </button>
-                        }
-
-                        {/* Message Bubble */}
+              <div className="relative flex min-w-0 flex-1 flex-col bg-white">
+                <div className="flex-1 overflow-y-auto overflow-x-hidden bg-[#F9FAFB] p-3 space-y-3">
+                  {messages.map((msg) => (
+                    <React.Fragment key={msg.id}>
+                      <motion.div
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                      >
                         <div
-                          className={`p-3 shadow-sm break-words ${msg.role === 'user' ? 'bg-gradient-to-br from-forest to-[#1E3D35] text-white rounded-2xl rounded-tr-sm' : 'bg-white border border-gray-100 text-gray-800 rounded-2xl rounded-tl-sm'}`}>
+                          className={`group relative flex min-w-0 max-w-[90%] flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'}`}
+                        >
+                          {msg.role === 'bot' && (
+                            <button className="absolute right-0 -top-5 p-1 text-gray-300 opacity-0 transition-opacity hover:text-red-400 group-hover:opacity-100">
+                              <Flag className="h-3 w-3" />
+                            </button>
+                          )}
 
-                          {msg.type === 'text' &&
-                            <p className="text-sm leading-relaxed whitespace-pre-wrap break-words">
-                              {msg.content}
-                            </p>
-                          }
+                          <div
+                            className={`break-words rounded-2xl p-3 shadow-sm ${msg.role === 'user' ? 'rounded-tr-sm bg-gradient-to-br from-forest to-[#1E3D35] text-white' : 'rounded-tl-sm border border-gray-100 bg-white text-gray-800'}`}
+                          >
+                            <p className="whitespace-pre-wrap text-sm leading-relaxed">{msg.content}</p>
+                          </div>
 
-                          {msg.type === 'map-card' &&
-                            <div className="w-full">
-                              <div className="flex items-center gap-2 mb-2">
-                                <MapPin className="w-4 h-4 text-terracotta" />
-                                <span className="font-bold text-sm">
-                                  {msg.content}
-                                </span>
-                              </div>
-                              <div className="h-24 bg-gray-100 rounded-lg mb-2 relative overflow-hidden">
-                                <svg
-                                  viewBox="0 0 100 50"
-                                  className="w-full h-full opacity-50">
-
-                                  <path
-                                    d="M0 25 Q25 10 50 25 T100 25"
-                                    fill="none"
-                                    stroke="#ccc"
-                                    strokeWidth="2" />
-
-                                </svg>
-                                <div className="absolute inset-0 flex items-center justify-center">
-                                  <button className="bg-white/90 backdrop-blur shadow-sm px-3 py-1.5 rounded-full text-xs font-bold text-forest hover:scale-105 transition-transform">
-                                    View on Map
-                                  </button>
-                                </div>
-                              </div>
-                            </div>
-                          }
-
-                          {msg.type === 'image-card' &&
-                            <div className="w-full">
-                              <div className="h-32 bg-gradient-to-br from-terracotta to-mustard rounded-lg mb-2 relative overflow-hidden">
-                                <div className="absolute inset-0 bg-black/10" />
-                              </div>
-                              <p className="text-xs font-medium text-gray-500">
-                                {msg.content}
-                              </p>
-                            </div>
-                          }
+                          <span className="mt-1 px-1 text-[10px] text-gray-400">{msg.timestamp}</span>
                         </div>
+                      </motion.div>
 
-                        {/* Timestamp */}
-                        <span className="text-[10px] text-gray-400 mt-1 px-1">
-                          {msg.timestamp}
-                        </span>
+                      {msg.role === 'user' && (
+                        <motion.div
+                          initial={{ opacity: 0, y: 8 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          className="flex justify-start"
+                        >
+                          <div className="max-w-[90%] px-1 pt-1">
+                            <div className="flex flex-wrap gap-2">
+                              {getFollowUpQuestions(msg.content).map((question) => (
+                                <button
+                                  key={`${msg.id}-${question}`}
+                                  onClick={() => handleSend(question)}
+                                  className="rounded-full border border-forest/20 bg-white px-3 py-1.5 text-xs font-medium text-forest transition-colors hover:bg-forest/5"
+                                >
+                                  {question}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        </motion.div>
+                      )}
+                    </React.Fragment>
+                  ))}
+
+                  {isTyping && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="flex justify-start"
+                    >
+                      <div className="flex gap-1 rounded-2xl rounded-tl-sm border border-gray-100 bg-white p-4 shadow-sm">
+                        <motion.div
+                          animate={{ scale: [1, 1.2, 1] }}
+                          transition={{ repeat: Infinity, duration: 0.6 }}
+                          className="h-2 w-2 rounded-full bg-gray-400"
+                        />
+                        <motion.div
+                          animate={{ scale: [1, 1.2, 1] }}
+                          transition={{ repeat: Infinity, duration: 0.6, delay: 0.2 }}
+                          className="h-2 w-2 rounded-full bg-gray-400"
+                        />
+                        <motion.div
+                          animate={{ scale: [1, 1.2, 1] }}
+                          transition={{ repeat: Infinity, duration: 0.6, delay: 0.4 }}
+                          className="h-2 w-2 rounded-full bg-gray-400"
+                        />
                       </div>
                     </motion.div>
                   )}
 
-                  {/* Typing Indicator */}
-                  {isTyping &&
-                    <motion.div
-                      initial={{
-                        opacity: 0,
-                        y: 10
-                      }}
-                      animate={{
-                        opacity: 1,
-                        y: 0
-                      }}
-                      className="flex justify-start">
-
-                      <div className="bg-white border border-gray-100 p-4 rounded-2xl rounded-tl-sm shadow-sm flex gap-1">
-                        <motion.div
-                          animate={{
-                            scale: [1, 1.2, 1]
-                          }}
-                          transition={{
-                            repeat: Infinity,
-                            duration: 0.6
-                          }}
-                          className="w-2 h-2 bg-gray-400 rounded-full" />
-
-                        <motion.div
-                          animate={{
-                            scale: [1, 1.2, 1]
-                          }}
-                          transition={{
-                            repeat: Infinity,
-                            duration: 0.6,
-                            delay: 0.2
-                          }}
-                          className="w-2 h-2 bg-gray-400 rounded-full" />
-
-                        <motion.div
-                          animate={{
-                            scale: [1, 1.2, 1]
-                          }}
-                          transition={{
-                            repeat: Infinity,
-                            duration: 0.6,
-                            delay: 0.4
-                          }}
-                          className="w-2 h-2 bg-gray-400 rounded-full" />
-
-                      </div>
-                    </motion.div>
-                  }
                   <div ref={messagesEndRef} />
                 </div>
 
-                {/* Suggested Replies */}
-                {messages.length === 1 && !isTyping &&
-                  <div className="px-4 py-2 bg-white border-t border-gray-50 overflow-x-auto">
+                {messages.length === 1 && !isTyping && (
+                  <div className="overflow-x-auto border-t border-gray-50 bg-white px-4 py-2">
                     <div className="flex gap-2 pb-2">
-                      {SUGGESTED_REPLIES.map((reply) =>
+                      {SUGGESTED_QUESTIONS.map((reply) => (
                         <button
                           key={reply}
                           onClick={() => handleSend(reply)}
-                          className="whitespace-nowrap px-3 py-1.5 rounded-full border border-forest/20 text-forest text-xs font-medium hover:bg-forest/5 transition-colors">
-
+                          className="whitespace-nowrap rounded-full border border-forest/20 px-3 py-1.5 text-xs font-medium text-forest transition-colors hover:bg-forest/5"
+                        >
                           {reply}
                         </button>
-                      )}
+                      ))}
                     </div>
                   </div>
-                }
+                )}
 
-                {/* Input Area */}
                 <ChatInput onSend={handleSend} />
               </div>
             </div>
           </motion.div>
-        }
+        )}
       </AnimatePresence>
-    </>);
-
+    </>
+  );
 }
