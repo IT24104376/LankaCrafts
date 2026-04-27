@@ -1,19 +1,14 @@
 import api from './axiosInstance';
 
 export interface BookingData {
-  artisanId?: string;
+  email?: string;
+  touristEmail?: string;
+  artisanId?: number | string | null;
   craftId?: string;
-  craftName?: string;
-  artisanName?: string;
-  location?: string;
-  customerId?: string;
-  customerName?: string;
-  customerEmail?: string;
-  customerPhone?: string;
-  bookingDate?: string;
-  bookingTime?: string;
-  groupSize?: number;
-  status?: string;
+  date?: string;
+  time?: string;
+  timeSlot?: string;
+  [key: string]: any;
 }
 
 export const bookingApi = {

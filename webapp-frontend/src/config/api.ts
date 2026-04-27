@@ -1,4 +1,4 @@
-import apiClient from './axios';
+import apiClient from '../api/axiosInstance';
 import { AxiosError } from 'axios';
 
 /**
