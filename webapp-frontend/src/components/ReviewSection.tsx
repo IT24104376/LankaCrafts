@@ -16,6 +16,7 @@ import {
   'lucide-react';
 import { reviewApi, Review, ReviewStats } from '../services/reviewApi';
 import { useAuth } from '../context/AuthContext';
+import { aiApi, AiReviewSummary } from '../services/aiApi';
 
 // ── Types ──────────────────────────────────────────────────────
 interface ReviewSectionProps {
@@ -81,7 +82,19 @@ function StarSelector({
 }
 
 // ── AI Summary Card ────────────────────────────────────────────
-function AISummaryCard({ loading = false, stats, artisanName }: { loading?: boolean; stats?: ReviewStats | null; artisanName?: string }) {
+function AISummaryCard({ 
+  loading = false, 
+  stats, 
+  artisanName, 
+  aiSummaryData,
+  hasReviews = false
+}: { 
+  loading?: boolean; 
+  stats?: ReviewStats | null; 
+  artisanName?: string; 
+  aiSummaryData?: AiReviewSummary | null;
+  hasReviews?: boolean;
+}) {
   const total = stats?.totalReviews || 0;
 
   return (
@@ -126,6 +139,34 @@ function AISummaryCard({ loading = false, stats, artisanName }: { loading?: bool
               <div key={i} className="h-3 bg-gray-200 rounded-full animate-pulse" style={{ width: `${w}%` }} />
             )}
           </div>
+        ) : aiSummaryData ? (
+          <div className="space-y-3">
+            <p className="text-sm text-gray-600 leading-relaxed whitespace-pre-wrap">
+              {aiSummaryData.summary}
+            </p>
+            {aiSummaryData.highlights && aiSummaryData.highlights.length > 0 && (
+              <div className="flex flex-wrap gap-2 mt-2">
+                {aiSummaryData.highlights.map((h, i) => (
+                  <span key={i} className="px-2 py-1 text-xs bg-forest/10 text-forest rounded-full">
+                    ✓ {h}
+                  </span>
+                ))}
+              </div>
+            )}
+            {aiSummaryData.cautions && aiSummaryData.cautions.length > 0 && (
+              <div className="flex flex-wrap gap-2 mt-2">
+                {aiSummaryData.cautions.map((c, i) => (
+                  <span key={i} className="px-2 py-1 text-xs bg-red-50 text-red-600 rounded-full">
+                    ⚠ {c}
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+        ) : !hasReviews ? (
+          <p className="text-sm text-gray-400 italic leading-relaxed">
+            Not enough reviews yet to generate an AI summary. Be the first to share your experience below!
+          </p>
         ) : (
           <p className="text-sm text-gray-600 leading-relaxed">
             Visitors consistently highlight the <strong className="text-forest">authentic techniques</strong>
@@ -353,16 +394,16 @@ function ReviewCard({
       </AnimatePresence>
 
       {
-    review.artisanReply && (
-      <div className="mt-4 ml-4 pl-4 border-l-2 border-forest/20">
-        <div className="flex items-center gap-2 mb-1">
-          <span className="text-xs font-bold text-forest">Artisan Reply</span>
-          <span className="text-xs text-gray-400">{new Date(review.artisanReply.date).toLocaleDateString()}</span>
-        </div>
-        <p className="text-sm text-gray-600">{review.artisanReply.text}</p>
-      </div>
-    )
-  }
+        review.artisanReply && (
+          <div className="mt-4 ml-4 pl-4 border-l-2 border-forest/20">
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-xs font-bold text-forest">Artisan Reply</span>
+              <span className="text-xs text-gray-400">{new Date(review.artisanReply.date).toLocaleDateString()}</span>
+            </div>
+            <p className="text-sm text-gray-600">{review.artisanReply.text}</p>
+          </div>
+        )
+      }
     </motion.div >
   );
 }
@@ -377,12 +418,15 @@ export function ReviewSection({
   const [reviews, setReviews] = useState<Review[]>([]);
   const [stats, setStats] = useState<ReviewStats | null>(null);
   const [loading, setLoading] = useState(true);
+  const [aiSummary, setAiSummary] = useState<AiReviewSummary | null>(null);
+  const [loadingAi, setLoadingAi] = useState(false);
   const [sortBy, setSortBy] = useState<'newest' | 'highest' | 'lowest'>('newest');
 
   useEffect(() => {
     const fetchReviews = async () => {
       try {
         setLoading(true);
+        setAiSummary(null); // Clear previous summary immediately
         const data = await reviewApi.getReviews({
           context,
           artisanName: artisanName || '',
@@ -391,6 +435,23 @@ export function ReviewSection({
         });
         setReviews(data.reviews || []);
         setStats(data.stats || null);
+
+        if (data.reviews && data.reviews.length > 0) {
+          try {
+            setLoadingAi(true);
+            const summaryData = await aiApi.summarizeArtistReviews({
+              artisanName: artisanName || 'this artisan',
+              reviews: (data.reviews as Review[]).map((r: Review) => ({ rating: r.rating, text: r.text }))
+            });
+            setAiSummary(summaryData);
+          } catch (err) {
+            console.error('Failed to fetch AI summary:', err);
+          } finally {
+            setLoadingAi(false);
+          }
+        } else {
+          setAiSummary(null);
+        }
       } catch (err) {
         console.error('Failed to fetch reviews:', err);
       } finally {
@@ -449,7 +510,13 @@ export function ReviewSection({
           <p className="text-sm text-gray-400 mt-2">{stats?.totalReviews || 0} reviews</p>
         </div>
         <div className="md:col-span-2">
-          <AISummaryCard loading={loading} stats={stats} artisanName={artisanName} />
+          <AISummaryCard 
+            loading={loading || loadingAi} 
+            stats={stats} 
+            artisanName={artisanName} 
+            aiSummaryData={aiSummary} 
+            hasReviews={reviews.length > 0}
+          />
         </div>
       </div>
 

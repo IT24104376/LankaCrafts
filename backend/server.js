@@ -34,7 +34,7 @@ app.use(
       'http://localhost:3000',
       'http://127.0.0.1:5173',
     ],
-    methods: ['GET', 'POST', 'PATCH','PUT' ,'DELETE', 'OPTIONS'],
+    methods: ['GET', 'POST', 'PATCH', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
     credentials: true,
   })
