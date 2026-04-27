@@ -85,7 +85,7 @@ export const getBookingsByEmail = async (req, res) => {
 export const getBookingById = async (req, res) => {
   try {
     const booking = await Booking.findById(req.params.id);
-    
+
     if (!booking) {
       return res.status(404).json({ error: "Booking not found" });
     }
