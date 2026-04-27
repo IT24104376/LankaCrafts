@@ -9,7 +9,7 @@ const api = axios.create({
 // ── RELIABLE TOKEN GETTER ──────────────────────────────────
 const getAuthToken = () => {
   const auth = getAuth();
-  
+
   return new Promise((resolve) => {
     // 1. Check if user is already available in memory
     if (auth.currentUser) {
@@ -72,7 +72,7 @@ api.interceptors.request.use(async (config) => {
       console.error("Failed to parse session user for headers", e);
     }
   }
-  
+
   return config;
 }, (error) => {
   return Promise.reject(error);

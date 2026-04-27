@@ -69,7 +69,7 @@ export function TouristProfile() {
       try {
         const [blogsRes, bookingsRes, reviewsRes] = await Promise.all([
           getMyBlogs(),
-          bookingApi.getBookingsByEmail(tourist.id),
+          bookingApi.getBookingsByEmail(tourist.email),
           getReviews({ mine: true }).catch(() => ({ data: { reviews: [] } }))
         ]);
 
