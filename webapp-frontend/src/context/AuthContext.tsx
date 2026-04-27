@@ -177,7 +177,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // --- Tourist Actions ---
   const login = async (email: string, password: string) => {
-    console.log('AuthContext: Calling Firebase login for email:', email);
     await signInWithEmailAndPassword(auth, email, password);
     // Profile is handled by onAuthStateChanged
   };
@@ -206,7 +205,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // --- Artist Actions ---
   const handleLoginArtist = async (email: string, password: string) => {
-    console.log('AuthContext: Calling Firebase loginArtist for email:', email);
     await signInWithEmailAndPassword(auth, email, password);
     const res = await loginArtist(); // Handled by API helper
     setArtist(res.data.artist);
@@ -237,7 +235,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // --- Admin Actions ---
   const adminLogin = async (email: string, password: string) => {
-    console.log('AuthContext: Calling backend adminLogin for email:', email);
     const res = await loginAdmin(email, password);
     const { token: newToken, admin: adminData } = res.data;
     localStorage.setItem('admin_token', newToken);
