@@ -28,9 +28,8 @@ export default function MyBookings() {
         if (!email) { setLoading(false); return; }
         try {
             const token = await AsyncStorage.getItem('firebase_token');
-            const baseUrl = process.env.EXPO_PUBLIC_API_BASE_URL || 'http://localhost:5000';
             const response = await fetch(
-                `${baseUrl}/api/bookings/user/${email}`,
+                `http://10.110.118.83:5000/api/bookings/user/${email}`,
                 {
                     headers: {
                         'Content-Type': 'application/json',

@@ -144,8 +144,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const unsubscribeFirebase = onAuthStateChanged(auth, async (user) => {
       setFirebaseUser(user);
       if (user) {
+        const token = await user.getIdToken();
+        await AsyncStorage.setItem('firebase_token', token);
         await fetchCorrectProfile();
       } else {
+        await AsyncStorage.removeItem('firebase_token');
         setTourist(null);
         setArtist(null);
       }

@@ -51,11 +51,11 @@ export default function TouristBlogsScreen() {
     const blog = blogs.find(b => b._id === id);
     if (!blog) return;
     const alreadyLiked = blog.likes?.includes(tourist?.id);
-    
+
     // Optimistic Update
     setBlogs(prev => prev.map(b => {
       if (b._id === id) {
-        const nextLikes = alreadyLiked 
+        const nextLikes = alreadyLiked
           ? (b.likes || []).filter((uid: string) => uid !== tourist?.id)
           : [...(b.likes || []), tourist?.id];
         return { ...b, likes: nextLikes, likeCount: (b.likeCount || 0) + (alreadyLiked ? -1 : 1), hasLiked: !alreadyLiked };
@@ -69,7 +69,7 @@ export default function TouristBlogsScreen() {
       // Revert on error
       setBlogs(prev => prev.map(b => {
         if (b._id === id) {
-          const nextLikes = alreadyLiked 
+          const nextLikes = alreadyLiked
             ? [...(b.likes || []), tourist?.id]
             : (b.likes || []).filter((uid: string) => uid !== tourist?.id);
           return { ...b, likes: nextLikes, likeCount: (b.likeCount || 0) + (alreadyLiked ? 1 : -1), hasLiked: alreadyLiked };
@@ -89,6 +89,7 @@ export default function TouristBlogsScreen() {
   };
 
   return (
+
     <SafeAreaView style={s.safe} edges={['top']}>
       {/* Header */}
       <View style={s.header}>
