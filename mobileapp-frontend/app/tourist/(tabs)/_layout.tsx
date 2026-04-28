@@ -1,6 +1,6 @@
 import React from 'react';
 import { Tabs } from 'expo-router';
-import { Home, LayoutDashboard, BookOpen, UserCircle } from 'lucide-react-native';
+import { Home, LayoutDashboard, BookOpen, UserCircle, CalendarDays } from 'lucide-react-native';
 
 const TAB_COLOR_ACTIVE = '#C65D3B';
 const TAB_COLOR_INACTIVE = '#9CA3AF';
@@ -43,6 +43,13 @@ export default function TouristTabsLayout() {
         options={{
           title: 'Dashboard',
           tabBarIcon: ({ color, size }) => <LayoutDashboard size={size} color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="bookings"
+        options={{
+          title: 'Bookings',
+          tabBarIcon: ({ color, size }) => <CalendarDays size={size} color={color} />,
         }}
       />
       <Tabs.Screen

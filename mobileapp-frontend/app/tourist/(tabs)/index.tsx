@@ -67,6 +67,21 @@ export default function TouristHomeScreen() {
           <Text style={s.searchPlaceholder}>Search artisans, crafts, workshops...</Text>
         </TouchableOpacity>
 
+        {/* Book a Workshop Banner */}
+        <TouchableOpacity
+          style={s.bookBanner}
+          onPress={() => router.push('/tourist/bookings/book-workshop')}
+          activeOpacity={0.85}>
+          <View>
+            <Text style={s.bookBannerTag}>EXPERIENCE SRI LANKA</Text>
+            <Text style={s.bookBannerTitle}>Book a Workshop</Text>
+            <Text style={s.bookBannerSub}>Learn directly from master artisans</Text>
+          </View>
+          <View style={s.bookBannerIcon}>
+            <Text style={{ fontSize: 32 }}></Text>
+          </View>
+        </TouchableOpacity>
+
         {/* Craft Categories */}
         <View style={s.section}>
           <Text style={s.sectionTag}>EXPLORE</Text>
@@ -154,6 +169,11 @@ export default function TouristHomeScreen() {
 }
 
 const s = StyleSheet.create({
+  bookBanner: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#C65D3B', marginHorizontal: 20, marginTop: 16, borderRadius: 20, padding: 20 },
+  bookBannerTag: { fontSize: 10, fontWeight: '800', color: 'rgba(255,255,255,0.7)', letterSpacing: 2, marginBottom: 4 },
+  bookBannerTitle: { fontSize: 20, fontWeight: '800', color: '#fff', marginBottom: 4 },
+  bookBannerSub: { fontSize: 12, color: 'rgba(255,255,255,0.8)' },
+  bookBannerIcon: { width: 56, height: 56, borderRadius: 16, backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center' },
   safe: { flex: 1, backgroundColor: '#F6F3EE' },
   welcome: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingTop: 16, paddingBottom: 8 },
   welcomeHi: { fontSize: 13, color: '#9CA3AF' },
