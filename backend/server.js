@@ -29,13 +29,9 @@ const app = express();
 // CORS: allow the Vite dev server and any local ports
 app.use(
   cors({
-    origin: [
-      'http://localhost:5173',
-      'http://localhost:3000',
-      'http://127.0.0.1:5173',
-    ],
-    methods: ['GET', 'POST', 'PATCH','PUT' ,'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
+    origin: '*',
+    methods: ['GET', 'POST', 'PATCH', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'x-user-email', 'x-user-role', 'x-username'],
     credentials: true,
   })
 );

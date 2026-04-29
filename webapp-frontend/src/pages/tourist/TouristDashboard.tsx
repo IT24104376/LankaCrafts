@@ -211,7 +211,7 @@ export function TouristDashboard() {
     const fetchUpcoming = async () => {
       if (tourist?.id) {
         try {
-          const data = await bookingApi.getBookingsByEmail(tourist.id);
+          const data = await bookingApi.getBookingsByEmail(tourist.email);
           setUpcomingWorkshops(data || []);
         } catch (err) {
           console.error("API Error:", err);
