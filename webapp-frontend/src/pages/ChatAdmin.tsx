@@ -87,7 +87,7 @@ export function ChatAdmin() {
           <div className="mb-12 flex items-center justify-between">
             <div>
               <h1 className="font-display mb-2 text-4xl font-black text-forest">Knowledge Base</h1>
-              <p className="text-gray-600">Manage LankaCrafts chatbot FAQs and review recent feedback.</p>
+              <p className="text-gray-600">Manage Lanka Crafts chatbot FAQs and review recent feedback.</p>
             </div>
             <div className="flex gap-3">
               <Button variant="outline" className="gap-2">

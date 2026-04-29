@@ -5,8 +5,9 @@ import {
   CompassIcon,
   PaletteIcon,
   ShieldCheckIcon,
-  ArrowRightIcon } from
-'lucide-react';
+  ArrowRightIcon
+} from
+  'lucide-react';
 import { Navbar } from '../components/Navbar';
 import { Footer } from '../components/Footer';
 export function RegisterSelect() {
@@ -339,7 +340,7 @@ export function RegisterSelect() {
                 Admin
               </h2>
               <p className="text-gray-500 text-sm leading-relaxed mb-8 flex-1">
-                Manage the Lanka Craft platform, verify artisans and workshops,
+                Manage the Lanka Crafts platform, verify artisans and workshops,
                 oversee user activity, and maintain platform integrity.
               </p>
               <ul className="space-y-2 mb-8">

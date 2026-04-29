@@ -23,7 +23,7 @@ const ROLES = [
   {
     key: 'admin', label: 'Admin', tag: 'Platform', Icon: ShieldCheck,
     color: '#C9A227', bg: '#FDF8E7', route: '/' as const,
-    desc: 'Manage the Lanka Craft platform, verify artisans, and oversee user activity.',
+    desc: 'Manage the Lanka Crafts platform, verify artisans, and oversee user activity.',
     features: ['Verify artisan profiles', 'Manage platform users', 'Analytics & reports'],
   },
 ];
@@ -38,7 +38,7 @@ export default function RegisterSelectScreen() {
           <Path d="M16 4 C10 4 6 10 6 16 C6 22 10 28 16 28 C22 28 26 22 26 16 C26 10 22 4 16 4Z" fill="#C9A227" opacity={0.5} />
           <Path d="M16 8 L18 14 L24 14 L19 18 L21 24 L16 20 L11 24 L13 18 L8 14 L14 14 Z" fill="#C9A227" />
         </Svg>
-        <View style={s.badge}><Text style={s.badgeText}>Join Lanka Craft</Text></View>
+        <View style={s.badge}><Text style={s.badgeText}>Join Lanka Crafts</Text></View>
         <Text style={s.title}>How would you like to join?</Text>
         <Text style={s.subtitle}>Choose your role to get started.</Text>
 
