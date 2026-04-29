@@ -116,8 +116,8 @@ export default function TouristDashboardScreen() {
   };
 
   const upcoming = bookings
-    .filter((b: any) => new Date(b.date) >= new Date())
-    .sort((a: any, b: any) => new Date(a.date).getTime() - new Date(b.date).getTime())
+    .filter((b: any) => new Date(b.bookingDate) >= new Date())
+    .sort((a: any, b: any) => new Date(a.bookingDate).getTime() - new Date(b.bookingDate).getTime())
     .slice(0, 3);
 
   if (loading) {
@@ -177,18 +177,19 @@ export default function TouristDashboardScreen() {
             upcoming.map((b: any, i: number) => (
               <View key={b._id || i} style={s.bookingCard}>
                 <View style={s.bookingDate}>
-                  <Text style={s.bookingDay}>{new Date(b.date).getDate()}</Text>
-                  <Text style={s.bookingMonth}>{new Date(b.date).toLocaleString('default', { month: 'short' })}</Text>
+                  <Text style={s.bookingDate}>{new Date(b.bookingDate).getDate()}</Text>
+                  <Text style={s.bookingMonth}>{new Date(b.bookingDate).toLocaleString('default', { month: 'short' })}</Text>
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={s.bookingTitle} numberOfLines={1}>{b.workshopTitle || b.craftType || 'Workshop'}</Text>
+                  <Text style={s.bookingTitle} numberOfLines={1}>{b.craftName || b.artisanName}</Text>
+                  <Text style={s.bookingArtisan} numberOfLines={1}>{b.artisanName}</Text>
                   <View style={s.bookingMeta}>
                     <Clock size={12} color="#9CA3AF" />
-                    <Text style={s.bookingMetaText}>{b.timeSlot || b.time || 'TBD'}</Text>
+                    <Text style={s.bookingMetaText}>{b.bookingTime}</Text>
                   </View>
                   <View style={s.bookingMeta}>
                     <MapPin size={12} color="#9CA3AF" />
-                    <Text style={s.bookingMetaText} numberOfLines={1}>{b.location || b.artisanName || 'Sri Lanka'}</Text>
+                    <Text style={s.bookingMetaText} numberOfLines={1}>{b.location}</Text>
                   </View>
                 </View>
                 <View style={[s.statusBadge, { backgroundColor: b.status === 'confirmed' ? '#DCFCE7' : '#FEF9C3' }]}>
@@ -294,6 +295,7 @@ const s = StyleSheet.create({
   bookingDay: { fontSize: 18, fontWeight: '800', color: '#C65D3B' },
   bookingMonth: { fontSize: 10, fontWeight: '600', color: '#C65D3B', textTransform: 'uppercase' },
   bookingTitle: { fontSize: 14, fontWeight: '700', color: '#1E1E1E', marginBottom: 4 },
+  bookingArtisan: { fontSize: 12, color: '#6B7280', marginBottom: 4 },
   bookingMeta: { flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 2 },
   bookingMetaText: { fontSize: 11, color: '#9CA3AF' },
   statusBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
