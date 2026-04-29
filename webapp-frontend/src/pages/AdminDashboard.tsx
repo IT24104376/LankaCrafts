@@ -536,7 +536,7 @@ export function AdminDashboard() {
                 </div>
                 <div>
                   <p className="text-white font-bold text-sm font-display leading-tight">
-                    Lanka Craft
+                    Lanka Crafts
                   </p>
                   <p className="text-white/50 text-[10px] uppercase tracking-widest">
                     Admin Panel

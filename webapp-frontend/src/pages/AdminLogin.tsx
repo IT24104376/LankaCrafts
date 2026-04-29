@@ -62,7 +62,7 @@ export function AdminLogin() {
                 <ShieldIcon className="w-5 h-5 text-[#2F5D50]" />
               </div>
               <div>
-                <p className="text-white font-bold text-lg leading-tight">Lanka Craft</p>
+                <p className="text-white font-bold text-lg leading-tight">Lanka Crafts</p>
                 <p className="text-white/50 text-xs uppercase tracking-widest">Admin Portal</p>
               </div>
             </div>
@@ -132,7 +132,7 @@ export function AdminLogin() {
             </button>
           </form>
         </div>
-        <p className="text-center text-xs text-gray-400 mt-4">Lanka Craft Admin v1.0</p>
+        <p className="text-center text-xs text-gray-400 mt-4">Lanka Crafts Admin v1.0</p>
       </div>
     </div>
   );

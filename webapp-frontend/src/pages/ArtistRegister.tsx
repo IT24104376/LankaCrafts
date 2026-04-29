@@ -327,7 +327,7 @@ export function ArtistRegister() {
               <ellipse cx="8" cy="16" rx="7" ry="4" fill="white" opacity="0.75" />
               <circle cx="16" cy="16" r="3.5" fill="white" />
             </svg>
-            <span className="text-xl font-display font-bold text-white">LankaCrafts</span>
+            <span className="text-xl font-display font-bold text-white">Lanka Crafts</span>
           </div>
           <div>
             <h2 className="text-3xl font-display font-bold text-white leading-tight mb-8">Share Your Craft with the World</h2>
