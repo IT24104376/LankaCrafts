@@ -13,7 +13,6 @@ import {
   Calendar, BookOpen, Heart, Star,
   MapPin, Clock, ChevronRight, TrendingUp,
 } from 'lucide-react-native';
-import { BatikBackground } from '../../../src/components/BatikBackground';
 
 const { width } = Dimensions.get('window');
 
@@ -117,8 +116,8 @@ export default function TouristDashboardScreen() {
   };
 
   const upcoming = bookings
-    .filter((b: any) => new Date(b.bookingDate) >= new Date())
-    .sort((a: any, b: any) => new Date(a.bookingDate).getTime() - new Date(b.bookingDate).getTime())
+    .filter((b: any) => new Date(b.date) >= new Date())
+    .sort((a: any, b: any) => new Date(a.date).getTime() - new Date(b.date).getTime())
     .slice(0, 3);
 
   if (loading) {
@@ -128,154 +127,148 @@ export default function TouristDashboardScreen() {
   }
 
   return (
-    <BatikBackground>
-      <SafeAreaView style={s.safe} edges={['top']}>
-
-        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 32 }}>
-          {/* Welcome Banner */}
-          <View style={s.banner}>
-            <View style={{ flex: 1 }}>
-              <Text style={s.bannerHi}>Good {new Date().getHours() < 12 ? 'morning' : new Date().getHours() < 18 ? 'afternoon' : 'evening'},</Text>
-              <Text style={s.bannerName}>{tourist?.callingName || 'Explorer'} 👋</Text>
-              <Text style={s.bannerSub}>Here's your activity overview</Text>
-            </View>
-            <View style={s.bannerAvatar}>
-              {tourist?.profilePicUrl ? (
-                <Image source={{ uri: tourist.profilePicUrl }} style={s.bannerAvatarImg} />
-              ) : (
-                <Text style={s.bannerAvatarText}>{tourist?.initials || '?'}</Text>
-              )}
-            </View>
+    <SafeAreaView style={s.safe} edges={['top']}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 32 }}>
+        {/* Welcome Banner */}
+        <View style={s.banner}>
+          <View style={{ flex: 1 }}>
+            <Text style={s.bannerHi}>Good {new Date().getHours() < 12 ? 'morning' : new Date().getHours() < 18 ? 'afternoon' : 'evening'},</Text>
+            <Text style={s.bannerName}>{tourist?.callingName || 'Explorer'} 👋</Text>
+            <Text style={s.bannerSub}>Here's your activity overview</Text>
           </View>
-
-          {/* Stats */}
-          <View style={s.statsGrid}>
-            {statCards.map((sc) => {
-              const Icon = sc.icon;
-              return (
-                <View key={sc.label} style={s.statCard}>
-                  <View style={[s.statIcon, { backgroundColor: sc.bg }]}>
-                    <Icon size={18} color={sc.color} />
-                  </View>
-                  <Text style={s.statValue}>{sc.value}</Text>
-                  <Text style={s.statLabel}>{sc.label}</Text>
-                </View>
-              );
-            })}
-          </View>
-
-          {/* Upcoming Bookings */}
-          <View style={s.section}>
-            <View style={s.sectionHeader}>
-              <Text style={s.sectionTitle}>Upcoming Bookings</Text>
-              {upcoming.length > 0 && <TouchableOpacity onPress={() => router.push('/tourist/bookings')}><Text style={s.seeAll}>See All</Text></TouchableOpacity>}
-            </View>
-            {upcoming.length === 0 ? (
-              <View style={s.emptyCard}>
-                <Calendar size={32} color="#D1D5DB" />
-                <Text style={s.emptyTitle}>No upcoming bookings</Text>
-                <Text style={s.emptySub}>Book a workshop to get started!</Text>
-              </View>
+          <View style={s.bannerAvatar}>
+            {tourist?.profilePicUrl ? (
+              <Image source={{ uri: tourist.profilePicUrl }} style={s.bannerAvatarImg} />
             ) : (
-              upcoming.map((b: any, i: number) => (
-                <View key={b._id || i} style={s.bookingCard}>
-                  <View style={s.bookingDate}>
-                    <Text style={s.bookingDate}>{new Date(b.bookingDate).getDate()}</Text>
-                    <Text style={s.bookingMonth}>{new Date(b.bookingDate).toLocaleString('default', { month: 'short' })}</Text>
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <Text style={s.bookingTitle} numberOfLines={1}>{b.craftName || b.artisanName}</Text>
-                    <Text style={s.bookingArtisan} numberOfLines={1}>{b.artisanName}</Text>
-                    <View style={s.bookingMeta}>
-                      <Clock size={12} color="#9CA3AF" />
-                      <Text style={s.bookingMetaText}>{b.bookingTime}</Text>
-                    </View>
-                    <View style={s.bookingMeta}>
-                      <MapPin size={12} color="#9CA3AF" />
-                      <Text style={s.bookingMetaText} numberOfLines={1}>{b.location}</Text>
-                    </View>
-                  </View>
-                  <View style={[s.statusBadge, { backgroundColor: b.status === 'confirmed' ? '#DCFCE7' : '#FEF9C3' }]}>
-                    <Text style={[s.statusText, { color: b.status === 'confirmed' ? '#16A34A' : '#CA8A04' }]}>{b.status || 'Pending'}</Text>
-                  </View>
-                </View>
-              ))
+              <Text style={s.bannerAvatarText}>{tourist?.initials || '?'}</Text>
             )}
           </View>
+        </View>
 
-          {/* Recommended For You */}
-          {recommendations.length > 0 && (
-            <View style={s.section}>
-              <View style={s.sectionHeader}>
-                <Text style={s.sectionTitle}>Recommended For You</Text>
-                <TouchableOpacity onPress={() => router.push('/tourist/browse')}>
-                  <Text style={s.seeAll}>See All</Text>
-                </TouchableOpacity>
+        {/* Stats */}
+        <View style={s.statsGrid}>
+          {statCards.map((sc) => {
+            const Icon = sc.icon;
+            return (
+              <View key={sc.label} style={s.statCard}>
+                <View style={[s.statIcon, { backgroundColor: sc.bg }]}>
+                  <Icon size={18} color={sc.color} />
+                </View>
+                <Text style={s.statValue}>{sc.value}</Text>
+                <Text style={s.statLabel}>{sc.label}</Text>
               </View>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingRight: 16 }}>
-                {recommendations.map((w) => (
-                  <TouchableOpacity key={w._id} style={s.recCard} activeOpacity={0.9} onPress={() => router.push(`/artist/profile/${w._id}`)}>
-                    <View style={s.recImageWrap}>
-                      <Image source={{ uri: w.img }} style={s.recImage} />
-                      <View style={s.recTag}>
-                        <Text style={s.recTagText}>{w.category}</Text>
-                      </View>
-                      <TouchableOpacity
-                        style={s.recLike}
-                        onPress={() => toggleSave(w._id)}
-                      >
-                        <Heart
-                          size={14}
-                          color={savedWs.includes(w._id) ? '#DC2626' : '#9CA3AF'}
-                          fill={savedWs.includes(w._id) ? '#DC2626' : 'transparent'}
-                        />
-                      </TouchableOpacity>
-                    </View>
-                    <View style={s.recInfo}>
-                      <Text style={s.recTitle} numberOfLines={1}>{w.title}</Text>
-                      <Text style={s.recArtisan} numberOfLines={1}>{w.artisanName}</Text>
-                      <View style={s.recMeta}>
-                        <View style={s.recRating}>
-                          <Star size={12} color="#C9A227" fill="#C9A227" />
-                          <Text style={s.recRatingText}>{w.rating}</Text>
-                          <Text style={s.recReviews}>({w.reviews})</Text>
-                        </View>
-                        <Text style={s.recLocation}>{w.location}</Text>
-                      </View>
-                    </View>
-                  </TouchableOpacity>
-                ))}
-              </ScrollView>
-            </View>
-          )}
+            );
+          })}
+        </View>
 
-          {/* Quick Actions */}
+        {/* Upcoming Bookings */}
+        <View style={s.section}>
+          <View style={s.sectionHeader}>
+            <Text style={s.sectionTitle}>Upcoming Bookings</Text>
+            {upcoming.length > 0 && <Text style={s.seeAll}>See All</Text>}
+          </View>
+          {upcoming.length === 0 ? (
+            <View style={s.emptyCard}>
+              <Calendar size={32} color="#D1D5DB" />
+              <Text style={s.emptyTitle}>No upcoming bookings</Text>
+              <Text style={s.emptySub}>Book a workshop to get started!</Text>
+            </View>
+          ) : (
+            upcoming.map((b: any, i: number) => (
+              <View key={b._id || i} style={s.bookingCard}>
+                <View style={s.bookingDate}>
+                  <Text style={s.bookingDay}>{new Date(b.date).getDate()}</Text>
+                  <Text style={s.bookingMonth}>{new Date(b.date).toLocaleString('default', { month: 'short' })}</Text>
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={s.bookingTitle} numberOfLines={1}>{b.workshopTitle || b.craftType || 'Workshop'}</Text>
+                  <View style={s.bookingMeta}>
+                    <Clock size={12} color="#9CA3AF" />
+                    <Text style={s.bookingMetaText}>{b.timeSlot || b.time || 'TBD'}</Text>
+                  </View>
+                  <View style={s.bookingMeta}>
+                    <MapPin size={12} color="#9CA3AF" />
+                    <Text style={s.bookingMetaText} numberOfLines={1}>{b.location || b.artisanName || 'Sri Lanka'}</Text>
+                  </View>
+                </View>
+                <View style={[s.statusBadge, { backgroundColor: b.status === 'confirmed' ? '#DCFCE7' : '#FEF9C3' }]}>
+                  <Text style={[s.statusText, { color: b.status === 'confirmed' ? '#16A34A' : '#CA8A04' }]}>{b.status || 'Pending'}</Text>
+                </View>
+              </View>
+            ))
+          )}
+        </View>
+
+        {/* Recommended For You */}
+        {recommendations.length > 0 && (
           <View style={s.section}>
-            <Text style={s.sectionTitle}>Quick Actions</Text>
-            <View style={s.quickGrid}>
-              {[
-                { label: 'Write Blog', emoji: '✍️', color: '#2F5D50', bg: '#EBF4F1', route: '/tourist/blog-create/blog-create' },
-                { label: 'Browse Artisans', emoji: '🎨', color: '#C65D3B', bg: '#FEF0EB', route: '/tourist/browse' },
-                { label: 'My Reviews', emoji: '⭐', color: '#C9A227', bg: '#FDF8E7', route: '/tourist/reviews' },
-                { label: 'Edit Profile', emoji: '👤', color: '#6366F1', bg: '#EEF2FF', route: '/tourist/profile-edit' },
-              ].map(q => (
-                <TouchableOpacity key={q.label} style={[s.quickCard, { backgroundColor: q.bg }]} activeOpacity={0.7} onPress={() => router.push(q.route)}>
-                  <Text style={s.quickEmoji}>{q.emoji}</Text>
-                  <Text style={[s.quickLabel, { color: q.color }]}>{q.label}</Text>
+            <View style={s.sectionHeader}>
+              <Text style={s.sectionTitle}>Recommended For You</Text>
+              <TouchableOpacity onPress={() => router.push('/tourist/browse')}>
+                <Text style={s.seeAll}>See All</Text>
+              </TouchableOpacity>
+            </View>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingRight: 16 }}>
+              {recommendations.map((w) => (
+                <TouchableOpacity key={w._id} style={s.recCard} activeOpacity={0.9} onPress={() => router.push(`/artist/${w._id}`)}>
+                  <View style={s.recImageWrap}>
+                    <Image source={{ uri: w.img }} style={s.recImage} />
+                    <View style={s.recTag}>
+                      <Text style={s.recTagText}>{w.category}</Text>
+                    </View>
+                    <TouchableOpacity
+                      style={s.recLike}
+                      onPress={() => toggleSave(w._id)}
+                    >
+                      <Heart
+                        size={14}
+                        color={savedWs.includes(w._id) ? '#DC2626' : '#9CA3AF'}
+                        fill={savedWs.includes(w._id) ? '#DC2626' : 'transparent'}
+                      />
+                    </TouchableOpacity>
+                  </View>
+                  <View style={s.recInfo}>
+                    <Text style={s.recTitle} numberOfLines={1}>{w.title}</Text>
+                    <Text style={s.recArtisan} numberOfLines={1}>{w.artisanName}</Text>
+                    <View style={s.recMeta}>
+                      <View style={s.recRating}>
+                        <Star size={12} color="#C9A227" fill="#C9A227" />
+                        <Text style={s.recRatingText}>{w.rating}</Text>
+                        <Text style={s.recReviews}>({w.reviews})</Text>
+                      </View>
+                      <Text style={s.recLocation}>{w.location}</Text>
+                    </View>
+                  </View>
                 </TouchableOpacity>
               ))}
-            </View>
+            </ScrollView>
           </View>
+        )}
 
-        </ScrollView>
-
-      </SafeAreaView>
-    </BatikBackground>
+        {/* Quick Actions */}
+        <View style={s.section}>
+          <Text style={s.sectionTitle}>Quick Actions</Text>
+          <View style={s.quickGrid}>
+            {[
+              { label: 'Write Blog', emoji: '✍️', color: '#2F5D50', bg: '#EBF4F1', route: '/tourist/blogs' },
+              { label: 'Browse Artisans', emoji: '🎨', color: '#C65D3B', bg: '#FEF0EB', route: '/tourist/browse' },
+              { label: 'My Reviews', emoji: '⭐', color: '#C9A227', bg: '#FDF8E7', route: '/tourist/profile' },
+              { label: 'Edit Profile', emoji: '👤', color: '#6366F1', bg: '#EEF2FF', route: '/tourist/profile-edit' },
+            ].map(q => (
+              <TouchableOpacity key={q.label} style={[s.quickCard, { backgroundColor: q.bg }]} activeOpacity={0.7} onPress={() => router.push(q.route)}>
+                <Text style={s.quickEmoji}>{q.emoji}</Text>
+                <Text style={[s.quickLabel, { color: q.color }]}>{q.label}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const s = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: 'transparent' },
+  safe: { flex: 1, backgroundColor: '#F6F3EE' },
   loadingWrap: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   banner: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#2F5D50', marginHorizontal: 16, marginTop: 12, borderRadius: 20, padding: 20 },
   bannerHi: { fontSize: 13, color: 'rgba(255,255,255,0.6)' },
@@ -301,7 +294,6 @@ const s = StyleSheet.create({
   bookingDay: { fontSize: 18, fontWeight: '800', color: '#C65D3B' },
   bookingMonth: { fontSize: 10, fontWeight: '600', color: '#C65D3B', textTransform: 'uppercase' },
   bookingTitle: { fontSize: 14, fontWeight: '700', color: '#1E1E1E', marginBottom: 4 },
-  bookingArtisan: { fontSize: 12, color: '#6B7280', marginBottom: 4 },
   bookingMeta: { flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 2 },
   bookingMetaText: { fontSize: 11, color: '#9CA3AF' },
   statusBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },

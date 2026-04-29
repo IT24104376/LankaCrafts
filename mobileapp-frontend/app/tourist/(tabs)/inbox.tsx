@@ -19,7 +19,6 @@ import {
   type ChatMessage,
   chatApi,
 } from '../../../src/services/chatApi';
-import { BatikBackground } from '../../../src/components/BatikBackground';
 
 const PALETTE = ['#C65D3B', '#2F5D50', '#C9A227', '#1A6B6B', '#8B5E3C'];
 
@@ -72,7 +71,7 @@ const formatDayLabel = (value?: string | null) => {
 };
 
 export default function TouristInboxScreen() {
-  const { tourist } = useAuth();
+  const { firebaseUser, tourist } = useAuth();
   const currentUserId = tourist?.id || '';
   const listRef = useRef<FlatList<ChatMessage>>(null);
   const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -130,7 +129,7 @@ export default function TouristInboxScreen() {
   }, [messages]);
 
   const loadConversations = async () => {
-    if (!tourist) return;
+    if (!firebaseUser) return;
 
     try {
       setLoadingConversations(true);
@@ -183,9 +182,9 @@ export default function TouristInboxScreen() {
   };
 
   useEffect(() => {
-    if (!tourist) return;
+    if (!firebaseUser) return;
     loadConversations();
-  }, [tourist]);
+  }, [firebaseUser]);
 
   useEffect(() => {
     if (!activeConversationId) {
@@ -197,7 +196,7 @@ export default function TouristInboxScreen() {
   }, [activeConversationId]);
 
   useEffect(() => {
-    if (!tourist) return;
+    if (!firebaseUser) return;
 
     const interval = setInterval(() => {
       loadConversations();
@@ -207,10 +206,10 @@ export default function TouristInboxScreen() {
     }, 6000);
 
     return () => clearInterval(interval);
-  }, [tourist, activeConversationId, conversations]);
+  }, [firebaseUser, activeConversationId, conversations]);
 
   useEffect(() => {
-    if (!tourist || !searchQuery.trim()) {
+    if (!firebaseUser || !searchQuery.trim()) {
       setArtistResults([]);
       return;
     }
@@ -228,7 +227,7 @@ export default function TouristInboxScreen() {
     return () => {
       if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
     };
-  }, [tourist, searchQuery]);
+  }, [firebaseUser, searchQuery]);
 
   const handleSelectConversation = (conversationId: string) => {
     setActiveConversationId(conversationId);
@@ -366,8 +365,7 @@ export default function TouristInboxScreen() {
   const selectedConversation = activeConversation;
 
   return (
-    <BatikBackground>
-      <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={styles.safeArea}>
       {showList ? (
         <View style={styles.container}>
           <View style={styles.headerBlock}>
@@ -594,15 +592,14 @@ export default function TouristInboxScreen() {
           {error ? <Text style={styles.errorText}>{error}</Text> : null}
         </KeyboardAvoidingView>
       )}
-      </SafeAreaView>
-    </BatikBackground>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: 'transparent',
+    backgroundColor: '#F6F3EE',
   },
   container: {
     flex: 1,

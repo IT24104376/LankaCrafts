@@ -84,48 +84,6 @@ export const getArtistProfile = () =>
 export const updateArtistProfile = (data: object) =>
   api.patch('/artist/profile', data);
 
-// ── Artist Bookings ────────────────────────────────────────────────────────────
-
-export const getArtistBookings = () =>
-  api.get('/artist/bookings');
-
-// ── Artist Schedule ────────────────────────────────────────────────────────────
-
-export const getArtistSchedule = () =>
-  api.get('/artist/schedule');
-
-export const updateArtistSchedule = (data: object) =>
-  api.patch('/artist/schedule', data);
-
-// ── Artist Crafts ──────────────────────────────────────────────────────────────
-
-export const createCraft = (data: object) =>
-  api.post('/crafts', data);
-
-export const updateCraft = (id: string, data: object) =>
-  api.patch(`/crafts/${id}`, data);
-
-export const deleteCraft = (id: string) =>
-  api.delete(`/crafts/${id}`);
-
-// ── Public Crafts ────────────────────────────────────────────────────────────
-
-export const getPublicCraft = (id: string) =>
-  api.get(`/crafts/public/crafts/${id}`);
-
-export const getPublicCrafts = (page = 1, limit = 20, category?: string, search?: string, artistId?: string) => {
-  const params = new URLSearchParams();
-  params.append('page', page.toString());
-  params.append('limit', limit.toString());
-  if (category) params.append('category', category);
-  if (search) params.append('search', search);
-  if (artistId) params.append('artistId', artistId);
-  return api.get(`/crafts/public/crafts?${params.toString()}`);
-};
-
-export const updatePublicCraft = (id: string, data: object) =>
-  api.patch(`/crafts/public/crafts/${id}`, data);
-
 // ── Public Artists ────────────────────────────────────────────────────────────
 
 export const getArtists = (page = 1, limit = 20, craftType?: string, search?: string) => {
