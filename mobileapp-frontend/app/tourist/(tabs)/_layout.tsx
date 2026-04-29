@@ -1,6 +1,14 @@
 import React from 'react';
 import { Tabs } from 'expo-router';
-import { Home, LayoutDashboard, BookOpen, UserCircle, CalendarDays } from 'lucide-react-native';
+import {
+  Home,
+  LayoutDashboard,
+  BookOpen,
+  UserCircle,
+  CalendarDays,
+  MessageSquare,
+  Bot,
+} from 'lucide-react-native';
 
 const TAB_COLOR_ACTIVE = '#C65D3B';
 const TAB_COLOR_INACTIVE = '#9CA3AF';
@@ -16,7 +24,7 @@ export default function TouristTabsLayout() {
           backgroundColor: '#fff',
           borderTopWidth: 1,
           borderTopColor: '#F0F0F0',
-          height: 60,
+          height: 68,
           paddingBottom: 8,
           paddingTop: 6,
           elevation: 10,
@@ -57,6 +65,20 @@ export default function TouristTabsLayout() {
         options={{
           title: 'Blogs',
           tabBarIcon: ({ color, size }) => <BookOpen size={size} color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="inbox"
+        options={{
+          title: 'Inbox',
+          tabBarIcon: ({ color, size }) => <MessageSquare size={size} color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="chatbot"
+        options={{
+          title: 'AI Chat',
+          tabBarIcon: ({ color, size }) => <Bot size={size} color={color} />,
         }}
       />
       <Tabs.Screen

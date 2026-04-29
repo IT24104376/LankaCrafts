@@ -3,13 +3,22 @@ import { getAuth } from 'firebase/auth';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Constants from 'expo-constants';
 // @ts-ignore
-import { API_BASE_URL } from '@env';
+import { API_BASE_URL, EXPO_PUBLIC_API_BASE_URL } from '@env';
 
 const extra = Constants.expoConfig?.extra ?? {};
-const baseUrl = (extra.API_BASE_URL ?? API_BASE_URL ?? process.env.API_BASE_URL ?? 'http://localhost:5000').replace(/\/$/, '');
+const rawBaseUrl =
+  extra.API_BASE_URL ??
+  extra.EXPO_PUBLIC_API_BASE_URL ??
+  EXPO_PUBLIC_API_BASE_URL ??
+  API_BASE_URL ??
+  process.env.EXPO_PUBLIC_API_BASE_URL ??
+  process.env.API_BASE_URL ??
+  'http://localhost:5000';
+
+const normalizedBaseUrl = rawBaseUrl.replace(/\/$/, '').replace(/\/api$/, '');
 
 const api = axios.create({
-  baseURL: baseUrl + '/api',
+  baseURL: normalizedBaseUrl + '/api',
   headers: { 'Content-Type': 'application/json' },
 });
 
