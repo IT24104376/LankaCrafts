@@ -10,7 +10,7 @@ export const CHAT_FAQS: FaqItem[] = [
   {
     id: 'how-to-book',
     category: 'Bookings',
-    question: 'How do I book a workshop on LankaCrafts?',
+    question: 'How do I book a workshop on Lanka Crafts?',
     answer:
       'Open an artist profile or workshop page, choose your preferred date and time, and complete the booking form. After that, you can review your booking from the My Bookings page.',
     keywords: ['book', 'booking', 'workshop', 'reserve', 'schedule', 'my bookings'],
@@ -26,7 +26,7 @@ export const CHAT_FAQS: FaqItem[] = [
   {
     id: 'what-can-tourists-do',
     category: 'General',
-    question: 'What can tourists do on LankaCrafts?',
+    question: 'What can tourists do on Lanka Crafts?',
     answer:
       'Tourists can create an account, browse verified artists, book workshops, chat with artisans, manage bookings, and share feedback after their experience.',
     keywords: ['tourist', 'tourists', 'features', 'account', 'dashboard', 'what can i do'],
@@ -34,7 +34,7 @@ export const CHAT_FAQS: FaqItem[] = [
   {
     id: 'artist-registration',
     category: 'Artists',
-    question: 'How do artists join LankaCrafts?',
+    question: 'How do artists join Lanka Crafts?',
     answer:
       'Artists can register through the artist sign-up flow, complete their profile with craft details and location, and wait for verification before publishing their services.',
     keywords: ['artist register', 'join', 'signup', 'sign up', 'verification', 'profile'],
@@ -99,4 +99,4 @@ export const findFaqAnswer = (message: string) => {
 };
 
 export const getFallbackAnswer = () =>
-  "I’m here to help with LankaCrafts questions only, such as bookings, artists, workshops, payments, reviews, and support. Please ask a website-related question or choose one of the suggestions below.";
+  "I’m here to help with Lanka Crafts questions only, such as bookings, artists, workshops, payments, reviews, and support. Please ask a website-related question or choose one of the suggestions below.";

@@ -17,7 +17,7 @@ const INITIAL_MESSAGES: Message[] = [
     id: '1',
     role: 'bot',
     content:
-      "Hello! I'm the LankaCrafts assistant. I can help with bookings, artists, workshops, reviews, payments, and general site questions. What would you like to know?",
+      "Hello! I'm the Lanka Crafts assistant. I can help with bookings, artists, workshops, reviews, payments, and general site questions. What would you like to know?",
     timestamp: new Date().toLocaleTimeString([], {
       hour: '2-digit',
       minute: '2-digit',
@@ -119,7 +119,7 @@ export function ChatWidget() {
                   <Compass className="h-6 w-6 text-mustard" />
                 </div>
                 <div>
-                  <h3 className="font-body font-bold text-white">LankaCrafts AI Guide</h3>
+                  <h3 className="font-body font-bold text-white">Lanka Crafts AI Guide</h3>
                   <div className="flex items-center gap-1.5">
                     <span className="h-2 w-2 animate-pulse rounded-full bg-green-400" />
                     <span className="text-xs text-white/80">FAQ Assistant · Online</span>
