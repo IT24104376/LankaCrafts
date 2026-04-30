@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { getAuth } from 'firebase/auth';
+import { auth } from '../config/firebase';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Constants from 'expo-constants';
 // @ts-ignore
@@ -27,9 +27,8 @@ console.log('🔗 [axiosInstance] Configured API baseURL:', api.defaults.baseURL
 // ── RELIABLE TOKEN GETTER ──────────────────────────────────
 const getAuthToken = async (): Promise<string | null> => {
   try {
-    const auth = getAuth();
     if (auth.currentUser) {
-      return await auth.currentUser.getIdToken();
+      return await auth.currentUser.getIdToken(true);
     }
     // Fallback to stored admin token
     const adminToken = await AsyncStorage.getItem('admin_token');
