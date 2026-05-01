@@ -1,5 +1,6 @@
 import express from 'express';
-import { verifyToken } from '../services/artistService.js';
+import multer from 'multer';
+import { verifyAnyFirebaseToken } from '../middleware/auth.js';
 import {
   createCraft,
   getCraftsByArtist,
@@ -11,34 +12,18 @@ import {
   searchCrafts,
   incrementCraftViews
 } from '../services/craftService.js';
-import Artist from '../models/Artist.js';
 
 const router = express.Router();
+const upload = multer({ storage: multer.memoryStorage() });
 
-const authenticate = async (req, res, next) => {
-  const authHeader = req.headers.authorization || '';
-  if (!authHeader.startsWith('Bearer ')) {
-    return res.status(401).json({ error: 'Firebase ID token required.' });
-  }
-
-  const idToken = authHeader.split('Bearer ')[1];
+router.post('/', verifyAnyFirebaseToken, upload.array('images', 10), async (req, res) => {
   try {
-    const decoded = await verifyToken(idToken);
-    req.uid = decoded.uid;
-    next();
-  } catch (err) {
-    return res.status(401).json({ error: err.message });
-  }
-};
-
-router.post('/crafts', authenticate, async (req, res) => {
-  try {
-    const artist = await Artist.findOne({ firebaseUid: req.uid });
-    if (!artist) {
-      return res.status(404).json({ error: 'Artist profile not found.' });
+    // Ensure user is an artist
+    if (req.user.role !== 'artist') {
+      return res.status(403).json({ error: 'Access denied. Artist account required.' });
     }
-
-    const craft = await createCraft(artist._id, req.body);
+    const artistId = req.user.uid;
+    const craft = await createCraft(artistId, req.body, req.files || []);
     res.status(201).json({
       message: 'Craft created successfully.',
       craft
@@ -49,14 +34,13 @@ router.post('/crafts', authenticate, async (req, res) => {
 });
 
 
-router.patch('/crafts/:id', authenticate, async (req, res) => {
+router.patch('/:id', verifyAnyFirebaseToken, upload.array('images', 10), async (req, res) => {
   try {
-    const artist = await Artist.findOne({ firebaseUid: req.uid });
-    if (!artist) {
-      return res.status(404).json({ error: 'Artist profile not found.' });
+    if (req.user.role !== 'artist') {
+      return res.status(403).json({ error: 'Access denied. Artist account required.' });
     }
-
-    const craft = await updateCraft(req.params.id, artist._id, req.body);
+    const artistId = req.user.uid;
+    const craft = await updateCraft(req.params.id, artistId, req.body, req.files || []);
     res.json({
       message: 'Craft updated successfully.',
       craft
@@ -66,14 +50,13 @@ router.patch('/crafts/:id', authenticate, async (req, res) => {
   }
 });
 
-router.delete('/crafts/:id', authenticate, async (req, res) => {
+router.delete('/:id', verifyAnyFirebaseToken, async (req, res) => {
   try {
-    const artist = await Artist.findOne({ firebaseUid: req.uid });
-    if (!artist) {
-      return res.status(404).json({ error: 'Artist profile not found.' });
+    if (req.user.role !== 'artist') {
+      return res.status(403).json({ error: 'Access denied. Artist account required.' });
     }
-
-    await deleteCraft(req.params.id, artist._id);
+    const artistId = req.user.uid;
+    await deleteCraft(req.params.id, artistId);
     res.json({ message: 'Craft deleted successfully.' });
   } catch (err) {
     res.status(err.status || 500).json({ error: err.message });

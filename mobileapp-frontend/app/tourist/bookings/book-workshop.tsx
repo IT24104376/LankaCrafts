@@ -70,21 +70,21 @@ export default function BookWorkshop() {
         const artisanData = allArtists.find(a => (a._id || a.id) === selectedArtisan);
         const craftData = craftCategories.find(c => c.id === selectedCraft);
 
-        try {
-            await bookingApi.createBooking({
-                artisanId: selectedArtisan as string,
-                artisanName: artisanData?.fullName || 'Unknown',
-                location: artisanData?.address?.city || 'Unknown',
-                craftId: selectedCraft,
-                craftName: craftData?.name || 'Unknown',
-                customerId: tourist?.id,
-                name: formData.name,
-                email: formData.email,
-                phone: formData.phone,
-                date: selectedDate,
-                time: selectedTime,
-                groupSize: formData.groupSize,
-            });
+         try {
+              await bookingApi.createBooking({
+                  artisanId: selectedArtisan as string,
+                  artisanName: artisanData?.fullName || 'Unknown',
+                  location: artisanData?.address?.city || 'Unknown',
+                  craftId: selectedCraft,
+                  craftName: craftData?.name || 'Unknown',
+                  customerId: tourist?.id,
+                  name: formData.name,
+                  email: formData.email,
+                  phone: formData.phone,
+                  date: selectedDate,
+                  time: selectedTime,
+                  groupSize: formData.groupSize,
+              });
             setIsSuccess(true);
         } catch {
             Alert.alert('Error', 'Failed to save booking. Please try again.');

@@ -5,6 +5,7 @@ import {
   signOut,
   onAuthStateChanged,
   User,
+  UserCredential,
 } from 'firebase/auth';
 import { auth } from '../config/firebase';
 import {
@@ -112,26 +113,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [adminToken, setAdminToken] = useState<string | null>(localStorage.getItem('admin_token'));
   const [loading, setLoading] = useState(true);
 
-  // --- Profile Resolver Logic ---
-  // This helper tries to find who the user is after they log in
-  const fetchCorrectProfile = async () => {
-    try {
-      // 1. Try Tourist first
-      const res = await getProfile();
-      setTourist(res.data.tourist);
-      setArtist(null);
-    } catch {
-      try {
-        // 2. If not a tourist, try Artist
-        const res = await getArtistProfile();
-        setArtist(res.data.artist);
-        setTourist(null);
-      } catch {
-        setTourist(null);
-        setArtist(null);
-      }
-    }
-  };
+   // --- Profile Resolver Logic ---
+   // This helper tries to find who the user is after they log in
+   const fetchCorrectProfile = async () => {
+     try {
+       // 1. Try Tourist first
+       const res = await getProfile();
+       setTourist(res.data.tourist);
+       setArtist(null);
+     } catch {
+       try {
+         // 2. If not a tourist, try Artist
+         const res = await getArtistProfile();
+         setArtist(res.data.artist);
+         setTourist(null);
+       } catch {
+         setTourist(null);
+         setArtist(null);
+         // No valid profile found; sign out to clear inconsistent state
+         try {
+           await signOut(auth);
+         } catch (err) {
+           console.error('Failed to sign out after profile not found:', err);
+         }
+       }
+     }
+   };
 
   useEffect(() => {
     let firebaseReady = false;
@@ -182,10 +189,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const register = async (email: string, password: string, profileData: object) => {
-    await createUserWithEmailAndPassword(auth, email, password);
-    const res = await registerTourist({ email, ...profileData });
-    setTourist(res.data.tourist);
-    setArtist(null);
+    let userCredential: UserCredential | undefined = undefined;
+    try {
+      userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const res = await registerTourist({ email, ...profileData });
+      setTourist(res.data.tourist);
+      setArtist(null);
+    } catch (err) {
+      if (userCredential?.user) {
+        try {
+          await userCredential.user.delete();
+        } catch (delErr) {
+          console.error('Failed to delete Firebase user after registration failure:', delErr);
+        }
+      }
+      throw err;
+    }
   };
 
   const logout = async () => {
@@ -212,10 +231,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const handleRegisterArtist = async (email: string, password: string, profileData: object) => {
-    await createUserWithEmailAndPassword(auth, email, password);
-    const res = await registerArtist({ email, ...profileData });
-    setArtist(res.data.artist);
-    setTourist(null);
+    let userCredential: UserCredential | undefined = undefined;
+    try {
+      userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const res = await registerArtist({ email, ...profileData });
+      setArtist(res.data.artist);
+      setTourist(null);
+    } catch (err) {
+      if (userCredential?.user) {
+        try {
+          await userCredential.user.delete();
+        } catch (delErr) {
+          console.error('Failed to delete Firebase user after registration failure:', delErr);
+        }
+      }
+      throw err;
+    }
   };
 
   const logoutArtist = async () => {

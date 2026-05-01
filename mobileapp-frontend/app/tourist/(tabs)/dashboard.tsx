@@ -209,9 +209,9 @@ export default function TouristDashboardScreen() {
                 <Text style={s.seeAll}>See All</Text>
               </TouchableOpacity>
             </View>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingRight: 16 }}>
-              {recommendations.map((w) => (
-                <TouchableOpacity key={w._id} style={s.recCard} activeOpacity={0.9} onPress={() => router.push(`/artist/${w._id}`)}>
+             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingRight: 16 }}>
+               {recommendations.map((w) => (
+                 <TouchableOpacity key={w._id} style={s.recCard} activeOpacity={0.9} onPress={() => router.push(`/tourist/artists/${w._id}`)}>
                   <View style={s.recImageWrap}>
                     <Image source={{ uri: w.img }} style={s.recImage} />
                     <View style={s.recTag}>

@@ -17,6 +17,7 @@
     "expo-image-picker": "^55.0.19",
     "expo-linear-gradient": "^55.0.13",
     "expo-linking": "^55.0.14",
+    "expo-module-scripts": "^55.0.2",
     "expo-router": "^55.0.13",
     "expo-status-bar": "~55.0.5",
     "firebase": "^12.12.1",
