@@ -31,7 +31,6 @@ export default function EditBooking() {
     const minDateString = today.toISOString().split('T')[0];
 
     const handleSubmit = async () => {
-        // Add this check at the top
         const selected = new Date(formData.bookingDate);
         if (selected < today) {
             Alert.alert('Invalid Date', 'Please select a future date.');

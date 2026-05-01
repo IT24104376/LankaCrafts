@@ -66,7 +66,6 @@ export default function BookWorkshop() {
         if (!/^[0-9]{10}$/.test(formData.phone)) { Alert.alert('Error', 'Phone must be 10 digits'); return; }
         if (!selectedDate || !selectedTime) { Alert.alert('Error', 'Please select date and time'); return; }
 
-        // Add this check at the top
         const selected = new Date(selectedDate);
         const today = new Date();
         today.setHours(0, 0, 0, 0);
