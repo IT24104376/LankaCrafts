@@ -26,23 +26,37 @@ console.log('🔗 [axiosInstance] Configured API baseURL:', api.defaults.baseURL
 
 // ── RELIABLE TOKEN GETTER ──────────────────────────────────
 const getAuthToken = async (): Promise<string | null> => {
-  try {
-    if (auth.currentUser) {
-      return await auth.currentUser.getIdToken(true);
+  // For Firebase-authenticated users (tourists & artists)
+  if (auth.currentUser) {
+    try {
+      // Get current token without forcing refresh
+      return await auth.currentUser.getIdToken(false);
+    } catch (err) {
+      console.warn('[axiosInstance] getIdToken failed, trying stored token:', err);
     }
-    // Fallback to stored admin token
-    const adminToken = await AsyncStorage.getItem('admin_token');
-    return adminToken;
-  } catch {
-    const adminToken = await AsyncStorage.getItem('admin_token');
-    return adminToken;
   }
+  
+  // Fallback to stored Firebase token
+  try {
+    const storedToken = await AsyncStorage.getItem('firebase_token');
+    if (storedToken) {
+      return storedToken;
+    }
+  } catch (err) {
+    console.warn('[axiosInstance] Failed to retrieve stored Firebase token:', err);
+  }
+  
+  // No valid Firebase token available
+  return null;
 };
 
 // ── INTERCEPTOR ──────────────────────────────────────────
 api.interceptors.request.use(async (config) => {
-  // Skip Firebase for admin auth endpoints
-  if (config.url?.includes('/auth/login') || config.url?.includes('/auth/me')) {
+  // Admin routes: use admin_token (paths start with /auth/ or /admin/)
+  const path = config.url || '';
+  const isAdminRoute = path.startsWith('/auth/') || path.startsWith('/admin/');
+
+  if (isAdminRoute) {
     const adminToken = await AsyncStorage.getItem('admin_token');
     if (adminToken) {
       config.headers.Authorization = `Bearer ${adminToken}`;

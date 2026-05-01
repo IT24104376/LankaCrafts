@@ -11,11 +11,7 @@ import blogRoutes from './routes/blogs.js';
 import workshopBookingRoutes from './routes/bookingRoutes.js';
 
 import artistAuthRoutes from './routes/artistAuth.js';
-import artistProfileRoutes from './routes/artistProfile.js';
-import artistRoutes from './routes/artists.js';
 import craftRoutes from './routes/crafts.js';
-import paymentRoutes from './routes/payments.js';
-
 import reviewRoutes from './routes/reviews.js';
 import analyticsRoutes from './routes/analytics.js';
 import activityRoutes from './routes/activity.js';
@@ -23,6 +19,8 @@ import chatRoutes from './routes/chat.js';
 import adminAuthRoutes from './routes/adminAuth.js';
 import adminRoutes from './routes/admin.js';
 import aiRoutes from './routes/ai.js';
+import artistRoutes from './routes/artistRoutes.js';
+import artistsRoutes from './routes/artists.js';
 
 const app = express();
 
@@ -45,17 +43,16 @@ app.use('/api/tourist', touristRoutes);
 app.use('/api/tourist/blogs', blogRoutes);
 app.use('/api/bookings', workshopBookingRoutes);
 app.use('/api/artist/auth', artistAuthRoutes);
-app.use('/api/artist', artistProfileRoutes);
-app.use('/api/artists', artistRoutes);
 app.use('/api/crafts', craftRoutes);
-app.use('/api/payments', paymentRoutes);
 app.use('/api/reviews', reviewRoutes);
-app.use('/api/ai', aiRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/activity', activityRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/api/auth', adminAuthRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/ai', aiRoutes);
+app.use('/api/artist', artistRoutes);
+app.use('/api/artists', artistsRoutes);
 
 // ── Health check ──────────────────────────────────────────────────────────────
 app.get('/health', (_req, res) => {
@@ -77,6 +74,9 @@ app.use((_req, res) => {
 app.use((err, _req, res, _next) => {
   console.error('[ERROR]', err.message);
 
+  if (err.status && err.status >= 400 && err.status < 500) {
+    return res.status(err.status).json({ error: err.message });
+  }
   if (err.name === 'ValidationError') {
     const messages = Object.values(err.errors).map((e) => e.message);
     return res.status(400).json({ error: messages.join(', ') });

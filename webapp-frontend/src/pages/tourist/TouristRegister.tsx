@@ -59,6 +59,19 @@ export function TouristRegister() {
     setSubmitting(true);
     setApiError('');
     try {
+      // Validate date of birth
+      if (step2.dateOfBirth) {
+        const dob = new Date(step2.dateOfBirth);
+        if (isNaN(dob.getTime())) {
+          setApiError('Invalid date of birth. Please select a valid date.');
+          setSubmitting(false);
+          return;
+        }
+      } else {
+        setApiError('Date of birth is required.');
+        setSubmitting(false);
+        return;
+      }
       await register(step1.email, step1.password, {
         fullName: step1.fullName,
         callingName: step1.callingName,

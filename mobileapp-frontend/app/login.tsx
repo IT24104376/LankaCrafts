@@ -46,12 +46,12 @@ export default function UnifiedLoginScreen() {
               <ArrowRight size={20} color="#9CA3AF" />
             </TouchableOpacity>
 
-            {/* Artisan Login */}
-            <TouchableOpacity 
-              style={styles.card}
-              activeOpacity={0.8}
-              onPress={() => alert('Artisan portal coming soon!')}
-            >
+             {/* Artisan Login */}
+             <TouchableOpacity 
+               style={styles.card}
+               activeOpacity={0.8}
+               onPress={() => router.push('/artist/login')}
+             >
               <View style={[styles.iconContainer, { backgroundColor: '#FEF0EB' }]}>
                 <Palette size={32} color="#C65D3B" />
               </View>

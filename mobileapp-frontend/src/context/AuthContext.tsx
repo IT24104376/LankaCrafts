@@ -114,22 +114,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   // --- Profile Resolver Logic ---
-  const fetchCorrectProfile = async () => {
-    try {
-      const res = await getProfile();
-      setTourist(res.data.tourist);
-      setArtist(null);
-    } catch {
-      try {
-        const res = await getArtistProfile();
-        setArtist(res.data.artist);
-        setTourist(null);
-      } catch {
-        setTourist(null);
-        setArtist(null);
-      }
-    }
-  };
+   const fetchCorrectProfile = async () => {
+     try {
+       const res = await getProfile();
+       setTourist(res.data.tourist);
+       setArtist(null);
+     } catch {
+       try {
+         const res = await getArtistProfile();
+         // API returns { success: true, data: artist }
+         const artistData = res.data?.data;
+         if (artistData) {
+           // Normalize to use id instead of _id for consistency
+           setArtist({ ...artistData, id: artistData._id });
+         } else {
+           setArtist(null);
+         }
+         setTourist(null);
+       } catch {
+         setTourist(null);
+         setArtist(null);
+       }
+     }
+   };
 
   useEffect(() => {
     let firebaseReady = false;
@@ -204,15 +211,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // --- Artist Actions ---
   const handleLoginArtist = async (email: string, password: string) => {
-    await signInWithEmailAndPassword(auth, email, password);
-    const res = await loginArtist();
+    const userCredential = await signInWithEmailAndPassword(auth, email, password);
+    const token = await userCredential.user.getIdToken(true);
+    const res = await loginArtist(token);
     setArtist(res.data.artist);
     setTourist(null);
   };
 
   const handleRegisterArtist = async (email: string, password: string, profileData: object) => {
-    await createUserWithEmailAndPassword(auth, email, password);
-    const res = await registerArtist({ email, ...profileData });
+    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+    const token = await userCredential.user.getIdToken(true);
+    const res = await registerArtist({ email, ...profileData }, token);
     setArtist(res.data.artist);
     setTourist(null);
   };
@@ -226,7 +235,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const refreshArtist = async () => {
     try {
       const res = await getArtistProfile();
-      setArtist(res.data.artist);
+      const artistData = res.data?.data;
+      if (artistData) {
+        setArtist({ ...artistData, id: artistData._id });
+      }
     } catch (err) {
       console.error('Failed to refresh artist profile:', err);
     }

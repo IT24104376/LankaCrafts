@@ -1,6 +1,5 @@
 import { useAuth } from '../../../src/context/AuthContext';
 import { bookingApi } from '../../../src/api';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { useEffect, useState } from 'react';
 import {
     View, Text, ScrollView, TouchableOpacity,
@@ -27,18 +26,8 @@ export default function MyBookings() {
     const fetchBookings = async () => {
         if (!email) { setLoading(false); return; }
         try {
-            const token = await AsyncStorage.getItem('firebase_token');
-            const baseUrl = process.env.EXPO_PUBLIC_API_BASE_URL || 'http://localhost:5000';
-            const response = await fetch(
-                `${baseUrl}/bookings/user/${email}`,
-                {
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    }
-                }
-            );
-            const data = await response.json();
+            const response = await bookingApi.getBookingsByEmail(email);
+            const data = response;
             setBookings(Array.isArray(data) ? data : (data.bookings ?? []));
         } catch (err) {
             console.error('Error fetching bookings:', err);

@@ -1,5 +1,6 @@
 import admin from '../config/firebase.js';
 import Tourist from '../models/Tourist.js';
+import Artist from '../models/Artist.js';
 
 /**
  * Verify a Firebase ID token and return the decoded payload.
@@ -56,6 +57,18 @@ export async function registerTourist(uid, firebaseEmail, body) {
     }
   }
 
+  // Validate and parse dateOfBirth if provided
+  let parsedDateOfBirth;
+  if (dateOfBirth && dateOfBirth.trim() !== '') {
+    const dob = new Date(dateOfBirth);
+    if (isNaN(dob.getTime())) {
+      const e = new Error('Invalid date of birth. Please provide a valid date.');
+      e.status = 400;
+      throw e;
+    }
+    parsedDateOfBirth = dob;
+  }
+
   if (!fullName || !country) {
     const e = new Error('fullName and country are required.');
     e.status = 400;
@@ -70,7 +83,7 @@ export async function registerTourist(uid, firebaseEmail, body) {
     country,
     preferredLanguages: preferredLanguages || [],
     idNumber: idNumber || '',
-    dateOfBirth: dateOfBirth || undefined,
+    dateOfBirth: parsedDateOfBirth || undefined,
     address: address || {},
     interests: interests || [],
     preferredRegions: preferredRegions || [],
@@ -91,4 +104,64 @@ export async function loginTourist(uid) {
     throw e;
   }
   return tourist;
+}
+
+export async function registerArtist(uid, firebaseEmail, body) {
+  const existing = await Artist.findOne({ firebaseUid: uid });
+  if (existing){
+    const e = new Error("Artist profile already exists for this account.");
+    e.status = 409;
+    throw e;
+  }
+
+  const {
+    fullName,
+    callingName,
+    email,
+    phone,
+    craftType,
+    bio,
+    profilePicUrl,
+    address, 
+    availability,
+    rating,
+    reviewCount,
+    workshopsConducted,
+    status,
+  } = body;
+
+  if (!fullName || !craftType || !address) {
+    const e = new Error('fullName, craftType, and address are required.');
+    e.status = 400;
+    throw e;
+  }
+
+  const artist = await Artist.create({
+    firebaseUid:uid,
+    fullName,
+    callingName,
+    email: email || firebaseEmail,
+    phone,
+    craftType,
+    bio: bio || '',
+    profilePicUrl: profilePicUrl || '',
+    address,
+    availability: availability || {},
+    rating: rating || 0,
+    reviewCount: reviewCount || 0,
+    workshopsConducted: workshopsConducted || 0,
+    status: status || 'active',
+  });
+
+  return artist;
+} 
+
+export async function loginArtist(uid) {
+  const artist = await Artist.findOne({ firebaseUid: uid, status: 'active' });
+  if (!artist) {
+    const e = new Error('Artist profile not found or deactivated. Please contact support.');
+    e.status = 404;
+    throw e;
+  }
+  return artist;
 }

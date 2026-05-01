@@ -50,6 +50,23 @@ export async function getProfile(touristId) {
  * Update allowed fields of a tourist profile.
  */
 export async function updateProfile(touristId, updates) {
+  // Validate and parse dateOfBirth if provided
+  if (updates.dateOfBirth) {
+    const dob = new Date(updates.dateOfBirth);
+    if (isNaN(dob.getTime())) {
+      const e = new Error('Invalid date of birth.');
+      e.status = 400;
+      throw e;
+    }
+    // Ensure exact match (no overflow)
+    if (dob.toISOString().split('T')[0] !== updates.dateOfBirth) {
+      const e = new Error('Invalid date of birth.');
+      e.status = 400;
+      throw e;
+    }
+    updates.dateOfBirth = dob;
+  }
+
   return Tourist.findByIdAndUpdate(
     touristId,
     { $set: updates },

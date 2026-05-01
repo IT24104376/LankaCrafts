@@ -101,7 +101,7 @@ export default function TouristHomeScreen() {
           <View style={s.section}>
             <Text style={s.sectionTag}>FEATURED</Text>
             <Text style={s.sectionTitle}>Artisan Spotlight</Text>
-            <View style={s.featuredCard}>
+            <TouchableOpacity style={s.featuredCard} onPress={() => router.push(`/tourist/artists/${featured._id || featured.id}`)} activeOpacity={0.8}>
               <View style={s.featuredTop}>
                 <View style={s.featuredAvatar}>
                   <Text style={s.featuredInitials}>{featured.initials || '?'}</Text>
@@ -111,45 +111,45 @@ export default function TouristHomeScreen() {
                   <Text style={s.featuredCraft}>{featured.craftType}</Text>
                   <View style={s.ratingRow}>
                     <Star size={14} color="#C9A227" fill="#C9A227" />
-                    <Text style={s.ratingText}>{featured.rating?.toFixed(1) || '4.8'}</Text>
+                    <Text style={s.ratingText}>{featured.rating?.toFixed(1) || '0.0'}</Text>
                     <Text style={s.ratingCount}>({featured.reviewCount || 0} reviews)</Text>
                   </View>
                 </View>
               </View>
               <Text style={s.featuredBio} numberOfLines={2}>{featured.bio}</Text>
-            </View>
+            </TouchableOpacity>
           </View>
         )}
 
-        {/* Browse Artisans */}
-        {artists.length > 0 && (
-          <View style={s.section}>
-            <View style={s.sectionHeader}>
-              <View>
-                <Text style={s.sectionTag}>ARTISANS</Text>
-                <Text style={s.sectionTitle}>Discover Artisans</Text>
-              </View>
-              <TouchableOpacity>
-                <Text style={s.seeAll}>See All</Text>
-              </TouchableOpacity>
-            </View>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-              {artists.map((a: any, i: number) => (
-                <View key={a._id || i} style={s.artisanCard}>
-                  <View style={s.artisanAvatar}>
-                    <Text style={s.artisanInitials}>{a.initials || '?'}</Text>
-                  </View>
-                  <Text style={s.artisanName} numberOfLines={1}>{a.callingName || a.fullName}</Text>
-                  <Text style={s.artisanCraft} numberOfLines={1}>{a.craftType}</Text>
-                  <View style={s.artisanRating}>
-                    <Star size={12} color="#C9A227" fill="#C9A227" />
-                    <Text style={s.artisanRatingText}>{a.rating?.toFixed(1) || '–'}</Text>
-                  </View>
-                </View>
-              ))}
-            </ScrollView>
-          </View>
-        )}
+         {/* Browse Artisans */}
+         {artists.length > 0 && (
+           <View style={s.section}>
+             <View style={s.sectionHeader}>
+               <View>
+                 <Text style={s.sectionTag}>ARTISANS</Text>
+                 <Text style={s.sectionTitle}>Discover Artisans</Text>
+               </View>
+               <TouchableOpacity onPress={() => router.push('/tourist/artists')}>
+                 <Text style={s.seeAll}>See All</Text>
+               </TouchableOpacity>
+             </View>
+             <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+               {artists.map((a: any, i: number) => (
+                 <TouchableOpacity key={a._id || i} style={s.artisanCard} onPress={() => router.push(`/tourist/artists/${a._id}`)}>
+                   <View style={s.artisanAvatar}>
+                     <Text style={s.artisanInitials}>{a.initials || '?'}</Text>
+                   </View>
+                   <Text style={s.artisanName} numberOfLines={1}>{a.callingName || a.fullName}</Text>
+                   <Text style={s.artisanCraft} numberOfLines={1}>{a.craftType}</Text>
+                   <View style={s.artisanRating}>
+                     <Star size={12} color="#C9A227" fill="#C9A227" />
+                     <Text style={s.artisanRatingText}>{a.rating?.toFixed(1) || '–'}</Text>
+                   </View>
+                 </TouchableOpacity>
+               ))}
+             </ScrollView>
+           </View>
+         )}
 
         {/* Map Teaser */}
         <View style={s.mapTeaser}>
