@@ -103,11 +103,15 @@ export const updateArtistSchedule = (data: object) =>
 
 // ── Artist Crafts ──────────────────────────────────────────────────────────────
 
-export const createCraft = (data: object) =>
-  api.post('/crafts', data);
+export const createCraft = (data: FormData) =>
+  api.post('/crafts', data, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
 
-export const updateCraft = (id: string, data: object) =>
-  api.patch(`/crafts/${id}`, data);
+export const updateCraft = (id: string, data: FormData) =>
+  api.patch(`/crafts/${id}`, data, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
 
 export const deleteCraft = (id: string) =>
   api.delete(`/crafts/${id}`);

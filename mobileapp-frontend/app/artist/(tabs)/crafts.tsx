@@ -126,7 +126,11 @@ export default function ArtistCraftsScreen() {
       if (form.tags.length > 0) {
         formData.append('tags', JSON.stringify(form.tags));
       }
-      // Append image files
+      // Send existing images when updating
+      if (editingCraft && form.images.length > 0) {
+        formData.append('existingImages', JSON.stringify(form.images));
+      }
+      // Append new image files
       form.mediaFiles.forEach((file, index) => {
         formData.append('images', {
           uri: file.uri,
@@ -301,6 +305,7 @@ export default function ArtistCraftsScreen() {
                 <View style={s.detailImageRow}>
                   {selectedCraft.images && selectedCraft.images.length > 0 ? (
                     <FlatList
+                      style={{ height: 200 }}
                       horizontal
                       pagingEnabled
                       showsHorizontalScrollIndicator={false}
@@ -614,7 +619,7 @@ const s = StyleSheet.create({
   detailPrice: { fontSize: 16, fontWeight: '700', color: '#2F5D50' },
   detailDesc: { fontSize: 14, color: '#4B5563', lineHeight: 22 },
   detailFullImage: { width: '100%', height: 200, borderRadius: 12, backgroundColor: '#F3F4F6' },
-  detailImageRow: { marginBottom: 16 },
+  detailImageRow: { height: 200, marginBottom: 16 },
   detailChipContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 8 },
   detailChip: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#E8F5E9', borderRadius: 12, paddingHorizontal: 14, paddingVertical: 8 },
   detailTagChip: { backgroundColor: '#E0E7FF' },

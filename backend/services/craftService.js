@@ -24,6 +24,25 @@ export async function createCraft(artistId, craftData, files = []) {
     throw e;
   }
 
+  // Parse stringified JSON fields
+  let parsedDimensions = dimensions;
+  let parsedWeight = weight;
+  let parsedMaterials = materials;
+  let parsedTags = tags;
+
+  if (typeof dimensions === 'string') {
+    try { parsedDimensions = JSON.parse(dimensions); } catch { parsedDimensions = {}; }
+  }
+  if (typeof weight === 'string') {
+    try { parsedWeight = JSON.parse(weight); } catch { parsedWeight = {}; }
+  }
+  if (typeof materials === 'string') {
+    try { parsedMaterials = JSON.parse(materials); } catch { parsedMaterials = []; }
+  }
+  if (typeof tags === 'string') {
+    try { parsedTags = JSON.parse(tags); } catch { parsedTags = []; }
+  }
+
   // VALIDATE IMAGE COUNT
   if (files && files.length > MAX_IMAGES) {
     const e = new Error(`Maximum ${MAX_IMAGES} images allowed.`);
@@ -65,10 +84,10 @@ export async function createCraft(artistId, craftData, files = []) {
       category,
       images: uploadedImages,
       stock: stock ?? 1,
-      dimensions: dimensions || {},
-      weight: weight || {},
-      materials: materials || [],
-      tags: tags || [],
+      dimensions: parsedDimensions || {},
+      weight: parsedWeight || {},
+      materials: parsedMaterials || [],
+      tags: parsedTags || [],
       isAvailable: true,
     });
 
@@ -105,15 +124,46 @@ export async function updateCraft(craftId, artistId, updates, files = []) {
     throw e;
   }
 
+  // Parse stringified JSON fields
+  let parsedDimensions = updates.dimensions;
+  let parsedWeight = updates.weight;
+  let parsedMaterials = updates.materials;
+  let parsedTags = updates.tags;
+  let parsedExistingImages = null;
+
+  if (typeof updates.dimensions === 'string') {
+    try { parsedDimensions = JSON.parse(updates.dimensions); } catch { parsedDimensions = undefined; }
+  }
+  if (typeof updates.weight === 'string') {
+    try { parsedWeight = JSON.parse(updates.weight); } catch { parsedWeight = undefined; }
+  }
+  if (typeof updates.materials === 'string') {
+    try { parsedMaterials = JSON.parse(updates.materials); } catch { parsedMaterials = undefined; }
+  }
+  if (typeof updates.tags === 'string') {
+    try { parsedTags = JSON.parse(updates.tags); } catch { parsedTags = undefined; }
+  }
+  if (typeof updates.existingImages === 'string') {
+    try { parsedExistingImages = JSON.parse(updates.existingImages); } catch { parsedExistingImages = null; }
+  }
+
   const allowedUpdates = [
     'name', 'description', 'price', 'currency', 'category',
     'stock', 'isAvailable', 'dimensions', 'weight',
     'materials', 'tags'
   ];
 
+  const updateData = {
+    ...updates,
+    dimensions: parsedDimensions,
+    weight: parsedWeight,
+    materials: parsedMaterials,
+    tags: parsedTags
+  };
+
   for (const key of allowedUpdates) {
-    if (updates[key] !== undefined) {
-      craft[key] = updates[key];
+    if (updateData[key] !== undefined) {
+      craft[key] = updateData[key];
     }
   }
 
@@ -128,6 +178,11 @@ export async function updateCraft(craftId, artistId, updates, files = []) {
   const uploadedPublicIds = [];
 
   try {
+    // Handle images: use existing images if no new files, otherwise combine
+    if (parsedExistingImages !== null) {
+      craft.images = parsedExistingImages;
+    }
+    
     // Upload new images to Cloudinary
     if (files && files.length > 0) {
       for (let i = 0; i < files.length; i++) {
