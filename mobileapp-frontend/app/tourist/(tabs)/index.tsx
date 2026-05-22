@@ -5,9 +5,11 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { WebView } from 'react-native-webview';
 import { useAuth } from '../../../src/context/AuthContext';
 import { getArtists, getFeaturedArtist } from '../../../src/services/api';
-import { Search, MapPin, Star, ArrowRight, Heart } from 'lucide-react-native';
+import { Search, MapPin, Star, Heart } from 'lucide-react-native';
+import { BatikBackground } from '../../../src/components/BatikBackground';
 
 const { width } = Dimensions.get('window');
 
@@ -44,127 +46,171 @@ export default function TouristHomeScreen() {
   }, []);
 
   return (
-    <SafeAreaView style={s.safe} edges={['top']}>
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 32 }}>
-        {/* Welcome */}
-        <View style={s.welcome}>
-          <View>
-            <Text style={s.welcomeHi}>Welcome back,</Text>
-            <Text style={s.welcomeName}>{tourist?.callingName || 'Explorer'} 👋</Text>
-          </View>
-          <TouchableOpacity style={s.avatar} onPress={() => router.push('/tourist/(tabs)/profile')}>
-            {tourist?.profilePicUrl ? (
-              <Image source={{ uri: tourist.profilePicUrl }} style={s.avatarImg} />
-            ) : (
-              <Text style={s.avatarText}>{tourist?.initials || '?'}</Text>
-            )}
-          </TouchableOpacity>
-        </View>
-
-        {/* Search */}
-        <TouchableOpacity style={s.searchBar} activeOpacity={0.8}>
-          <Search size={18} color="#9CA3AF" />
-          <Text style={s.searchPlaceholder}>Search artisans, crafts, workshops...</Text>
-        </TouchableOpacity>
-
-        {/* Book a Workshop Banner */}
-        <TouchableOpacity
-          style={s.bookBanner}
-          onPress={() => router.push('/tourist/bookings/book-workshop')}
-          activeOpacity={0.85}>
-          <View>
-            <Text style={s.bookBannerTag}>EXPERIENCE SRI LANKA</Text>
-            <Text style={s.bookBannerTitle}>Book a Workshop</Text>
-            <Text style={s.bookBannerSub}>Learn directly from master artisans</Text>
-          </View>
-          <View style={s.bookBannerIcon}>
-            <Text style={{ fontSize: 32 }}></Text>
-          </View>
-        </TouchableOpacity>
-
-        {/* Craft Categories */}
-        <View style={s.section}>
-          <Text style={s.sectionTag}>EXPLORE</Text>
-          <Text style={s.sectionTitle}>Craft Categories</Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            {CRAFTS.map(c => (
-              <TouchableOpacity key={c.label} style={s.craftCard} activeOpacity={0.7}>
-                <Text style={s.craftEmoji}>{c.emoji}</Text>
-                <Text style={s.craftLabel}>{c.label}</Text>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-        </View>
-
-        {/* Featured Artisan */}
-        {featured && (
-          <View style={s.section}>
-            <Text style={s.sectionTag}>FEATURED</Text>
-            <Text style={s.sectionTitle}>Artisan Spotlight</Text>
-            <TouchableOpacity style={s.featuredCard} onPress={() => router.push(`/tourist/artists/${featured._id || featured.id}`)} activeOpacity={0.8}>
-              <View style={s.featuredTop}>
-                <View style={s.featuredAvatar}>
-                  <Text style={s.featuredInitials}>{featured.initials || '?'}</Text>
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={s.featuredName}>{featured.fullName || featured.callingName}</Text>
-                  <Text style={s.featuredCraft}>{featured.craftType}</Text>
-                  <View style={s.ratingRow}>
-                    <Star size={14} color="#C9A227" fill="#C9A227" />
-                    <Text style={s.ratingText}>{featured.rating?.toFixed(1) || '0.0'}</Text>
-                    <Text style={s.ratingCount}>({featured.reviewCount || 0} reviews)</Text>
-                  </View>
-                </View>
-              </View>
-              <Text style={s.featuredBio} numberOfLines={2}>{featured.bio}</Text>
+    <BatikBackground>
+      <SafeAreaView style={s.safe} edges={['top']}>
+        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 32 }}>
+          {/* Welcome */}
+          <View style={s.welcome}>
+            <View>
+              <Text style={s.welcomeHi}>Welcome back,</Text>
+              <Text style={s.welcomeName}>{tourist?.callingName || 'Explorer'} 👋</Text>
+            </View>
+            <TouchableOpacity style={s.avatar} onPress={() => router.push('/tourist/(tabs)/profile')}>
+              {tourist?.profilePicUrl ? (
+                <Image source={{ uri: tourist.profilePicUrl }} style={s.avatarImg} />
+              ) : (
+                <Text style={s.avatarText}>{tourist?.initials || '?'}</Text>
+              )}
             </TouchableOpacity>
           </View>
-        )}
 
-         {/* Browse Artisans */}
-         {artists.length > 0 && (
-           <View style={s.section}>
-             <View style={s.sectionHeader}>
-               <View>
-                 <Text style={s.sectionTag}>ARTISANS</Text>
-                 <Text style={s.sectionTitle}>Discover Artisans</Text>
-               </View>
-               <TouchableOpacity onPress={() => router.push('/tourist/artists')}>
-                 <Text style={s.seeAll}>See All</Text>
-               </TouchableOpacity>
-             </View>
-             <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-               {artists.map((a: any, i: number) => (
-                 <TouchableOpacity key={a._id || i} style={s.artisanCard} onPress={() => router.push(`/tourist/artists/${a._id}`)}>
-                   <View style={s.artisanAvatar}>
-                     <Text style={s.artisanInitials}>{a.initials || '?'}</Text>
-                   </View>
-                   <Text style={s.artisanName} numberOfLines={1}>{a.callingName || a.fullName}</Text>
-                   <Text style={s.artisanCraft} numberOfLines={1}>{a.craftType}</Text>
-                   <View style={s.artisanRating}>
-                     <Star size={12} color="#C9A227" fill="#C9A227" />
-                     <Text style={s.artisanRatingText}>{a.rating?.toFixed(1) || '–'}</Text>
-                   </View>
-                 </TouchableOpacity>
-               ))}
-             </ScrollView>
-           </View>
-         )}
-
-        {/* Map Teaser */}
-        <View style={s.mapTeaser}>
-          <MapPin size={24} color="#C9A227" />
-          <Text style={s.mapTitle}>Explore on the Map</Text>
-          <Text style={s.mapSubtitle}>Discover artisan workshops across Sri Lanka</Text>
-          <TouchableOpacity style={s.mapBtn} onPress={() => router.push('/tourist/(tabs)/dashboard')} activeOpacity={0.8}>
-            <Text style={s.mapBtnText}>Open Dashboard Map</Text>
-            <ArrowRight size={16} color="#2F5D50" />
+          {/* Search */}
+          <TouchableOpacity style={s.searchBar} activeOpacity={0.8}>
+            <Search size={18} color="#9CA3AF" />
+            <Text style={s.searchPlaceholder}>Search artisans, crafts, workshops...</Text>
           </TouchableOpacity>
-        </View>
 
-        {loading && <ActivityIndicator size="large" color="#C65D3B" style={{ marginTop: 24 }} />}
-      </ScrollView>
-    </SafeAreaView>
+          {/* Book a Workshop Banner */}
+          <TouchableOpacity
+            style={s.bookBanner}
+            onPress={() => router.push('/tourist/bookings/book-workshop')}
+            activeOpacity={0.85}>
+            <View>
+              <Text style={s.bookBannerTag}>EXPERIENCE SRI LANKA</Text>
+              <Text style={s.bookBannerTitle}>Book a Workshop</Text>
+              <Text style={s.bookBannerSub}>Learn directly from master artisans</Text>
+            </View>
+            <View style={s.bookBannerIcon}>
+              <Text style={{ fontSize: 32 }}></Text>
+            </View>
+          </TouchableOpacity>
+
+          {/* Craft Categories */}
+          <View style={s.section}>
+            <Text style={s.sectionTag}>EXPLORE</Text>
+            <Text style={s.sectionTitle}>Craft Categories</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+              {CRAFTS.map(c => (
+                <TouchableOpacity key={c.label} style={s.craftCard} activeOpacity={0.7}>
+                  <Text style={s.craftEmoji}>{c.emoji}</Text>
+                  <Text style={s.craftLabel}>{c.label}</Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
+
+          {/* Featured Artisan */}
+          {featured && (
+            <View style={s.section}>
+              <Text style={s.sectionTag}>FEATURED</Text>
+              <Text style={s.sectionTitle}>Artisan Spotlight</Text>
+              <View style={s.featuredCard}>
+                <View style={s.featuredTop}>
+                  <View style={s.featuredAvatar}>
+                    <Text style={s.featuredInitials}>{featured.initials || '?'}</Text>
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={s.featuredName}>{featured.fullName || featured.callingName}</Text>
+                    <Text style={s.featuredCraft}>{featured.craftType}</Text>
+                    <View style={s.ratingRow}>
+                      <Star size={14} color="#C9A227" fill="#C9A227" />
+                      <Text style={s.ratingText}>{featured.rating?.toFixed(1) || '4.8'}</Text>
+                      <Text style={s.ratingCount}>({featured.reviewCount || 0} reviews)</Text>
+                    </View>
+                  </View>
+                </View>
+                <Text style={s.featuredBio} numberOfLines={2}>{featured.bio}</Text>
+              </View>
+            </View>
+          )}
+
+          {/* Browse Artisans */}
+          {artists.length > 0 && (
+            <View style={s.section}>
+              <View style={s.sectionHeader}>
+                <View>
+                  <Text style={s.sectionTag}>ARTISANS</Text>
+                  <Text style={s.sectionTitle}>Discover Artisans</Text>
+                </View>
+                <TouchableOpacity onPress={() => router.push('/tourist/browse')}>
+                  <Text style={s.seeAll}>See All</Text>
+                </TouchableOpacity>
+              </View>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                {artists.map((a: any, i: number) => (
+                  <View key={a._id || i} style={s.artisanCard}>
+                    <View style={s.artisanAvatar}>
+                      <Text style={s.artisanInitials}>{a.initials || '?'}</Text>
+                    </View>
+                    <Text style={s.artisanName} numberOfLines={1}>{a.callingName || a.fullName}</Text>
+                    <Text style={s.artisanCraft} numberOfLines={1}>{a.craftType}</Text>
+                    <View style={s.artisanRating}>
+                      <Star size={12} color="#C9A227" fill="#C9A227" />
+                      <Text style={s.artisanRatingText}>{a.rating?.toFixed(1) || '–'}</Text>
+                    </View>
+                  </View>
+                ))}
+              </ScrollView>
+            </View>
+          )}
+
+          {/* Interactive Map */}
+          <View style={s.section}>
+            <Text style={s.sectionTag}>DISCOVER</Text>
+            <Text style={s.sectionTitle}>Explore on the Map</Text>
+            <View style={s.mapContainer}>
+              <WebView
+                style={s.map}
+                originWhitelist={['*']}
+                scrollEnabled={false}
+                source={{ html: `
+                  <!DOCTYPE html>
+                  <html>
+                  <head>
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+                    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+                    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+                    <style>
+                      body { padding: 0; margin: 0; }
+                      html, body, #map { height: 100%; width: 100%; }
+                    </style>
+                  </head>
+                  <body>
+                    <div id="map"></div>
+                    <script>
+                      var map = L.map('map').setView([7.8731, 80.7718], 7);
+                      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                        maxZoom: 19,
+                        attribution: '© OpenStreetMap'
+                      }).addTo(map);
+
+                      var markers = ${JSON.stringify(
+                        artists
+                          .filter((a: any) => a.location?.coordinates?.length === 2 && a.location.coordinates[0] !== 0)
+                          .map((a: any) => ({
+                            lat: a.location.coordinates[1],
+                            lng: a.location.coordinates[0],
+                            title: a.fullName || a.callingName,
+                            desc: (a.craftType || '') + ' — ' + (a.address?.city || 'Sri Lanka')
+                          }))
+                      )};
+
+                      markers.forEach(function(m) {
+                        L.marker([m.lat, m.lng]).addTo(map)
+                          .bindPopup('<b>' + m.title + '</b><br>' + m.desc);
+                      });
+                    </script>
+                  </body>
+                  </html>
+                ` }}
+              />
+            </View>
+          </View>
+
+          {loading && <ActivityIndicator size="large" color="#C65D3B" style={{ marginTop: 24 }} />}
+        </ScrollView>
+      </SafeAreaView>
+    </BatikBackground>
   );
 }
 
@@ -174,7 +220,7 @@ const s = StyleSheet.create({
   bookBannerTitle: { fontSize: 20, fontWeight: '800', color: '#fff', marginBottom: 4 },
   bookBannerSub: { fontSize: 12, color: 'rgba(255,255,255,0.8)' },
   bookBannerIcon: { width: 56, height: 56, borderRadius: 16, backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center' },
-  safe: { flex: 1, backgroundColor: '#F6F3EE' },
+  safe: { flex: 1, backgroundColor: 'transparent' },
   welcome: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingTop: 16, paddingBottom: 8 },
   welcomeHi: { fontSize: 13, color: '#9CA3AF' },
   welcomeName: { fontSize: 22, fontWeight: '800', color: '#2F5D50' },
@@ -208,9 +254,6 @@ const s = StyleSheet.create({
   artisanCraft: { fontSize: 11, color: '#9CA3AF', marginBottom: 4 },
   artisanRating: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   artisanRatingText: { fontSize: 12, fontWeight: '600', color: '#1E1E1E' },
-  mapTeaser: { alignItems: 'center', backgroundColor: '#2F5D50', margin: 20, borderRadius: 24, padding: 28 },
-  mapTitle: { fontSize: 20, fontWeight: '800', color: '#fff', marginTop: 12, marginBottom: 6 },
-  mapSubtitle: { fontSize: 13, color: 'rgba(255,255,255,0.6)', marginBottom: 20, textAlign: 'center' },
-  mapBtn: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: '#C9A227', paddingVertical: 12, paddingHorizontal: 24, borderRadius: 14 },
-  mapBtnText: { fontSize: 13, fontWeight: '700', color: '#2F5D50' },
+  mapContainer: { height: 280, borderRadius: 20, overflow: 'hidden', borderWidth: 1, borderColor: '#F0F0F0' },
+  map: { width: '100%', height: '100%' },
 });

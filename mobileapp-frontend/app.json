@@ -1,14 +1,17 @@
 {
   "expo": {
-    "name": "mobileapp-frontend",
+    "name": "LankaCrafts Mobile App",
     "slug": "mobileapp-frontend",
     "extra": {
-      "FIREBASE_API_KEY": "your_key",
-      "FIREBASE_AUTH_DOMAIN": "your_domain",
-      "FIREBASE_PROJECT_ID": "your_project_id",
-      "FIREBASE_STORAGE_BUCKET": "your_bucket",
-      "FIREBASE_MESSAGING_SENDER_ID": "your_sender_id",
-      "FIREBASE_APP_ID": "your_app_id"
+      "FIREBASE_API_KEY": "AIzaSyAc6LzNHx-kzCFlQcr85K3kXy6efDEEgsk",
+      "FIREBASE_AUTH_DOMAIN": "lanka-crafts---tourists.firebaseapp.com",
+      "FIREBASE_PROJECT_ID": "lanka-crafts---tourists",
+      "FIREBASE_STORAGE_BUCKET": "lanka-crafts---tourists.firebasestorage.app",
+      "FIREBASE_MESSAGING_SENDER_ID": "1074222588727",
+      "FIREBASE_APP_ID": "1:1074222588727:web:0c2ca340a918c7e0d530b2",
+      "eas": {
+        "projectId": "38f79d93-56f2-4334-ada6-a15f16a6f3aa"
+      }
     },
     "scheme": "lankacrafts",
     "version": "1.0.0",
@@ -25,9 +28,10 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
+        "foregroundImage": "./assets/logo.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "package": "com.kasunaka.lankacrafts"
     },
     "web": {
       "favicon": "./assets/favicon.png"

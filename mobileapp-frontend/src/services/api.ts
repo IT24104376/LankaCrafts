@@ -70,15 +70,11 @@ export const deleteBlog = (id: string) =>
 
 // ── Artist Auth ─────────────────────────────────────────────────────────────────
 
-export const registerArtist = (data: object, firebaseToken?: string) => {
-  const config = firebaseToken ? { headers: { Authorization: `Bearer ${firebaseToken}` } } : {};
-  return api.post('/artist/auth/register', data, config);
-};
+export const registerArtist = (data: object) =>
+  api.post('/artist/auth/register', data);
 
-export const loginArtist = (firebaseToken?: string) => {
-  const config = firebaseToken ? { headers: { Authorization: `Bearer ${firebaseToken}` } } : {};
-  return api.post('/artist/auth/login', {}, config);
-};
+export const loginArtist = () =>
+  api.post('/artist/auth/login');
 
 // ── Artist Profile ─────────────────────────────────────────────────────────────
 
