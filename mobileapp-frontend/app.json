@@ -2,9 +2,9 @@
   "expo": {
     "name": "LankaCrafts",
     "slug": "lankacrafts-mobileapp-frontend",
-      "eas": {
-        "projectId": "38f79d93-56f2-4334-ada6-a15f16a6f3aa"
-      },
+    "eas": {
+      "projectId": "38f79d93-56f2-4334-ada6-a15f16a6f3aa"
+    },
     "scheme": "lankacrafts",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -27,6 +27,12 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "2ac7c32d-900b-41c9-a33b-1eeedf122ee3"
+      }
+    },
+    "owner": "kasun-aka"
   }
 }
