@@ -79,7 +79,7 @@ Lanka Crafts follows a **client-server monorepo architecture** with a centralize
    ┌──────────▼┐  ┌─────▼────┐  ┌──▼───────────────┐
    │ MongoDB   │  │ Firebase │  │ External APIs    │
    │  Atlas    │  │  Auth    │  │ Cloudinary       │
-   │ (Data)    │  │ (Identity│  │ Groq AI (LLM)    │
+   │ (Data)    │  │(Identity)│  │ Groq AI (LLM)    │
    └───────────┘  └──────────┘  │ Map API / Email  │
                                 └──────────────────┘
 ```
@@ -184,15 +184,24 @@ All API routes follow RESTful conventions. Protected routes require a valid **Fi
 
 ## ☁️ Deployment
 
-The platform is in its final integration phase. Planned deployment targets:
+The platform is fully integrated across all layers. Live platform entry targets:
 
-| Component | Platform | Status |
-|---|---|---|
-| Backend API | [Render](https://render.com) | 🔄 Planned |
-| Web Application | [Vercel](https://vercel.com) (auto-deploy from GitHub) | 🔄 Planned |
-| Mobile Application | Android APK via Expo EAS Build | 🔄 Planned |
-| Database | MongoDB Atlas (shared cluster) | ✅ Active |
-| Authentication | Firebase (shared project) | ✅ Active |
+| Component | Platform | Deployment Target / Access Point | Status |
+| :--- | :--- | :--- | :--- |
+| **Web Frontend** | [Netlify](https://netlify.com) | [lanka-crafts.netlify.app](https://lanka-crafts.netlify.app/) | ✅ Live |
+| **Backend API** | [Railway](https://railway.com) | Private Microservice Endpoint | ✅ Live |
+| **Mobile Application** | GitHub Releases | [Download Pre-compiled APK](../../releases) | 📱 Active Preview |
+| **Database Cluster** | MongoDB Atlas | Cloud Cluster (Shared Tier) | ✅ Active |
+| **Identity Service** | Firebase Auth | Production Instance Infrastructure | ✅ Active |
+
+### 📥 Testing the Mobile App
+
+To test the cross-platform Android Mobile Application version directly on a physical device or simulation sandbox:
+
+1. Navigate to the **[Releases](../../releases)** tab on this GitHub repository.
+2. Download the latest compiled asset build file (`LankaCrafts-Preview.apk`).
+3. Transfer the file to your Android device (or drag-and-drop it into an Android Emulator).
+4. Open the file on the device and follow the prompt to install and evaluate the interface.
 
 ---
 
