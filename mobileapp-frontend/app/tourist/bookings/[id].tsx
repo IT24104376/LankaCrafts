@@ -26,6 +26,7 @@ export default function EditBooking() {
         };
         fetchBooking();
     }, [id]);
+
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const minDateString = today.toISOString().split('T')[0];
@@ -36,7 +37,6 @@ export default function EditBooking() {
             Alert.alert('Invalid Date', 'Please select a future date.');
             return;
         }
-
         try {
             setError(null);
             await bookingApi.updateBooking(id, formData);
