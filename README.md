@@ -232,3 +232,10 @@ To test the cross-platform Android Mobile Application version directly on a phys
 **Lanka Crafts** — *Preserving Sri Lanka's craft heritage, one digital connection at a time.*
 
 </div>
+
+**Copyright&copy; 2026 Kasun Akalanka and Contributors**
+
+**All rights reserved.**
+
+⚠️This software and associated files may not be copied, modified, distributed, sublicensed, sold, or used commercially without
+explicit written permission from the copyright holders.
