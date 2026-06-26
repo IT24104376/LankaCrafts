@@ -1,63 +1,83 @@
 import axios from 'axios';
-import { auth } from '../config/firebase';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Constants from 'expo-constants';
 // @ts-ignore
-import { API_BASE_URL } from '@env';
+import { API_BASE_URL, EXPO_PUBLIC_API_BASE_URL } from '@env';
 
 const extra = Constants.expoConfig?.extra ?? {};
-const baseUrl = (extra.API_BASE_URL ?? API_BASE_URL ?? process.env.API_BASE_URL ?? 'http://localhost:5000').replace(/\/$/, '');
+const rawBaseUrl =
+  extra.API_BASE_URL ??
+  extra.EXPO_PUBLIC_API_BASE_URL ??
+  EXPO_PUBLIC_API_BASE_URL ??
+  API_BASE_URL ??
+  process.env.EXPO_PUBLIC_API_BASE_URL ??
+  process.env.API_BASE_URL;
+
+const normalizedBaseUrl = rawBaseUrl.replace(/\/$/, '').replace(/\/api$/, '');
 
 const api = axios.create({
-  baseURL: baseUrl + '/api',
+  baseURL: normalizedBaseUrl + '/api',
   headers: { 'Content-Type': 'application/json' },
 });
 
-console.log('🔗 [axiosInstance] Configured API baseURL:', api.defaults.baseURL);
+// console.log('🔗 [axiosInstance] Configured API baseURL:', api.defaults.baseURL);
 
 // ── RELIABLE TOKEN GETTER ──────────────────────────────────
-const getAuthToken = async (): Promise<string | null> => {
-  // For Firebase-authenticated users (tourists & artists)
-  if (auth.currentUser) {
-    try {
-      // Get current token without forcing refresh
-      return await auth.currentUser.getIdToken(false);
-    } catch (err) {
-      console.warn('[axiosInstance] getIdToken failed, trying stored token:', err);
+import { auth } from '../config/firebase';
+
+const getAuthToken = (): Promise<string | null> => {
+  return new Promise((resolve) => {
+    // 1. Check if user is already available in memory
+    if (auth.currentUser) {
+      auth.currentUser.getIdToken().then(resolve).catch(() => resolve(null));
+      return;
     }
-  }
-  
-  // Fallback to stored Firebase token
-  try {
-    const storedToken = await AsyncStorage.getItem('firebase_token');
-    if (storedToken) {
-      return storedToken;
-    }
-  } catch (err) {
-    console.warn('[axiosInstance] Failed to retrieve stored Firebase token:', err);
-  }
-  
-  // No valid Firebase token available
-  return null;
+
+    // 2. Wait for Firebase to initialize (max 3 seconds)
+    const timeout = setTimeout(() => {
+      unsubscribe();
+      resolve(null);
+    }, 3000);
+
+    const unsubscribe = auth.onAuthStateChanged(async (user) => {
+      clearTimeout(timeout);
+      unsubscribe();
+      if (user) {
+        try {
+          const token = await user.getIdToken();
+          resolve(token);
+        } catch {
+          resolve(null);
+        }
+      } else {
+        resolve(null);
+      }
+    });
+  });
 };
 
 // ── INTERCEPTOR ──────────────────────────────────────────
 api.interceptors.request.use(async (config) => {
-  // Admin routes: use admin_token (paths start with /auth/ or /admin/)
-  const path = config.url || '';
-  const isAdminRoute = path.startsWith('/auth/') || path.startsWith('/admin/');
+  // Check if it's an admin route
+  const isAdminRoute =
+    config.url?.startsWith('/admin/') ||
+    config.url?.startsWith('/analytics/') ||
+    config.url?.startsWith('/activity/') ||
+    config.url?.startsWith('/reviews/admin') ||
+    config.url?.includes('/moderate') ||
+    config.url === '/auth/login' ||
+    config.url === '/auth/me';
 
   if (isAdminRoute) {
     const adminToken = await AsyncStorage.getItem('admin_token');
     if (adminToken) {
       config.headers.Authorization = `Bearer ${adminToken}`;
     }
-    return config;
-  }
-
-  const token = await getAuthToken();
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
+  } else {
+    const token = await getAuthToken();
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
   }
 
   // Set actor headers (required by Reviews API)
@@ -82,6 +102,10 @@ api.interceptors.request.use(async (config) => {
 api.interceptors.response.use(
   (response) => response,
   (error) => {
+    // Optionally handle 401 Unauthorized globally
+    if (error.response?.status === 401) {
+      console.warn('⚠️ [axiosInstance] Unauthorized - may need to re-login');
+    }
     console.error('❌ [axiosInstance] Response Error:', error.message, error.response?.status, error.response?.data);
     return Promise.reject(error);
   }

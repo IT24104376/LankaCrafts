@@ -9,8 +9,9 @@ export default function TouristLayout() {
       <Stack.Screen name="(tabs)" />
       <Stack.Screen name="profile-edit" />
       <Stack.Screen name="blog-edit/[id]" />
-       <Stack.Screen name="artists/[id]" />
-       <Stack.Screen name="crafts/[id]" />
+      <Stack.Screen name="blog-create/blog-create" />
+      <Stack.Screen name="reviews" />
+      <Stack.Screen name="browse" />
     </Stack>
   );
 }
